@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hewen/mastiff-go/util"
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/util"
 	"github.com/stretchr/testify/assert"
 )
 

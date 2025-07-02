@@ -9,10 +9,10 @@ import (
 	"path"
 	"strings"
 
-	"github.com/hewen/mastiff-go/util"
 	sqle "github.com/dolthub/go-mysql-server"
 	"github.com/dolthub/go-mysql-server/memory"
 	"github.com/dolthub/go-mysql-server/server"
+	"github.com/hewen/mastiff-go/util"
 )
 
 func InitMockMysql(sqlDir string) (*DB, error) {

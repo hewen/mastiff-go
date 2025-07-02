@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
+	"github.com/go-redis/redis/v7"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/util"
-	"github.com/go-redis/redis/v7"
 )
 
 type RedisHook struct{}

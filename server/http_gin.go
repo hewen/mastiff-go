@@ -8,9 +8,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/util"
-	"github.com/gin-gonic/gin"
 	"github.com/tomasen/realip"
 )
 
