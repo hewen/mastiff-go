@@ -36,6 +36,11 @@ func TestTransact(t *testing.T) {
 		return fmt.Errorf("error")
 	})
 	assert.NotNil(t, err)
+
+	err = db.Transact(func(_ *sqlx.Tx) error {
+		panic("test")
+	})
+	assert.NotNil(t, err)
 }
 
 func TestSelectContext(t *testing.T) {
