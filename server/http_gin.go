@@ -15,41 +15,85 @@ import (
 	"github.com/tomasen/realip"
 )
 
+type bodyLogWriter struct {
+	gin.ResponseWriter
+	body *bytes.Buffer
+}
+
+func (w bodyLogWriter) Write(b []byte) (int, error) {
+	w.body.Write(b) // capture response body
+	return w.ResponseWriter.Write(b)
+}
+
 // GinLoggerHandler is a middleware for logging HTTP requests in Gin framework.
 func GinLoggerHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		begin := time.Now()
-		var bodyBytes []byte
+		start := time.Now()
 
-		if c.Request.Header.Get("Content-type") == "application/json" {
-			if c.Request.Body != nil {
-				bodyBytes, _ = io.ReadAll(c.Request.Body)
-			}
-			c.Request.Body = io.NopCloser(bytes.NewBuffer(bodyBytes))
+		var requestBody, responseBody string
+		var reqBodyBytes []byte
+
+		reqContentType := c.Request.Header.Get("Content-Type")
+		if c.Request.Body != nil {
+			limited := io.LimitReader(c.Request.Body, 1<<20) // 最大 1MB
+			reqBodyBytes, _ = io.ReadAll(limited)
+			c.Request.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
 		}
+
+		if isTextContent(reqContentType) {
+			requestBody = strings.ReplaceAll(string(reqBodyBytes), "\n", "")
+		} else if len(reqBodyBytes) > 0 {
+			requestBody = "[binary]"
+		}
+
+		blw := &bodyLogWriter{
+			ResponseWriter: c.Writer,
+			body:           bytes.NewBuffer(nil),
+		}
+		c.Writer = blw
 
 		traceID := logger.NewTraceID()
 		c.Set(string(logger.LoggerTraceKey), traceID)
 
 		c.Next()
 
-		bodyStr := strings.ReplaceAll(string(bodyBytes), "\n", "")
+		respContentType := c.Writer.Header().Get("Content-Type")
+		if isTextContent(respContentType) {
+			responseBody = strings.TrimSpace(blw.body.String())
+		} else if blw.body.Len() > 0 {
+			responseBody = "[binary]"
+		}
 
-		l := logger.NewLoggerWithTraceID(traceID)
-		l.Infof("%3d | %10s | %15s | %-7s | %s | %s | %s |  %s | %s| %s | %v",
+		log := logger.NewLoggerWithTraceID(traceID)
+		log.Infof(
+			"%3d | %10s | %15s | %-7s | %s | %s | %s | %s | UA: %s | req: %s | resp: %s",
 			c.Writer.Status(),
-			util.FormatDuration(time.Since(begin)),
+			util.FormatDuration(time.Since(start)),
 			realip.FromRequest(c.Request),
 			c.Request.Method,
-			c.Request.Header.Get("Content-type"),
+			reqContentType,
 			c.Request.Host,
-			c.Request.URL,
+			c.Request.URL.Path,
 			c.Request.Proto,
 			c.Request.UserAgent(),
-			bodyStr,
-			c.Errors,
+			requestBody,
+			responseBody,
 		)
+
+		if c.Errors != nil {
+			log.Errorf("%v", c.Errors)
+		}
 	}
+}
+
+func isTextContent(contentType string) bool {
+	ct := strings.ToLower(contentType)
+
+	return strings.Contains(ct, "application/json") ||
+		strings.Contains(ct, "application/xml") ||
+		strings.Contains(ct, "application/x-www-form-urlencoded") ||
+		strings.Contains(ct, "text/") ||
+		strings.Contains(ct, "application/javascript")
 }
 
 // GinRecoverHandler is a middleware for recovering from panics in Gin framework.
