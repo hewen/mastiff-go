@@ -69,7 +69,8 @@ func TestInitLogger(t *testing.T) {
 	})
 	assert.Nil(t, err)
 
-	tmpFile, _ := os.CreateTemp("/tmp", "tmp.log")
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(t, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
