@@ -1,3 +1,4 @@
+// Package server grpc server implementation
 package server
 
 import (
@@ -20,8 +21,10 @@ const (
 	defaultTimeout = 30
 )
 
+// ErrGrpcExecPanic is an error that indicates a panic occurred during gRPC execution.
 var ErrGrpcExecPanic = errors.New("grpc exec panic")
 
+// GrpcServer represents a gRPC server.
 type GrpcServer struct {
 	addr string
 	s    *grpc.Server
@@ -29,6 +32,7 @@ type GrpcServer struct {
 	ln   net.Listener
 }
 
+// NewGrpcServer creates a new gRPC server.
 func NewGrpcServer(conf GrpcConfig, registerServerFunc func(*grpc.Server), interceptors ...grpc.UnaryServerInterceptor) (*GrpcServer, error) {
 	ln, err := net.Listen("tcp", conf.Addr)
 	if err != nil {
@@ -65,6 +69,7 @@ func NewGrpcServer(conf GrpcConfig, registerServerFunc func(*grpc.Server), inter
 	return srv, nil
 }
 
+// Start starts the gRPC server and listens for incoming connections.
 func (s *GrpcServer) Start() {
 	AddGracefulStop(s.Stop)
 	gracefulStop()
@@ -75,6 +80,7 @@ func (s *GrpcServer) Start() {
 	}
 }
 
+// Stop gracefully stops the gRPC server and closes the listener.
 func (s *GrpcServer) Stop() {
 	s.l.Infof("Shutdown grpc service %s", s.addr)
 	if s.s != nil {
@@ -83,11 +89,15 @@ func (s *GrpcServer) Stop() {
 	}
 
 	if s.ln != nil {
-		s.ln.Close()
+		err := s.ln.Close()
+		if err != nil {
+			s.l.Errorf("%v", err)
+		}
 		s.ln = nil
 	}
 }
 
+// middleware is a gRPC interceptor that logs the request and response details, including execution time and any errors.
 func (s *GrpcServer) middleware(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
 	begin := time.Now()
 	pr, ok := peer.FromContext(ctx)
@@ -118,6 +128,7 @@ func (s *GrpcServer) middleware(ctx context.Context, req interface{}, info *grpc
 	return resp, err
 }
 
+// execHandler executes the handler and recovers from any panic, logging the error if it occurs.
 func (s *GrpcServer) execHandler(ctx context.Context, req interface{}, handler grpc.UnaryHandler, l *logger.Logger) (data interface{}, err error) {
 	defer func() {
 		if r := recover(); r != nil {
@@ -128,6 +139,7 @@ func (s *GrpcServer) execHandler(ctx context.Context, req interface{}, handler g
 	return handler(ctx, req)
 }
 
+// timeoutInterceptor creates a gRPC interceptor that sets a timeout for each request.
 func (s *GrpcServer) timeoutInterceptor(timeout time.Duration) grpc.UnaryServerInterceptor {
 	if timeout == 0 {
 		timeout = defaultTimeout

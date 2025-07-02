@@ -1,3 +1,4 @@
+// Package server gin server implementation
 package server
 
 import (
@@ -14,6 +15,7 @@ import (
 	"github.com/tomasen/realip"
 )
 
+// GinLoggerHandler is a middleware for logging HTTP requests in Gin framework.
 func GinLoggerHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		begin := time.Now()
@@ -50,6 +52,7 @@ func GinLoggerHandler() gin.HandlerFunc {
 	}
 }
 
+// GinRecoverHandler is a middleware for recovering from panics in Gin framework.
 func GinRecoverHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
@@ -62,6 +65,7 @@ func GinRecoverHandler() gin.HandlerFunc {
 	}
 }
 
+// NewGinAPIHandler initializes a new Gin API handler with the provided route initialization function.
 func NewGinAPIHandler(initRoute func(r *gin.Engine)) http.Handler {
 	r := gin.New()
 	r.Use(GinRecoverHandler())

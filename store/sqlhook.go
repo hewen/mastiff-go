@@ -1,3 +1,4 @@
+// Package store sql hooks
 package store
 
 import (
@@ -8,15 +9,20 @@ import (
 	"github.com/hewen/mastiff-go/util"
 )
 
+// Hooks is a hook collection.
 type Hooks struct{}
+type contextKey string
 
-var sqlBeginTimeKey struct{}
+// sqlBeginTimeKey is a context key for storing the SQL execution start time.
+var sqlBeginTimeKey contextKey = "beginTime"
 
-func (h *Hooks) Before(ctx context.Context, _ string, _ ...interface{}) (context.Context, error) {
+// Before records SQL execution time.
+func (h *Hooks) Before(ctx context.Context, _ string, _ ...any) (context.Context, error) {
 	return context.WithValue(ctx, sqlBeginTimeKey, time.Now()), nil
 }
 
-func (h *Hooks) After(ctx context.Context, query string, args ...interface{}) (context.Context, error) {
+// After records SQL execution time.
+func (h *Hooks) After(ctx context.Context, query string, args ...any) (context.Context, error) {
 	begin := ctx.Value(sqlBeginTimeKey).(time.Time)
 	l := logger.NewLoggerWithContext(ctx)
 	l.Infof("SQL | %10s | %s %v", util.FormatDuration(time.Since(begin)), query, args)

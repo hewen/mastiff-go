@@ -1,3 +1,4 @@
+// Package server http server implementation
 package server
 
 import (
@@ -9,16 +10,20 @@ import (
 )
 
 const (
-	HTTPTimeoutReadDefault  = 10
+	// HTTPTimeoutReadDefault is the default read timeout for the HTTP server.
+	HTTPTimeoutReadDefault = 10
+	// HTTPTimeoutWriteDefault is the default write timeout for the HTTP server.
 	HTTPTimeoutWriteDefault = 10
 )
 
+// HTTPService defines the configuration for an HTTP server.
 type HTTPService struct {
 	addr string
 	s    *http.Server
 	l    *logger.Logger
 }
 
+// NewHTTPServer creates a new HTTP server.
 func NewHTTPServer(conf HTTPConfig, handler http.Handler) (*HTTPService, error) {
 	if conf.TimeoutRead == 0 {
 		conf.TimeoutRead = HTTPTimeoutReadDefault
@@ -41,6 +46,7 @@ func NewHTTPServer(conf HTTPConfig, handler http.Handler) (*HTTPService, error) 
 	}, nil
 }
 
+// Start starts the HTTP server.
 func (s *HTTPService) Start() {
 	AddGracefulStop(s.Stop)
 	gracefulStop()
@@ -51,6 +57,7 @@ func (s *HTTPService) Start() {
 	}
 }
 
+// Stop gracefully stops the HTTP server.
 func (s *HTTPService) Stop() {
 	s.l.Infof("Shutdown service %s", s.addr)
 	if s.s == nil {

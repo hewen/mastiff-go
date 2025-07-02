@@ -1,6 +1,6 @@
 lint:
 	@echo Lint start
-	@golangci-lint run --timeout 10m --fast -v ./...
+	@golangci-lint run -v -E gocritic -E misspell -E revive -E godot --timeout 5m ./...
 
 test:
 	@echo Test start

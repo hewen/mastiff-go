@@ -1,12 +1,11 @@
+// Package store mock mysql
 package store
 
 import (
 	"bufio"
 	"fmt"
-	"io"
-	"io/fs"
 	"os"
-	"path"
+	"path/filepath"
 	"strings"
 
 	sqle "github.com/dolthub/go-mysql-server"
@@ -15,84 +14,106 @@ import (
 	"github.com/hewen/mastiff-go/util"
 )
 
+// InitMockMysql initializes a MySQL connection with the given configuration.
 func InitMockMysql(sqlDir string) (*DB, error) {
 	if sqlDir == "" {
 		return nil, fmt.Errorf("sql dir empty")
 	}
 
+	// 1. 创建 engine + server 配置
 	dbName := "mockdb"
-	db := memory.NewDatabase(dbName)
-	db.BaseDatabase.EnablePrimaryKeyIndexes()
-	pro := memory.NewDBProvider(db)
-	engine := sqle.NewDefault(pro)
+	engine, provider := createMockMysqlEngine(dbName)
 
 	port, err := util.GetFreePort()
 	if err != nil {
 		return nil, err
 	}
-	config := server.Config{
-		Protocol: "tcp",
-		Address:  fmt.Sprintf("localhost:%d", port),
-	}
 
-	s, err := server.NewServer(config, engine, memory.NewSessionBuilder(pro), nil)
+	// 2. 启动服务
+	address := fmt.Sprintf("localhost:%d", port)
+	err = startMockMysqlServer(address, engine, provider)
 	if err != nil {
 		return nil, err
 	}
 
+	// 3. 初始化连接
+	connStr := fmt.Sprintf("root:@tcp(%s)/%s?charset=utf8mb4&parseTime=true&interpolateParams=true", address, dbName)
+	dbConn, err := InitMysql(MysqlConf{DataSourceName: connStr})
+	if err != nil {
+		return nil, err
+	}
+
+	// 4. 加载 SQL 文件
+	err = loadSQLFiles(dbConn, sqlDir)
+	if err != nil {
+		return nil, err
+	}
+
+	return dbConn, nil
+}
+func createMockMysqlEngine(dbName string) (*sqle.Engine, *memory.DbProvider) {
+	db := memory.NewDatabase(dbName)
+	db.EnablePrimaryKeyIndexes()
+	provider := memory.NewDBProvider(db)
+	engine := sqle.NewDefault(provider)
+	return engine, provider
+}
+
+func startMockMysqlServer(address string, engine *sqle.Engine, provider *memory.DbProvider) error {
+	config := server.Config{
+		Protocol: "tcp",
+		Address:  address,
+	}
+
+	srv, err := server.NewServer(config, engine, memory.NewSessionBuilder(provider), nil)
+	if err != nil {
+		return err
+	}
+
 	go func() {
-		if err := s.Start(); err != nil {
+		if err := srv.Start(); err != nil {
 			panic(err)
 		}
 	}()
 
-	DbConn, err := InitMysql(MysqlConf{
-		DataSourceName: fmt.Sprintf("root:@tcp(%s)/%s?charset=utf8mb4&parseTime=true&interpolateParams=true", config.Address, dbName),
-	})
-	if err != nil {
-		return nil, err
-	}
+	return nil
+}
 
+func loadSQLFiles(dbConn *DB, sqlDir string) error {
 	entries, err := os.ReadDir(sqlDir)
 	if err != nil {
-		return nil, err
-	}
-	files := make([]fs.FileInfo, 0, len(entries))
-	for _, entry := range entries {
-		info, err := entry.Info()
-		if err != nil {
-			return nil, err
-		}
-		files = append(files, info)
+		return err
 	}
 
-	for _, file := range files {
-		if path.Ext(file.Name()) != ".sql" {
+	for _, entry := range entries {
+		if !strings.HasSuffix(entry.Name(), ".sql") {
 			continue
 		}
 
-		fi, err := os.Open(sqlDir + "/" + file.Name())
+		file, err := os.Open(filepath.Join(sqlDir, entry.Name())) // #nosec G304 -- entry name from os.ReadDir, safe
 		if err != nil {
-			return nil, err
+			return err
 		}
-		defer fi.Close()
-		br := bufio.NewReader(fi)
-		var sqlStr string
-		for {
-			a, _, c := br.ReadLine()
-			if c == io.EOF {
-				break
-			}
-			if string(a) != strings.TrimPrefix(string(a), "---") {
+		defer func() {
+			_ = file.Close()
+		}()
+
+		scanner := bufio.NewScanner(file)
+		var sb strings.Builder
+		for scanner.Scan() {
+			if strings.HasPrefix(scanner.Text(), "---") {
 				continue
 			}
-			sqlStr += string(a)
+			_, err = sb.WriteString(scanner.Text())
+			if err != nil {
+				return err
+			}
 		}
-		_, err = DbConn.Exec(sqlStr)
+
+		_, err = dbConn.Exec(sb.String())
 		if err != nil {
-			return nil, err
+			return err
 		}
 	}
-
-	return DbConn, nil
+	return nil
 }

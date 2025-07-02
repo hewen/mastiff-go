@@ -70,7 +70,9 @@ func TestInitLogger(t *testing.T) {
 	assert.Nil(t, err)
 
 	tmpFile, _ := os.CreateTemp("/tmp", "tmp.log")
-	defer os.Remove(tmpFile.Name())
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
 
 	err = InitLogger(Config{
 		Level:   "INFO",
@@ -87,7 +89,7 @@ func TestGetTraceIDWithGinContext(t *testing.T) {
 
 	traceID := NewTraceID()
 	ctx, _ = gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set(LoggerTraceKey, traceID)
+	ctx.Set(string(LoggerTraceKey), traceID)
 
 	res = GetTraceIDWithGinContext(ctx)
 	assert.Equal(t, traceID, res)
@@ -97,7 +99,7 @@ func TestNewLoggerWithGinContext(t *testing.T) {
 	traceID := NewTraceID()
 
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set(LoggerTraceKey, traceID)
+	ctx.Set(string(LoggerTraceKey), traceID)
 
 	l := NewLoggerWithGinContext(ctx)
 	assert.Equal(t, traceID, l.traceID)
@@ -106,13 +108,13 @@ func TestNewLoggerWithGinContext(t *testing.T) {
 func TestNewOutgoingContextFromGinContext(t *testing.T) {
 	traceID := NewTraceID()
 	gctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	gctx.Set(LoggerTraceKey, traceID)
+	gctx.Set(string(LoggerTraceKey), traceID)
 
 	ctx := NewOutgoingContextWithGinContext(gctx)
 	md, ok := metadata.FromOutgoingContext(ctx)
 	assert.Equal(t, true, ok)
 
-	trace, ok := md[LoggerTraceKey]
+	trace, ok := md[string(LoggerTraceKey)]
 	assert.Equal(t, true, ok)
 	assert.Equal(t, traceID, trace[0])
 }

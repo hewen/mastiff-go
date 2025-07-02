@@ -1,3 +1,4 @@
+// Package store mysql database
 package store
 
 import (
@@ -11,14 +12,17 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+// DB represents a database connection with sqlx capabilities.
 type DB struct {
 	*sqlx.DB
 }
 
+// DatabaseOption defines options for initializing a database connection.
 type DatabaseOption struct {
 	RegisterHookDriver bool
 }
 
+// InitDB initializes a database connection.
 func InitDB(driverName, dataSourceName string, driver driver.Driver, opt ...DatabaseOption) (*DB, error) {
 	if len(opt) == 0 || opt[0].RegisterHookDriver {
 		driverName += "WithHooks"
@@ -41,6 +45,7 @@ func InitDB(driverName, dataSourceName string, driver driver.Driver, opt ...Data
 	return &DB{sqlx.NewDb(conn, driverName)}, nil
 }
 
+// registerHookDriver registers a driver with sqlhooks if it is not already registered.
 func registerHookDriver(driverName string, driver driver.Driver) {
 	drivers := sql.Drivers()
 	var registerHook bool
@@ -55,6 +60,7 @@ func registerHookDriver(driverName string, driver driver.Driver) {
 	}
 }
 
+// Transact executes a function within a transaction, handling commit and rollback automatically.
 func (db *DB) Transact(fn func(*sqlx.Tx) error) (err error) {
 	tx, err := db.Beginx()
 	if err != nil {
@@ -77,6 +83,7 @@ func (db *DB) Transact(fn func(*sqlx.Tx) error) (err error) {
 	return fn(tx)
 }
 
+// InitMysql initializes a MySQL connection.
 func InitMysql(conf MysqlConf, opt ...DatabaseOption) (*DB, error) {
 	return InitDB("mysql", conf.DataSourceName, &mysql.MySQLDriver{}, opt...)
 }

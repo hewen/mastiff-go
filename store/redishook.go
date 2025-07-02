@@ -1,3 +1,4 @@
+// Package store redis hook for logging Redis commands
 package store
 
 import (
@@ -9,12 +10,16 @@ import (
 	"github.com/hewen/mastiff-go/util"
 )
 
+// RedisHook implements redis.Hook interface for logging Redis commands.
 type RedisHook struct{}
 
+// BeforeProcess is called before Redis command is processed.
 func (*RedisHook) BeforeProcess(ctx context.Context, _ redis.Cmder) (context.Context, error) {
+	// Record the time when Redis command is about to be processed.
 	return context.WithValue(ctx, sqlBeginTimeKey, time.Now()), nil
 }
 
+// AfterProcess is called after Redis command is processed.
 func (*RedisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 	begin := ctx.Value(sqlBeginTimeKey).(time.Time)
 	l := logger.NewLoggerWithContext(ctx)
@@ -22,10 +27,12 @@ func (*RedisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 	return nil
 }
 
+// BeforeProcessPipeline is called before a Redis pipeline is processed.
 func (*RedisHook) BeforeProcessPipeline(ctx context.Context, _ []redis.Cmder) (context.Context, error) {
 	return context.WithValue(ctx, sqlBeginTimeKey, time.Now()), nil
 }
 
+// AfterProcessPipeline is called after a Redis pipeline is processed.
 func (*RedisHook) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmder) error {
 	begin := ctx.Value(sqlBeginTimeKey).(time.Time)
 	l := logger.NewLoggerWithContext(ctx)

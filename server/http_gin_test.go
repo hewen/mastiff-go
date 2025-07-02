@@ -66,7 +66,9 @@ func TestGinRecoverHandler(t *testing.T) {
 		if res == nil || res.StatusCode != http.StatusOK {
 			continue
 		}
-		defer res.Body.Close()
+		defer func() {
+			_ = res.Body.Close()
+		}()
 		assert.Nil(t, err)
 		return
 	}

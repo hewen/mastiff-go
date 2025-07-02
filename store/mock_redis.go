@@ -1,3 +1,4 @@
+// Package store mock redis
 package store
 
 import (
@@ -5,6 +6,7 @@ import (
 	"github.com/go-redis/redis/v7"
 )
 
+// InitMockRedis initializes a mock Redis connection using miniredis.
 func InitMockRedis() *redis.Client {
 	s, err := miniredis.Run()
 	if err != nil {

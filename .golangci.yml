@@ -1,42 +1,14 @@
-run:
-  timeout: 10m
-
-linters-settings:
-  funlen:
-    lines: 200
-    statements: 200
-  maligned:
-    suggest-new: true
-    auto-fix: true
-  lll:
-    line-length: 240
-  misspell:
-    locale: US
-  gocritic:
-    enabled-checks:
-    disabled-checks:
-    enabled-tags:
-      - performance
-    settings: # settings passed to gocritic
-      captLocal: # must be valid enabled check name
-        paramsOnly: true
-      rangeValCopy:
-        sizeThreshold: 32
+version: "2"
 
 linters:
-  # disable-all: true
-  # enable-all: true
   enable:
     - errcheck
-    - gosimple
     - govet
     - ineffassign
     - staticcheck
-    - typecheck
     - unused
     - misspell
     - dupl
-    - goimports
     - unparam
     - gocritic
     - funlen
@@ -47,7 +19,9 @@ linters:
     - gomodguard
     - revive
     - gosec
-issues:
-  exclude:
-    - 'context-keys-type'
-    - 'SA1029'
+
+formatters:
+  # Enable specific formatter.
+  # Default: [] (uses standard Go formatting)
+  enable:
+    - goimports
