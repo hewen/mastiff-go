@@ -7,11 +7,14 @@ type (
 		Addr         string
 		TimeoutRead  int64
 		TimeoutWrite int64
+		PprofEnabled bool
+		Mode         string // "debug", "release", or "test"
 	}
 
-	// 	GrpcConfig holds the configuration for a gRPC server.
+	// GrpcConfig holds the configuration for a gRPC server.
 	GrpcConfig struct {
-		Addr    string
-		Timeout int64
+		Addr       string
+		Timeout    int64
+		Reflection bool
 	}
 )
