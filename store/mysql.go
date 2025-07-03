@@ -20,13 +20,34 @@ type DB struct {
 // DatabaseOption defines options for initializing a database connection.
 type DatabaseOption struct {
 	RegisterHookDriver bool
+	Hook               sqlhooks.Hooks
+	MaxIdleConns       int
+	MaxOpenConns       int
+	ConnMaxLifetime    time.Duration
 }
 
 // InitDB initializes a database connection.
 func InitDB(driverName, dataSourceName string, driver driver.Driver, opt ...DatabaseOption) (*DB, error) {
-	if len(opt) == 0 || opt[0].RegisterHookDriver {
+	var optCfg DatabaseOption
+	if len(opt) > 0 {
+		optCfg = opt[0]
+	}
+	if optCfg.RegisterHookDriver {
 		driverName += "WithHooks"
-		registerHookDriver(driverName, driver)
+		if optCfg.Hook == nil {
+			optCfg.Hook = &SQLHooks{}
+		}
+		registerHookDriver(driverName, driver, optCfg.Hook)
+	}
+
+	if optCfg.MaxIdleConns == 0 {
+		optCfg.MaxIdleConns = 8
+	}
+	if optCfg.MaxOpenConns == 0 {
+		optCfg.MaxOpenConns = 128
+	}
+	if optCfg.ConnMaxLifetime == 0 {
+		optCfg.ConnMaxLifetime = time.Minute
 	}
 
 	conn, err := sql.Open(driverName, dataSourceName)
@@ -34,9 +55,9 @@ func InitDB(driverName, dataSourceName string, driver driver.Driver, opt ...Data
 		return nil, err
 	}
 
-	conn.SetMaxIdleConns(8)
-	conn.SetMaxOpenConns(128)
-	conn.SetConnMaxLifetime(time.Minute)
+	conn.SetMaxIdleConns(optCfg.MaxIdleConns)
+	conn.SetMaxOpenConns(optCfg.MaxOpenConns)
+	conn.SetConnMaxLifetime(optCfg.ConnMaxLifetime)
 
 	if err := conn.Ping(); err != nil {
 		return nil, err
@@ -46,18 +67,20 @@ func InitDB(driverName, dataSourceName string, driver driver.Driver, opt ...Data
 }
 
 // registerHookDriver registers a driver with sqlhooks if it is not already registered.
-func registerHookDriver(driverName string, driver driver.Driver) {
-	drivers := sql.Drivers()
-	var registerHook bool
-	for i := range drivers {
-		if drivers[i] == driverName {
-			registerHook = true
-			break
+func registerHookDriver(driverName string, driver driver.Driver, hook sqlhooks.Hooks) {
+	if !isDriverRegistered(driverName) {
+		sql.Register(driverName, sqlhooks.Wrap(driver, hook))
+	}
+}
+
+// isDriverRegistered check driver registered.
+func isDriverRegistered(name string) bool {
+	for _, driverName := range sql.Drivers() {
+		if driverName == name {
+			return true
 		}
 	}
-	if !registerHook {
-		sql.Register(driverName, sqlhooks.Wrap(driver, &Hooks{}))
-	}
+	return false
 }
 
 // Transact executes a function within a transaction, handling commit and rollback automatically.
@@ -83,7 +106,12 @@ func (db *DB) Transact(fn func(*sqlx.Tx) error) (err error) {
 	return fn(tx)
 }
 
+// Close db conn.
+func (db *DB) Close() error {
+	return db.DB.Close()
+}
+
 // InitMysql initializes a MySQL connection.
 func InitMysql(conf MysqlConf, opt ...DatabaseOption) (*DB, error) {
-	return InitDB("mysql", conf.DataSourceName, &mysql.MySQLDriver{}, opt...)
+	return InitDB("mysql", conf.DataSourceName, mysql.MySQLDriver{}, opt...)
 }

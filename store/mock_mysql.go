@@ -48,7 +48,7 @@ func InitMockMysql(sqlDir string) (*DB, error) {
 
 	// 3. connect to mock mysql server
 	connStr := fmt.Sprintf("root:@tcp(%s)/%s?charset=utf8mb4&parseTime=true&interpolateParams=true", address, dbName)
-	dbConn, err := initMysqlFunc(MysqlConf{DataSourceName: connStr})
+	dbConn, err := initMysqlFunc(MysqlConf{DataSourceName: connStr}, DatabaseOption{RegisterHookDriver: true})
 	if err != nil {
 		return nil, err
 	}
