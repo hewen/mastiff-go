@@ -1,0 +1,33 @@
+package config
+
+import (
+	"github.com/hewen/mastiff-go/logger"
+	"github.com/hewen/mastiff-go/server"
+	"github.com/hewen/mastiff-go/store"
+	"github.com/spf13/viper"
+)
+
+type Config struct {
+	Logger logger.Config
+	HTTP   *server.HTTPConfig
+	Grpc   *server.GrpcConfig
+	Mysql  *store.MysqlConf
+	Redis  *store.RedisConf
+}
+
+func InitConfig(confFile string) (*Config, error) {
+	conf := new(Config)
+	viper.SetConfigFile(confFile)
+
+	err := viper.ReadInConfig()
+	if err != nil {
+		return nil, err
+	}
+
+	err = viper.Unmarshal(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	return conf, nil
+}

@@ -1,0 +1,27 @@
+version: "2"
+
+linters:
+  enable:
+    - errcheck
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    - misspell
+    - dupl
+    - unparam
+    - gocritic
+    - funlen
+    - goconst
+    - unconvert
+    - bodyclose
+    - sqlclosecheck
+    - gomodguard
+    - revive
+    - gosec
+
+formatters:
+  # Enable specific formatter.
+  # Default: [] (uses standard Go formatting)
+  enable:
+    - goimports

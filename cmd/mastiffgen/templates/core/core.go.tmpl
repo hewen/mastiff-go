@@ -1,0 +1,63 @@
+package core
+
+import (
+	"fmt"
+
+	"{{.ModuleName}}/config"
+	"{{.ModuleName}}/pkg/model"
+
+	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/logger"
+	"github.com/hewen/mastiff-go/server"
+	"google.golang.org/grpc"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+)
+
+type Core struct {
+	conf    *config.Config
+	servers server.Servers
+}
+
+func NewCore(conf *config.Config) (*Core, error) {
+	if conf == nil {
+		return nil, fmt.Errorf("empty config")
+	}
+
+	c := new(Core)
+	c.conf = conf
+
+	if err := model.InitConnector(conf); err != nil {
+		return nil, err
+	}
+
+	if err := logger.InitLogger(conf.Logger); err != nil {
+		return nil, err
+	}
+
+	httpServer, err := server.NewHTTPServer(conf.HTTP, c.initGinRoute)
+	if err != nil {
+		return nil, err
+	}
+	c.servers.Add(httpServer)
+
+	grpcServer, err := server.NewGrpcServer(conf.Grpc, func(s *grpc.Server) {
+		// TODO rpc.RegisterYourServer(s, c)
+		healthpb.RegisterHealthServer(s, c)
+	})
+	c.servers.Add(grpcServer)
+
+	return c, nil
+}
+
+func (c *Core) initGinRoute(r *gin.Engine) {
+	// TODO add route
+	// api := r.Group("/api/v1")
+}
+
+func (c *Core) Start() {
+	c.servers.Start()
+}
+
+func (c *Core) Stop() {
+	c.servers.Stop()
+}

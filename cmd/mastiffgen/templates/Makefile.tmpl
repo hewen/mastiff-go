@@ -8,7 +8,7 @@ MAKEFLAGS += --no-print-directory
 
 test:
 	@echo "==> Running Tests"
-	@go list -f '{{if gt (len .TestGoFiles) 0}}"go test -tags test -covermode=count -coverprofile {{.Name}}.coverprofile -coverpkg=$(COVER_PKG) {{.ImportPath}}"{{end}}' ./... \
+	@go list -f '\{\{if gt (len .TestGoFiles) 0\}\}"go test -tags test -covermode=count -coverprofile \{\{.Name\}\}.coverprofile -coverpkg=$(COVER_PKG) \{\{.ImportPath\}\}"\{\{end\}\}' ./... \
 	| xargs -I {} sh -c {}
 	@$(MAKE) merge-cover
 	@$(MAKE) check-cover
@@ -32,7 +32,7 @@ merge-cover:
 
 check-cover:
 	@go tool cover -func=$(COVER_OUT) | grep -v '100.0%' | \
-	awk '{if ($$3 < 80) {print $$1, $$2" coverage ("$$3") < 80%"; failed=1}} END {exit failed}'
+	awk '{if ($$3 < 80) {print $$1, $$2" coverage ("$$3") < 80%"; failed=1\}\} END {exit failed}'
 
 clean:
 	@echo "==> Cleaning Generated Files"
@@ -41,7 +41,3 @@ clean:
 	@rm -f *.test *.out
 
 .PHONY: test cover lint race clean merge-cover check-cover gen
-
-gen:
-	@echo "==> Running Code Generator"
-	go run ./cmd/mastiffgen/main.go -module=$(m) -name=$(n)

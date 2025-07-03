@@ -1,0 +1,36 @@
+package cmd
+
+import (
+	"os"
+
+	"{{.ModuleName}}/config"
+	"{{.ModuleName}}/core"
+	"github.com/hewen/mastiff-go/logger"
+	"github.com/spf13/cobra"
+)
+
+var runCmd = &cobra.Command{
+	Use:   "run",
+	Short: "run",
+	Long:  `run`,
+	Run: func(_ *cobra.Command, _ []string) {
+		l := logger.NewLogger()
+		conf, err := config.InitConfig(cfgFile)
+		if err != nil {
+			l.Errorf("%s", err.Error())
+			os.Exit(1)
+		}
+
+		c, err := core.NewCore(conf)
+		if err != nil {
+			l.Errorf("%s", err.Error())
+			os.Exit(1)
+		}
+
+		c.Start()
+	},
+}
+
+func init() {
+	RootCmd.AddCommand(runCmd)
+}

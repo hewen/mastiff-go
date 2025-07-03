@@ -1,0 +1,24 @@
+package config
+
+import (
+	"os"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+const (
+	testConfigName = "tmpconfig.yaml"
+)
+
+func TestInitConfig(t *testing.T) {
+	name := testConfigName
+	defer os.Remove(name)
+
+	_, err := os.Create(name)
+	assert.Nil(t, err)
+
+	c, err := InitConfig(name)
+	assert.Nil(t, err)
+	assert.NotNil(t, c)
+}

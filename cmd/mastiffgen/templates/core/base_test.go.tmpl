@@ -1,0 +1,26 @@
+package core
+
+import (
+	"os"
+	"testing"
+
+	"github.com/hewen/mastiff-go/store"
+	"{{.ModuleName}}/pkg/model"
+)
+
+func TestMain(m *testing.M) {
+	initMockRedis()
+	initMockMysql()
+	os.Exit(m.Run())
+}
+
+func initMockRedis() {
+	model.RedisConn = store.InitMockRedis()
+
+	hook := &store.RedisHook{}
+	model.RedisConn.AddHook(hook)
+}
+
+func initMockMysql() {
+	model.DbConn, _ = store.InitMockMysql("../pkg/sql/")
+}

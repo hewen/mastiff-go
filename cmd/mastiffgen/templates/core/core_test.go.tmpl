@@ -1,0 +1,37 @@
+package core
+
+import (
+	"testing"
+
+	"github.com/hewen/mastiff-go/logger"
+	"github.com/hewen/mastiff-go/server"
+	"github.com/hewen/mastiff-go/store"
+	"{{.ModuleName}}/config"
+	"github.com/alicebob/miniredis/v2"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewCoreFail(t *testing.T) {
+	s, _ := miniredis.Run()
+	c, err := NewCore(&config.Config{
+		Grpc: &server.GrpcConfig{
+			Addr: "0.0.0.0:9090",
+		},
+		Mysql: &store.MysqlConf{},
+		Redis: &store.RedisConf{
+			Addr:     s.Addr(),
+			Password: "",
+			DB:       0,
+		},
+		Logger: logger.Config{
+			Level: "INFO",
+		},
+	})
+	assert.NotNil(t, err)
+	assert.Nil(t, c)
+}
+
+func TestCoreStop(_ *testing.T) {
+	c := new(Core)
+	c.Stop()
+}
