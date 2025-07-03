@@ -71,7 +71,12 @@ func (h *mockHandler) Handle(_ context.Context, msg MyTestMsg) error {
 
 func TestQueueServer_Messages(t *testing.T) {
 	handler := &mockHandler{}
-	server, err := NewQueueServer(handler, 0)
+
+	conf := QueueConfig{
+		PoolSize:           10,
+		EmptySleepInterval: 1 * time.Millisecond,
+	}
+	server, err := NewQueueServer(conf, handler)
 	if err != nil {
 		t.Fatalf("failed to create queue server: %v", err)
 	}
@@ -128,9 +133,12 @@ func TestQueueServer_BulkMessages(t *testing.T) {
 	const totalMsgs = 200
 
 	origHandler := &mockHandler{}
-	poolSize := 4
+	conf := QueueConfig{
+		PoolSize:           10,
+		EmptySleepInterval: 1 * time.Millisecond,
+	}
 
-	server, err := NewQueueServer[MyTestMsg](nil, poolSize)
+	server, err := NewQueueServer[MyTestMsg](conf, nil)
 	if err != nil {
 		t.Fatalf("failed to create queue server: %v", err)
 	}
@@ -178,7 +186,11 @@ func TestQueueServer_BulkMessages(t *testing.T) {
 }
 
 func TestNewQueueServer_PoolError(t *testing.T) {
-	_, err := NewQueueServer(&mockHandler{}, -1)
+	conf := QueueConfig{
+		PoolSize:           -1,
+		EmptySleepInterval: 1 * time.Millisecond,
+	}
+	_, err := NewQueueServer(conf, &mockHandler{})
 	assert.NoError(t, err)
 }
 
@@ -192,7 +204,11 @@ func (h *popErrorHandler) Pop(_ context.Context) ([]byte, error) {
 
 func TestQueueServer_PopError(_ *testing.T) {
 	handler := &popErrorHandler{}
-	server, _ := NewQueueServer(handler, 1)
+	conf := QueueConfig{
+		PoolSize:           1,
+		EmptySleepInterval: 1 * time.Millisecond,
+	}
+	server, _ := NewQueueServer(conf, handler)
 
 	go server.Start()
 	defer server.Stop()
@@ -214,7 +230,11 @@ func (h *decodeErrorHandler) Decode(_ []byte) (MyTestMsg, error) {
 
 func TestQueueServer_DecodeError(_ *testing.T) {
 	handler := &decodeErrorHandler{}
-	server, _ := NewQueueServer(handler, 1)
+	conf := QueueConfig{
+		PoolSize:           1,
+		EmptySleepInterval: 1 * time.Millisecond,
+	}
+	server, _ := NewQueueServer(conf, handler)
 
 	go server.Start()
 	defer server.Stop()
@@ -243,7 +263,11 @@ func (h *handleErrorHandler) Handle(_ context.Context, _ MyTestMsg) error {
 
 func TestQueueServer_HandleError(_ *testing.T) {
 	handler := &handleErrorHandler{}
-	server, _ := NewQueueServer(handler, 1)
+	conf := QueueConfig{
+		PoolSize:           1,
+		EmptySleepInterval: 1 * time.Millisecond,
+	}
+	server, _ := NewQueueServer(conf, handler)
 
 	go server.Start()
 	defer server.Stop()
@@ -253,7 +277,11 @@ func TestQueueServer_HandleError(_ *testing.T) {
 
 func TestQueueServer_StartStopExit(t *testing.T) {
 	handler := &mockHandler{}
-	server, err := NewQueueServer(handler, 1)
+	conf := QueueConfig{
+		PoolSize:           1,
+		EmptySleepInterval: 1 * time.Millisecond,
+	}
+	server, err := NewQueueServer(conf, handler)
 	if err != nil {
 		t.Fatalf("failed to create queue server: %v", err)
 	}
@@ -275,7 +303,11 @@ func TestQueueServer_StartStopExit(t *testing.T) {
 
 func TestQueueServer_StopIdempotent(_ *testing.T) {
 	handler := &mockHandler{}
-	server, _ := NewQueueServer(handler, 1)
+	conf := QueueConfig{
+		PoolSize:           1,
+		EmptySleepInterval: 1 * time.Millisecond,
+	}
+	server, _ := NewQueueServer(conf, handler)
 
 	server.Stop()
 	server.Stop()

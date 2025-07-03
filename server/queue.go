@@ -3,6 +3,7 @@ package server
 
 import (
 	"context"
+	"time"
 
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/panjf2000/ants/v2"
@@ -18,11 +19,12 @@ type QueueMessage any
 
 // QueueServer is a simple queue server that processes messages from a queue using a goroutine pool.
 type QueueServer[T any] struct {
-	done     chan struct{}
-	handler  QueueHandler[T]
-	pool     *ants.Pool
-	logger   *logger.Logger
-	poolSize int
+	done               chan struct{}
+	handler            QueueHandler[T]
+	pool               *ants.Pool
+	logger             *logger.Logger
+	poolSize           int
+	EmptySleepInterval time.Duration
 }
 
 // QueueHandler defines the interface for handling queue messages.
@@ -35,25 +37,29 @@ type QueueHandler[T any] interface {
 }
 
 // NewQueueServer creates a new QueueServer with the specified handler and pool size.
-func NewQueueServer[T any](handler QueueHandler[T], poolSize int) (*QueueServer[T], error) {
-	if poolSize <= 0 {
-		poolSize = DefaultQueueGoroutinePoolSize
+func NewQueueServer[T any](conf QueueConfig, handler QueueHandler[T]) (*QueueServer[T], error) {
+	if conf.PoolSize <= 0 {
+		conf.PoolSize = DefaultQueueGoroutinePoolSize
+	}
+	if conf.EmptySleepInterval <= 0 {
+		conf.EmptySleepInterval = 10 * time.Millisecond
 	}
 
 	log := logger.NewLogger()
-	log.Infof("init goroutine pool size: %d", poolSize)
+	log.Infof("init goroutine pool size: %d", conf.PoolSize)
 
-	pool, err := ants.NewPool(poolSize)
+	pool, err := ants.NewPool(conf.PoolSize)
 	if err != nil {
 		return nil, err
 	}
 
 	return &QueueServer[T]{
-		done:     make(chan struct{}, 1),
-		pool:     pool,
-		handler:  handler,
-		logger:   log,
-		poolSize: poolSize,
+		done:               make(chan struct{}, 1),
+		pool:               pool,
+		handler:            handler,
+		logger:             log,
+		poolSize:           conf.PoolSize,
+		EmptySleepInterval: conf.EmptySleepInterval,
 	}, nil
 }
 
@@ -66,15 +72,9 @@ func (qs *QueueServer[T]) Start() {
 		case <-qs.done:
 			return
 		default:
-			err := qs.pool.Submit(func() {
-				if err := qs.runOnce(ctx); err != nil {
-					qs.logger.Errorf("error: %v", err)
-				}
-			})
-			if err != nil {
-				qs.logger.Errorf("submit to goroutine pool failed: %v", err)
+			if err := qs.runOnce(ctx); err != nil {
+				qs.logger.Errorf("error: %v", err)
 			}
-
 		}
 	}
 }
@@ -102,6 +102,7 @@ func (qs *QueueServer[T]) runOnce(ctx context.Context) error {
 		return err
 	}
 	if len(data) == 0 {
+		time.Sleep(qs.EmptySleepInterval)
 		return nil
 	}
 
@@ -110,10 +111,15 @@ func (qs *QueueServer[T]) runOnce(ctx context.Context) error {
 		return err
 	}
 
-	if err := qs.handler.Handle(ctx, msg); err != nil {
-		qs.logger.Errorf("failed to handle message: %v", err)
+	err = qs.pool.Submit(func() {
+		if err := qs.handler.Handle(ctx, msg); err != nil {
+			qs.logger.Errorf("failed to handle message: %v", err)
+		}
+		qs.logger.Infof("push success! => goroutine pool: [cap: %d, running: %d, free: %d]", qs.pool.Cap(), qs.pool.Running(), qs.pool.Free())
+	})
+	if err != nil {
+		qs.logger.Errorf("submit to goroutine pool failed: %v", err)
 	}
 
-	qs.logger.Infof("push success! => goroutine pool: [cap: %d, running: %d, free: %d]", qs.pool.Cap(), qs.pool.Running(), qs.pool.Free())
 	return nil
 }
