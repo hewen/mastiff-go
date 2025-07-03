@@ -13,8 +13,9 @@ import (
 
 var (
 	// stopFunc holds functions to be called during graceful shutdown.
-	stopFunc   []func()
-	stopFuncMu sync.Mutex
+	stopFuncMu       sync.Mutex
+	stopFunc         []func()
+	gracefulStopOnce sync.Once
 )
 
 // Server is an interface that defines methods for starting and stopping a server.
@@ -66,21 +67,29 @@ func AddGracefulStop(fn func()) {
 
 // gracefulStop listens for an interrupt signal and executes registered stop functions.
 func gracefulStop() {
-	waitClosed := make(chan struct{})
-	go func() {
-		sigint := make(chan os.Signal, 1)
-		signal.Notify(sigint, os.Interrupt)
-		<-sigint
+	gracefulStopOnce.Do(func() {
+		go func() {
+			sigint := make(chan os.Signal, 1)
+			signal.Notify(sigint, os.Interrupt)
+			<-sigint
+			shutdown()
+		}()
+	})
+}
 
-		log.Println("shutdown service.")
-		stopFuncMu.Lock()
-		funcs := make([]func(), len(stopFunc))
-		copy(funcs, stopFunc)
-		stopFuncMu.Unlock()
+func shutdown() {
+	log.Println("shutdown service.")
 
-		for i := range funcs {
-			funcs[i]()
+	stopFuncMu.Lock()
+	funcs := make([]func(), len(stopFunc))
+	copy(funcs, stopFunc)
+	stopFuncMu.Unlock()
+
+	for i := range funcs {
+		if funcs[i] == nil {
+			log.Printf("stopFunc[%d] is nil", i)
+			continue
 		}
-		close(waitClosed)
-	}()
+		funcs[i]()
+	}
 }

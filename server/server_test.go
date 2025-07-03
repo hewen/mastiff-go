@@ -1,10 +1,8 @@
 package server
 
 import (
-	"os"
 	"sync"
 	"testing"
-	"time"
 
 	"github.com/stretchr/testify/assert"
 )
@@ -31,32 +29,18 @@ func TestServersStop(_ *testing.T) {
 
 func TestGracefulStop(t *testing.T) {
 	var mu sync.Mutex
-
 	var called bool
 
-	stopFunc = []func(){
-		func() {
-			mu.Lock()
-			called = true
-			mu.Unlock()
-		},
-	}
+	AddGracefulStop(func() {
+		t.Log("stopFunc called")
+		mu.Lock()
+		called = true
+		mu.Unlock()
+	})
 
-	for i := range stopFunc {
-		AddGracefulStop(stopFunc[i])
-	}
-
-	gracefulStop()
-
-	p, err := os.FindProcess(os.Getpid())
-	assert.Nil(t, err)
-
-	err = p.Signal(os.Interrupt)
-	assert.Nil(t, err)
-
-	time.Sleep(100 * time.Millisecond)
+	shutdown()
 
 	mu.Lock()
-	assert.Equal(t, true, called)
+	assert.True(t, called)
 	mu.Unlock()
 }

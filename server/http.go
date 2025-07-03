@@ -5,6 +5,7 @@ import (
 	"context"
 	"errors"
 	"net/http"
+	"sync"
 	"time"
 
 	"github.com/gin-gonic/gin"
@@ -28,6 +29,7 @@ type HTTPService struct {
 	addr string
 	s    *http.Server
 	l    *logger.Logger
+	mu   sync.Mutex
 }
 
 // NewHTTPServer creates a new HTTP server.
@@ -74,6 +76,9 @@ func (s *HTTPService) Start() {
 
 // Stop gracefully stops the HTTP server.
 func (s *HTTPService) Stop() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.l.Infof("Shutdown service %s", s.addr)
 	if s.s == nil {
 		return

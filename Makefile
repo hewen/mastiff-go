@@ -18,7 +18,7 @@ cover:
 
 race:
 	@echo race test start
-	@go test -v -race -tags=gc_opt -coverprofile="race.coverprofile" -covermode=atomic -timeout 15m -failfast ./...
+	@go test -v -race -tags=gc_opt -covermode=atomic -timeout 15m -failfast ./...
 
 clean:
 	@rm -f *.coverprofile
