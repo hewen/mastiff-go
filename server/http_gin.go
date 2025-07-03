@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/util"
@@ -110,10 +111,15 @@ func GinRecoverHandler() gin.HandlerFunc {
 }
 
 // NewGinAPIHandler initializes a new Gin API handler with the provided route initialization function.
-func NewGinAPIHandler(initRoute func(r *gin.Engine)) http.Handler {
+func NewGinAPIHandler(conf *HTTPConfig, initRoute func(r *gin.Engine)) http.Handler {
+	gin.SetMode(conf.Mode)
 	r := gin.New()
 	r.Use(GinRecoverHandler())
 	r.Use(GinLoggerHandler())
+
+	if conf.PprofEnabled {
+		pprof.Register(r)
+	}
 
 	initRoute(r)
 	return r

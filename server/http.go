@@ -3,10 +3,17 @@ package server
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/logger"
+)
+
+var (
+	// ErrEmptyHTTPConfig is returned when the HTTP config is empty.
+	ErrEmptyHTTPConfig = errors.New("empty http config")
 )
 
 const (
@@ -24,13 +31,19 @@ type HTTPService struct {
 }
 
 // NewHTTPServer creates a new HTTP server.
-func NewHTTPServer(conf HTTPConfig, handler http.Handler) (*HTTPService, error) {
+func NewHTTPServer(conf *HTTPConfig, initRoute func(r *gin.Engine)) (*HTTPService, error) {
+	if conf == nil {
+		return nil, ErrEmptyHTTPConfig
+	}
+
 	if conf.TimeoutRead == 0 {
 		conf.TimeoutRead = HTTPTimeoutReadDefault
 	}
 	if conf.TimeoutWrite == 0 {
 		conf.TimeoutWrite = HTTPTimeoutWriteDefault
 	}
+
+	handler := NewGinAPIHandler(conf, initRoute)
 
 	srv := &http.Server{
 		Addr:         conf.Addr,
@@ -39,11 +52,13 @@ func NewHTTPServer(conf HTTPConfig, handler http.Handler) (*HTTPService, error) 
 		WriteTimeout: time.Duration(conf.TimeoutWrite) * time.Second,
 	}
 
-	return &HTTPService{
+	service := &HTTPService{
 		addr: conf.Addr,
 		s:    srv,
 		l:    logger.NewLogger(),
-	}, nil
+	}
+
+	return service, nil
 }
 
 // Start starts the HTTP server.

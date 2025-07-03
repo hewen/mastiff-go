@@ -3,6 +3,7 @@ package store
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -11,6 +12,8 @@ import (
 	sqle "github.com/dolthub/go-mysql-server"
 	"github.com/dolthub/go-mysql-server/memory"
 	"github.com/dolthub/go-mysql-server/server"
+	gsql "github.com/dolthub/go-mysql-server/sql"
+	vsql "github.com/dolthub/vitess/go/mysql"
 	"github.com/hewen/mastiff-go/util"
 )
 
@@ -67,12 +70,23 @@ func createMockMysqlEngine(dbName string) (*sqle.Engine, *memory.DbProvider) {
 }
 
 func startMockMysqlServer(address string, engine *sqle.Engine, provider *memory.DbProvider) error {
-	config := server.Config{
+	cfg := server.Config{
 		Protocol: "tcp",
 		Address:  address,
 	}
 
-	srv, err := server.NewServer(config, engine, memory.NewSessionBuilder(provider), nil)
+	// since we're using a memory db, we can't rely on server.DefaultSessionBuilder as it causes panics, so explicitly build a memorySessionBuilder
+	sessionBuilder := func(_ context.Context, c *vsql.Conn, addr string) (gsql.Session, error) {
+		var host, user string
+		mysqlConnectionUser, ok := c.UserData.(gsql.MysqlConnectionUser)
+		if ok {
+			host = mysqlConnectionUser.Host
+			user = mysqlConnectionUser.User
+		}
+		client := gsql.Client{Address: host, User: user, Capabilities: c.Capabilities}
+		return memory.NewSession(gsql.NewBaseSessionWithClientServer(addr, client, c.ConnectionID), provider), nil
+	}
+	srv, err := server.NewServer(cfg, engine, gsql.NewContext, sessionBuilder, nil)
 	if err != nil {
 		return err
 	}

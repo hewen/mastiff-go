@@ -43,7 +43,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v5
         with:
-          go-version: '^1.22.5'
+          go-version: '^1.24'
           cache: false
 
       - name: Setup and run golangci-lint
@@ -56,7 +56,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        go: ['1.22.5', '1.24']
+        go: ['1.24']
         os:
           - ubuntu-latest
           - macos-latest

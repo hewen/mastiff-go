@@ -124,37 +124,37 @@ func (l *Logger) GetTraceID() string {
 }
 
 // Debugf logs a debug message with the given format and arguments.
-func (l *Logger) Debugf(format string, v ...interface{}) {
+func (l *Logger) Debugf(format string, v ...any) {
 	l.output(LogLevelFlagDebug, format, v...)
 }
 
 // Infof logs an info message with the given format and arguments.
-func (l *Logger) Infof(format string, v ...interface{}) {
+func (l *Logger) Infof(format string, v ...any) {
 	l.output(LogLevelFlagInfo, format, v...)
 }
 
 // Warnf logs a warning message with the given format and arguments.
-func (l *Logger) Warnf(format string, v ...interface{}) {
+func (l *Logger) Warnf(format string, v ...any) {
 	l.output(LogLevelFlagWarn, format, v...)
 }
 
 // Errorf logs an error message with the given format and arguments.
-func (l *Logger) Errorf(format string, v ...interface{}) {
+func (l *Logger) Errorf(format string, v ...any) {
 	l.output(LogLevelFlagError, format, v...)
 }
 
 // Panicf logs a panic message with the given format and arguments, and then panics.
-func (l *Logger) Panicf(format string, v ...interface{}) {
+func (l *Logger) Panicf(format string, v ...any) {
 	l.output(LogLevelFlagPanic, format, v...)
 }
 
 // Fatalf logs a fatal message with the given format and arguments, and then exits the program.
-func (l *Logger) Fatalf(format string, v ...interface{}) {
+func (l *Logger) Fatalf(format string, v ...any) {
 	l.output(LogLevelFlagFatal, format, v...)
 }
 
 // output writes a log message with the specified level and format to the logger.
-func (l *Logger) output(level LogLevelFlag, format string, v ...interface{}) {
+func (l *Logger) output(level LogLevelFlag, format string, v ...any) {
 	if level > logLevel {
 		return
 	}

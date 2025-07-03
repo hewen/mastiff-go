@@ -15,14 +15,20 @@ import (
 	"github.com/hewen/mastiff-go/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
+	"google.golang.org/grpc/reflection"
+)
+
+var (
+	// ErrEmptyGrpcConfig is returned when the gRPC configuration is empty.
+	ErrEmptyGrpcConfig = errors.New("empty grpc config")
+
+	// ErrGrpcExecPanic is an error that indicates a panic occurred during gRPC execution.
+	ErrGrpcExecPanic = errors.New("grpc exec panic")
 )
 
 const (
 	defaultTimeout = 30
 )
-
-// ErrGrpcExecPanic is an error that indicates a panic occurred during gRPC execution.
-var ErrGrpcExecPanic = errors.New("grpc exec panic")
 
 // GrpcServer represents a gRPC server.
 type GrpcServer struct {
@@ -33,7 +39,10 @@ type GrpcServer struct {
 }
 
 // NewGrpcServer creates a new gRPC server.
-func NewGrpcServer(conf GrpcConfig, registerServerFunc func(*grpc.Server), interceptors ...grpc.UnaryServerInterceptor) (*GrpcServer, error) {
+func NewGrpcServer(conf *GrpcConfig, registerServerFunc func(*grpc.Server), interceptors ...grpc.UnaryServerInterceptor) (*GrpcServer, error) {
+	if conf == nil {
+		return nil, ErrEmptyGrpcConfig
+	}
 	ln, err := net.Listen("tcp", conf.Addr)
 	if err != nil {
 		return nil, err
@@ -65,6 +74,10 @@ func NewGrpcServer(conf GrpcConfig, registerServerFunc func(*grpc.Server), inter
 	srv.s = grpc.NewServer(opts...)
 
 	registerServerFunc(srv.s)
+
+	if conf.Reflection {
+		reflection.Register(srv.s)
+	}
 
 	return srv, nil
 }
@@ -98,7 +111,7 @@ func (s *GrpcServer) Stop() {
 }
 
 // middleware is a gRPC interceptor that logs the request and response details, including execution time and any errors.
-func (s *GrpcServer) middleware(ctx context.Context, req interface{}, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+func (s *GrpcServer) middleware(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	begin := time.Now()
 	pr, ok := peer.FromContext(ctx)
 	var addr string
@@ -129,7 +142,7 @@ func (s *GrpcServer) middleware(ctx context.Context, req interface{}, info *grpc
 }
 
 // execHandler executes the handler and recovers from any panic, logging the error if it occurs.
-func (s *GrpcServer) execHandler(ctx context.Context, req interface{}, handler grpc.UnaryHandler, l *logger.Logger) (data interface{}, err error) {
+func (s *GrpcServer) execHandler(ctx context.Context, req any, handler grpc.UnaryHandler, l *logger.Logger) (data any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = ErrGrpcExecPanic
@@ -145,7 +158,7 @@ func (s *GrpcServer) timeoutInterceptor(timeout time.Duration) grpc.UnaryServerI
 		timeout = defaultTimeout
 	}
 
-	return func(ctx context.Context, req interface{}, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp interface{}, err error) {
+	return func(ctx context.Context, req any, _ *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 		ctx, cancel := context.WithDeadline(ctx, time.Now().Add(timeout))
 		defer cancel()
 

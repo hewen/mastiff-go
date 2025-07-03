@@ -15,20 +15,22 @@ import (
 )
 
 func TestNewGinAPIHandler(t *testing.T) {
-	handler := NewGinAPIHandler(func(r *gin.Engine) {
+	handler := func(r *gin.Engine) {
 		r.GET("/test", func(c *gin.Context) {
 			c.JSON(http.StatusOK, gin.H{
 				"message": "ok",
 			})
 		})
-	})
+	}
 	assert.NotNil(t, handler)
 
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
-	conf := HTTPConfig{
-		Addr: fmt.Sprintf("localhost:%d", port),
+	conf := &HTTPConfig{
+		Addr:         fmt.Sprintf("localhost:%d", port),
+		PprofEnabled: true,
+		Mode:         "debug",
 	}
 
 	server, err := NewHTTPServer(conf, handler)
@@ -64,18 +66,18 @@ func TestGinLoggerHandler(_ *testing.T) {
 }
 
 func TestGinRecoverHandler(t *testing.T) {
-	handler := NewGinAPIHandler(func(r *gin.Engine) {
+	handler := func(r *gin.Engine) {
 		r.GET("/test", func(_ *gin.Context) {
 			panic("test")
 		})
-	})
+	}
 	assert.NotNil(t, handler)
 
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
 	addr := fmt.Sprintf("localhost:%d", port)
-	conf := HTTPConfig{
+	conf := &HTTPConfig{
 		Addr: addr,
 	}
 
