@@ -36,7 +36,7 @@ func GinLoggerHandler() gin.HandlerFunc {
 
 		reqContentType := c.Request.Header.Get("Content-Type")
 		if c.Request.Body != nil {
-			limited := io.LimitReader(c.Request.Body, 1<<20) // 最大 1MB
+			limited := io.LimitReader(c.Request.Body, 1<<20) // max 1MB
 			reqBodyBytes, _ = io.ReadAll(limited)
 			c.Request.Body = io.NopCloser(bytes.NewBuffer(reqBodyBytes))
 		}

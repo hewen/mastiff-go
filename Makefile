@@ -13,6 +13,7 @@ cover:
 	@echo Test start
 	@go list -f '{{if gt (len .TestGoFiles) 0}}"go test -tags test -covermode count -coverprofile {{.Name}}.coverprofile -coverpkg ./... {{.ImportPath}}"{{end}}' ./... | xargs -I {} sh -c {}
 	@gocovmerge `ls *.coverprofile` | grep -v ".pb.go" > coverage.out
+	@go tool cover -func coverage.out | grep total
 	@go tool cover -html coverage.out
 
 clean:
