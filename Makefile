@@ -16,6 +16,10 @@ cover:
 	@go tool cover -func coverage.out | grep total
 	@go tool cover -html coverage.out
 
+race:
+	@echo race test start
+	@go test -v -race -tags=gc_opt -coverprofile="race.coverprofile" -covermode=atomic -timeout 15m -failfast ./...
+
 clean:
 	@rm -f *.coverprofile
 	@rm -f coverage.*

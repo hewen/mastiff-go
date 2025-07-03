@@ -11,8 +11,11 @@ import (
 	_ "go.uber.org/automaxprocs"
 )
 
-// stopFunc holds functions to be called during graceful shutdown.
-var stopFunc []func()
+var (
+	// stopFunc holds functions to be called during graceful shutdown.
+	stopFunc   []func()
+	stopFuncMu sync.Mutex
+)
 
 // Server is an interface that defines methods for starting and stopping a server.
 type Server interface {
@@ -55,6 +58,9 @@ func (s *Servers) Stop() {
 
 // AddGracefulStop registers a function to be called during graceful shutdown.
 func AddGracefulStop(fn func()) {
+	stopFuncMu.Lock()
+	defer stopFuncMu.Unlock()
+
 	stopFunc = append(stopFunc, fn)
 }
 
@@ -65,9 +71,15 @@ func gracefulStop() {
 		sigint := make(chan os.Signal, 1)
 		signal.Notify(sigint, os.Interrupt)
 		<-sigint
+
 		log.Println("shutdown service.")
-		for i := range stopFunc {
-			stopFunc[i]()
+		stopFuncMu.Lock()
+		funcs := make([]func(), len(stopFunc))
+		copy(funcs, stopFunc)
+		stopFuncMu.Unlock()
+
+		for i := range funcs {
+			funcs[i]()
 		}
 		close(waitClosed)
 	}()

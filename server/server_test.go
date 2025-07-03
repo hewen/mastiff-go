@@ -30,10 +30,11 @@ func TestServersStop(_ *testing.T) {
 }
 
 func TestGracefulStop(t *testing.T) {
-	var called bool
 	var mu sync.Mutex
 
-	stopFunc := []func(){
+	var called bool
+
+	stopFunc = []func(){
 		func() {
 			mu.Lock()
 			called = true
