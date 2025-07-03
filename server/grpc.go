@@ -8,6 +8,7 @@ import (
 	"net"
 	"runtime/debug"
 	"strings"
+	"sync"
 	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
@@ -36,6 +37,7 @@ type GrpcServer struct {
 	s    *grpc.Server
 	l    *logger.Logger
 	ln   net.Listener
+	mu   sync.Mutex
 }
 
 // NewGrpcServer creates a new gRPC server.
@@ -95,6 +97,9 @@ func (s *GrpcServer) Start() {
 
 // Stop gracefully stops the gRPC server and closes the listener.
 func (s *GrpcServer) Stop() {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
 	s.l.Infof("Shutdown grpc service %s", s.addr)
 	if s.s != nil {
 		s.s.GracefulStop()
