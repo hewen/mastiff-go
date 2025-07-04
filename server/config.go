@@ -24,5 +24,6 @@ type (
 	QueueConf struct {
 		PoolSize           int           // Size of the goroutine pool for processing queue messages
 		EmptySleepInterval time.Duration // Duration to sleep when the queue is empty
+		QueueName          string        // queue name
 	}
 )
