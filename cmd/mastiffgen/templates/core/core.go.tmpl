@@ -2,6 +2,7 @@
 package core
 
 import (
+	"context"
 	"fmt"
 
 	"{{.ModuleName}}/config"
@@ -10,6 +11,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/server"
+	"github.com/hewen/mastiff-go/server/test"
 	"google.golang.org/grpc"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
@@ -37,20 +39,41 @@ func NewCore(conf *config.Config) (*Core, error) {
 		return nil, err
 	}
 
-	httpServer, err := server.NewHTTPServer(conf.HTTP, c.initGinRoute)
-	if err != nil {
-		return nil, err
-	}
-	c.servers.Add(httpServer)
+	if conf.HTTP != nil {
+		httpServer, err := server.NewHTTPServer(conf.HTTP, c.initGinRoute)
+		if err != nil {
+			return nil, err
+		}
 
-	grpcServer, err := server.NewGrpcServer(conf.Grpc, func(s *grpc.Server) {
-		healthpb.RegisterHealthServer(s, c)
-		// TODO add your gRPC service: rpc.RegisterYourServer(s, c)
-	})
-	if err != nil {
-		return nil, err
+		c.servers.Add(httpServer)
 	}
-	c.servers.Add(grpcServer)
+
+	if conf.Grpc != nil {
+		grpcServer, err := server.NewGrpcServer(conf.Grpc, func(s *grpc.Server) {
+			healthpb.RegisterHealthServer(s, c)
+			// TODO add your gRPC service: rpc.RegisterYourServer(s, c)
+		})
+		if err != nil {
+			return nil, err
+		}
+		c.servers.Add(grpcServer)
+	}
+
+	if conf.Queue != nil {
+		// TODO add handleFn and newMsgFn
+		handleFn := func(_ context.Context, _ *test.TestMsg) error {
+			return nil
+		}
+		newMsgFn := func() *test.TestMsg {
+			return &test.TestMsg{}
+		}
+		handler := server.NewQueueProtoRedisHandler(model.RStore.GetDb(), conf.Queue.QueueName, handleFn, newMsgFn)
+		queueServer, err := server.NewQueueServer(*conf.Queue, handler)
+		if err != nil {
+			return nil, err
+		}
+		c.servers.Add(queueServer)
+	}
 
 	return c, nil
 }

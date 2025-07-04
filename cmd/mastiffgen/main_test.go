@@ -73,7 +73,7 @@ func TestGenerateTemplates_Content(t *testing.T) {
 	readmePath := filepath.Join(tmpDir, "README.md")
 	content, err := os.ReadFile(readmePath) // nolint: gosec
 	assert.Nil(t, err)
-	assert.Contains(t, string(content), "modname")
+	assert.Contains(t, string(content), "projname")
 }
 
 // TestGenerateTemplates_DirCreationFailure simulates mkdir failure by passing invalid path.

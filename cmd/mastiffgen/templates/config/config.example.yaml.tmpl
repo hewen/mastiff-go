@@ -1,0 +1,31 @@
+HTTP:
+  Addr: "0.0.0.0:8080"            # HTTP server listen address
+  TimeoutRead: 5000               # Timeout for reading requests in milliseconds
+  TimeoutWrite: 10000             # Timeout for writing responses in milliseconds
+  PprofEnabled: false             # Enable pprof profiling endpoint
+  Mode: "release"                 # Server mode: debug, release, or test
+
+Grpc:
+  Addr: "0.0.0.0:9090"            # gRPC server listen address
+  Timeout: 10000                  # Timeout for gRPC requests in milliseconds
+  Reflection: true                # Enable gRPC reflection service
+
+Mysql:
+  DataSourceName: "user:password@tcp(127.0.0.1)/dbname?charset=utf8mb4&parseTime=true"
+                                 # MySQL data source name
+  RegisterHookDriver: false       # Whether to register driver hook (for logging/tracing)
+
+Redis:
+  Addr: "127.0.0.1:6379"         # Redis server address
+  Password: ""                   # Redis password, leave empty if none
+  DB: 0                          # Redis DB index
+  RegisterHookDriver: false       # Whether to register driver hook
+
+Logger:
+  Level: "INFO"                  # Log level: DEBUG, INFO, WARN, ERROR, etc.
+  Output: "/var/log/myapp/access.log"  # Log file output path
+  Maxsize: 100                   # Max log file size in megabytes before rotation
+
+Queue:
+  PoolSize: 10                  # Goroutine pool size for processing queue messages
+  EmptySleepInterval: 500ms    # Sleep duration when queue is empty (in Go duration format)

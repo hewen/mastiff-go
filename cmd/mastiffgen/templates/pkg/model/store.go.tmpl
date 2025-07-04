@@ -55,6 +55,11 @@ func (r *RedisStore) Close() error {
 	return r.db.Close()
 }
 
+// GetDb return redis client.
+func (r *RedisStore) GetDb() *redis.Client {
+	return r.db
+}
+
 // NewRedisStore creates a new instance of RedisStore with the provided Redis client.
 func NewRedisStore(db *redis.Client) *RedisStore {
 	return &RedisStore{db: db}

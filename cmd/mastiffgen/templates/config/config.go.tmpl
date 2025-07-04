@@ -13,6 +13,7 @@ type Config struct {
 	Logger logger.Config
 	HTTP   *server.HTTPConf
 	Grpc   *server.GrpcConf
+	Queue  *server.QueueConf
 	Mysql  *store.MysqlConf
 	Redis  *store.RedisConf
 }

@@ -2,7 +2,6 @@
 package core
 
 import (
-	"fmt"
 	"testing"
 
 	"{{.ModuleName}}/config"
@@ -23,28 +22,57 @@ func TestCoreEmptyConfig(t *testing.T) {
 
 func TestCore_InitConnectorError(t *testing.T) {
 	_, err := NewCore(&config.Config{
-		Mysql: &store.MysqlConf{},
+		Mysql: &store.MysqlConf{
+			DataSourceName: "error",
+        },
 	})
-	assert.EqualValues(t, "dial tcp 127.0.0.1:3306: connect: connection refused", err.Error())
+	assert.EqualValues(t, "invalid DSN: missing the slash separating the database name", err.Error())
 }
 
-func TestCore_HttpError(t *testing.T) {
-	_, err := NewCore(&config.Config{})
-	assert.EqualValues(t, "empty http config", err.Error())
+func TestCore_Http(t *testing.T) {
+	c, err := NewCore(&config.Config{
+		HTTP: &server.HTTPConf{
+			Addr: "error",
+		},
+	})
+
+	assert.Nil(t, err)
+	assert.NotNil(t, c)
+	go c.Start()
 }
 
-func TestCore_GrpcError(t *testing.T) {
-	_, err := NewCore(&config.Config{
+func TestCore_Grpc(t *testing.T) {
+	c, err := NewCore(&config.Config{
 		HTTP: &server.HTTPConf{
 			Addr: "0.0.0.0:8080",
 		},
 	})
-	assert.EqualValues(t, "empty grpc config", err.Error())
+
+	assert.Nil(t, err)
+	assert.NotNil(t, c)
+	go c.Start()
+}
+
+func TestCore_Queue(t *testing.T) {
+	s, _ := miniredis.Run()
+	c, err := NewCore(&config.Config{
+		Queue: &server.QueueConf{
+			QueueName: "test",
+		},
+		Redis: &store.RedisConf{
+			Addr:     s.Addr(),
+			Password: "",
+			DB:       0,
+		},
+	})
+
+	assert.Nil(t, err)
+	assert.NotNil(t, c)
+	go c.Start()
 }
 
 func TestNewCore(t *testing.T) {
 	initMockMysql()
-	fmt.Printf("%+v\n", model.DStore) // output for debug
 
 	s, _ := miniredis.Run()
 	c, err := NewCore(&config.Config{
