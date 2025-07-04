@@ -111,7 +111,7 @@ func GinRecoverHandler() gin.HandlerFunc {
 }
 
 // NewGinAPIHandler initializes a new Gin API handler with the provided route initialization function.
-func NewGinAPIHandler(conf *HTTPConfig, initRoute func(r *gin.Engine)) http.Handler {
+func NewGinAPIHandler(conf *HTTPConf, initRoute func(r *gin.Engine)) http.Handler {
 	gin.SetMode(conf.Mode)
 	r := gin.New()
 	r.Use(GinRecoverHandler())

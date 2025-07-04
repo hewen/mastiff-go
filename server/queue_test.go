@@ -72,7 +72,7 @@ func (h *mockHandler) Handle(_ context.Context, msg MyTestMsg) error {
 func TestQueueServer_Messages(t *testing.T) {
 	handler := &mockHandler{}
 
-	conf := QueueConfig{
+	conf := QueueConf{
 		PoolSize:           10,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
@@ -133,7 +133,7 @@ func TestQueueServer_BulkMessages(t *testing.T) {
 	const totalMsgs = 200
 
 	origHandler := &mockHandler{}
-	conf := QueueConfig{
+	conf := QueueConf{
 		PoolSize:           10,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
@@ -186,7 +186,7 @@ func TestQueueServer_BulkMessages(t *testing.T) {
 }
 
 func TestNewQueueServer_PoolError(t *testing.T) {
-	conf := QueueConfig{
+	conf := QueueConf{
 		PoolSize:           -1,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
@@ -204,7 +204,7 @@ func (h *popErrorHandler) Pop(_ context.Context) ([]byte, error) {
 
 func TestQueueServer_PopError(_ *testing.T) {
 	handler := &popErrorHandler{}
-	conf := QueueConfig{
+	conf := QueueConf{
 		PoolSize:           1,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
@@ -230,7 +230,7 @@ func (h *decodeErrorHandler) Decode(_ []byte) (MyTestMsg, error) {
 
 func TestQueueServer_DecodeError(_ *testing.T) {
 	handler := &decodeErrorHandler{}
-	conf := QueueConfig{
+	conf := QueueConf{
 		PoolSize:           1,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
@@ -263,7 +263,7 @@ func (h *handleErrorHandler) Handle(_ context.Context, _ MyTestMsg) error {
 
 func TestQueueServer_HandleError(_ *testing.T) {
 	handler := &handleErrorHandler{}
-	conf := QueueConfig{
+	conf := QueueConf{
 		PoolSize:           1,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
@@ -277,7 +277,7 @@ func TestQueueServer_HandleError(_ *testing.T) {
 
 func TestQueueServer_StartStopExit(t *testing.T) {
 	handler := &mockHandler{}
-	conf := QueueConfig{
+	conf := QueueConf{
 		PoolSize:           1,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
@@ -303,7 +303,7 @@ func TestQueueServer_StartStopExit(t *testing.T) {
 
 func TestQueueServer_StopIdempotent(_ *testing.T) {
 	handler := &mockHandler{}
-	conf := QueueConfig{
+	conf := QueueConf{
 		PoolSize:           1,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}

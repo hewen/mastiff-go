@@ -13,7 +13,7 @@ import (
 func TestGrpcServer(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
-	c := &GrpcConfig{
+	c := &GrpcConf{
 		Addr: fmt.Sprintf("localhost:%d", port),
 	}
 
@@ -36,7 +36,7 @@ func testInterceptor() grpc.UnaryServerInterceptor {
 }
 
 func TestGrpcServerStop(t *testing.T) {
-	c := &GrpcConfig{}
+	c := &GrpcConf{}
 
 	s, err := NewGrpcServer(c, func(_ *grpc.Server) {
 		// not doing
@@ -83,5 +83,5 @@ func TestGrpcServerEmptyConfig(t *testing.T) {
 	_, err := NewGrpcServer(nil, func(_ *grpc.Server) {
 		// not doing
 	})
-	assert.EqualValues(t, err, ErrEmptyGrpcConfig)
+	assert.EqualValues(t, err, ErrEmptyGrpcConf)
 }
