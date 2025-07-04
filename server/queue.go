@@ -115,6 +115,7 @@ func NewQueueServer[T any](conf QueueConf, handler QueueHandler[T]) (*QueueServe
 // Start begins the queue server, processing messages at regular intervals.
 func (qs *QueueServer[T]) Start() {
 	ctx := context.Background()
+	qs.logger.Infof("Start queue service")
 
 	for {
 		select {
@@ -130,6 +131,7 @@ func (qs *QueueServer[T]) Start() {
 
 // Stop stops the queue server and releases resources.
 func (qs *QueueServer[T]) Stop() {
+	qs.logger.Infof("Shutdown queue service")
 	select {
 	case <-qs.done:
 		return
