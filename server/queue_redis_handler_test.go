@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"sync"
 	"testing"
 	"time"
 
@@ -74,9 +75,12 @@ func TestQueueServerWithJsonHandler(t *testing.T) {
 		Name string `json:"name"`
 	}
 
+	var mu sync.Mutex
 	var handledMsg *MyMsg
 
 	handleFn := func(_ context.Context, msg MyMsg) error {
+		mu.Lock()
+		defer mu.Unlock()
 		handledMsg = &msg
 		return nil
 	}
@@ -102,6 +106,8 @@ func TestQueueServerWithJsonHandler(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 
+	mu.Lock()
+	defer mu.Unlock()
 	require.NotNil(t, handledMsg)
 	assert.Equal(t, msg.ID, handledMsg.ID)
 	assert.Equal(t, msg.Name, handledMsg.Name)
@@ -117,9 +123,12 @@ func TestQueueServerWithProtoHandler(t *testing.T) {
 	})
 
 	queueName := "proto_test_queue"
+	var mu sync.Mutex
 	var handledMsg *test.TestMsg
 
 	handleFn := func(_ context.Context, msg *test.TestMsg) error {
+		mu.Lock()
+		defer mu.Unlock()
 		handledMsg = msg
 		return nil
 	}
@@ -147,6 +156,8 @@ func TestQueueServerWithProtoHandler(t *testing.T) {
 
 	time.Sleep(50 * time.Millisecond)
 
+	mu.Lock()
+	defer mu.Unlock()
 	require.NotNil(t, handledMsg)
 	require.True(t, proto.Equal(msg, handledMsg))
 }
