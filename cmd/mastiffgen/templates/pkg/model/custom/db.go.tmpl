@@ -1,0 +1,16 @@
+// Package custom provides custom queries for the database.
+package custom
+
+import (
+	"github.com/hewen/mastiff-go/store"
+)
+
+// New CustomQueries returns a new instance of CustomQueries.
+func New(db *store.DB) *Queries {
+	return &Queries{db: db}
+}
+
+// Queries is a struct that holds the database connection and custom queries.
+type Queries struct {
+	db *store.DB
+}

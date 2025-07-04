@@ -1,3 +1,4 @@
+// Package config provides the configuration structure and initialization for the application.
 package config
 
 import (
@@ -7,14 +8,16 @@ import (
 	"github.com/spf13/viper"
 )
 
+// Config holds the configuration for the application, including logger, HTTP, gRPC, MySQL, and Redis configurations.
 type Config struct {
 	Logger logger.Config
-	HTTP   *server.HTTPConfig
-	Grpc   *server.GrpcConfig
+	HTTP   *server.HTTPConf
+	Grpc   *server.GrpcConf
 	Mysql  *store.MysqlConf
 	Redis  *store.RedisConf
 }
 
+// InitConfig initializes the configuration by reading the specified config file.
 func InitConfig(confFile string) (*Config, error) {
 	conf := new(Config)
 	viper.SetConfigFile(confFile)

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"{{.ModuleName}}/pkg/model"
+
 	"github.com/stretchr/testify/assert"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 	"google.golang.org/grpc/metadata"
@@ -13,7 +14,8 @@ import (
 func TestCheck(t *testing.T) {
 	c := new(Core)
 	ctx := context.TODO()
-	model.RedisConn.Close()
+	_ = model.RStore.Close()
+
 	res, err := c.Check(ctx, &healthpb.HealthCheckRequest{})
 	assert.NotNil(t, err)
 	assert.Equal(t, healthpb.HealthCheckResponse_NOT_SERVING, res.Status)
@@ -31,6 +33,12 @@ func TestWatch(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestList(t *testing.T) {
+	c := new(Core)
+	_, err := c.List(context.TODO(), &healthpb.HealthListRequest{})
+	assert.Nil(t, err)
+}
+
 type testWatchServer struct {
 }
 
@@ -40,5 +48,5 @@ func (*testWatchServer) SetHeader(metadata.MD) error  { return nil }
 func (*testWatchServer) SendHeader(metadata.MD) error { return nil }
 func (*testWatchServer) SetTrailer(metadata.MD)       {}
 func (*testWatchServer) Context() context.Context     { return nil }
-func (*testWatchServer) SendMsg(interface{}) error    { return nil }
-func (*testWatchServer) RecvMsg(interface{}) error    { return nil }
+func (*testWatchServer) SendMsg(any) error            { return nil }
+func (*testWatchServer) RecvMsg(any) error            { return nil }

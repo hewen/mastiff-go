@@ -4,8 +4,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/hewen/mastiff-go/store"
 	"{{.ModuleName}}/pkg/model"
+
+	"github.com/hewen/mastiff-go/store"
 )
 
 func TestMain(m *testing.M) {
@@ -15,12 +16,14 @@ func TestMain(m *testing.M) {
 }
 
 func initMockRedis() {
-	model.RedisConn = store.InitMockRedis()
+	redisConn := store.InitMockRedis()
 
 	hook := &store.RedisHook{}
-	model.RedisConn.AddHook(hook)
+	redisConn.AddHook(hook)
+	model.RStore = model.NewRedisStore(redisConn)
 }
 
 func initMockMysql() {
-	model.DbConn, _ = store.InitMockMysql("../pkg/sql/")
+	dbConn, _ := store.InitMockMysql("../pkg/sql/schema")
+	model.DStore = model.NewDbStore(dbConn)
 }

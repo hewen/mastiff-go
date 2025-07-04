@@ -1,23 +1,62 @@
+// Package core provides the main application logic and initialization for the Mastiff application.
 package core
 
 import (
+	"fmt"
 	"testing"
 
+	"{{.ModuleName}}/config"
+	"{{.ModuleName}}/pkg/model"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/server"
 	"github.com/hewen/mastiff-go/store"
-	"{{.ModuleName}}/config"
-	"github.com/alicebob/miniredis/v2"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewCoreFail(t *testing.T) {
+func TestCoreEmptyConfig(t *testing.T) {
+	_, err := NewCore(nil)
+	assert.NotNil(t, err)
+}
+
+func TestCore_InitConnectorError(t *testing.T) {
+	_, err := NewCore(&config.Config{
+		Mysql: &store.MysqlConf{},
+	})
+	assert.EqualValues(t, "dial tcp 127.0.0.1:3306: connect: connection refused", err.Error())
+}
+
+func TestCore_HttpError(t *testing.T) {
+	_, err := NewCore(&config.Config{})
+	assert.EqualValues(t, "empty http config", err.Error())
+}
+
+func TestCore_GrpcError(t *testing.T) {
+	_, err := NewCore(&config.Config{
+		HTTP: &server.HTTPConf{
+			Addr: "0.0.0.0:8080",
+		},
+	})
+	assert.EqualValues(t, "empty grpc config", err.Error())
+}
+
+func TestNewCore(t *testing.T) {
+	initMockMysql()
+	fmt.Printf("%+v\n", model.DStore) // output for debug
+
 	s, _ := miniredis.Run()
 	c, err := NewCore(&config.Config{
-		Grpc: &server.GrpcConfig{
+		Grpc: &server.GrpcConf{
 			Addr: "0.0.0.0:9090",
 		},
-		Mysql: &store.MysqlConf{},
+		HTTP: &server.HTTPConf{
+			Addr: "0.0.0.0:8080",
+		},
+		Mysql: &store.MysqlConf{
+			DataSourceName: model.DStore.DataSourceName(),
+		},
 		Redis: &store.RedisConf{
 			Addr:     s.Addr(),
 			Password: "",
@@ -27,11 +66,17 @@ func TestNewCoreFail(t *testing.T) {
 			Level: "INFO",
 		},
 	})
-	assert.NotNil(t, err)
-	assert.Nil(t, c)
+	assert.Nil(t, err)
+	assert.NotNil(t, c)
 }
 
-func TestCoreStop(_ *testing.T) {
+func TestCore_StartAndStop(_ *testing.T) {
 	c := new(Core)
+	c.Start()
 	c.Stop()
+}
+
+func TestInitGinRoute(_ *testing.T) {
+	c := new(Core)
+	c.initGinRoute(gin.New())
 }

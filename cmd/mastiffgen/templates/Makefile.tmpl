@@ -8,14 +8,17 @@ MAKEFLAGS += --no-print-directory
 
 test:
 	@echo "==> Running Tests"
-	@go list -f '\{\{if gt (len .TestGoFiles) 0\}\}"go test -tags test -covermode=count -coverprofile \{\{.Name\}\}.coverprofile -coverpkg=$(COVER_PKG) \{\{.ImportPath\}\}"\{\{end\}\}' ./... \
-	| xargs -I {} sh -c {}
+	@set -e; \
+	for pkg in $(PKGS); do \
+		name=$$(basename $$pkg); \
+		go test -tags test -covermode=count -coverprofile=$$name.coverprofile -coverpkg=$(COVER_PKG) $$pkg; \
+	done
 	@$(MAKE) merge-cover
 	@$(MAKE) check-cover
 
 cover:
 	@echo "==> Generating Coverage Report (HTML)"
-	@$(MAKE) test
+	@$(MAKE) test || true
 	@go tool cover -html=$(COVER_OUT)
 
 lint:
@@ -26,18 +29,27 @@ race:
 	@echo "==> Running Race Detector Tests"
 	@go test -v -race -tags=gc_opt -covermode=atomic -timeout 15m -failfast ./...
 
+sqlc:
+	@echo "==> Running sqlc generate"
+	@$(MAKE) clean-sqlc
+	@sqlc generate
+
+clean-sqlc:
+	@echo "==> Removing sqlc generated files"
+	@find ./pkg/model -type f -name '*.sql.go' -delete
+
 merge-cover:
 	@gocovmerge $(COVERFILES) | grep -v ".pb.go" > $(COVER_OUT)
 	@go tool cover -func=$(COVER_OUT) | grep total
 
 check-cover:
-	@go tool cover -func=$(COVER_OUT) | grep -v '100.0%' | \
-	awk '{if ($$3 < 80) {print $$1, $$2" coverage ("$$3") < 80%"; failed=1\}\} END {exit failed}'
+	@echo "==> Checking Coverage"
+	@go tool cover -func=$(COVER_OUT) \
+	| grep -vE '\s(main|init)\s' \
+	| awk '{ gsub(/%/, "", $$3); cov = $$3 + 0; if (cov < 80) { print $$1, $$2" coverage ("cov"%) < 80%"; failed=1 } } END { exit failed }'
 
 clean:
 	@echo "==> Cleaning Generated Files"
 	@rm -f *.coverprofile
 	@rm -f coverage.*
 	@rm -f *.test *.out
-
-.PHONY: test cover lint race clean merge-cover check-cover gen

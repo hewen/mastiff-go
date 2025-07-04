@@ -23,31 +23,36 @@ type TemplateData struct {
 
 // main is the entry point for the project scaffolding tool.
 func main() {
-	targetDir := flag.String("dir", ".", "target directory to generate project files")
-	moduleName := flag.String("module", "", "go module name for import paths")
-	projectName := flag.String("project", "", "project name (used in templates)")
-	flag.Parse()
+	if err := run(os.Args[1:]); err != nil {
+		fmt.Fprintln(os.Stderr, err)
+		os.Exit(1)
+	}
+}
+
+func run(args []string) error {
+	flags := flag.NewFlagSet("mastiffgen", flag.ContinueOnError)
+	targetDir := flags.String("dir", ".", "target directory to generate project files")
+	moduleName := flags.String("module", "", "go module name for import paths")
+	projectName := flags.String("project", "", "project name (used in templates)")
+
+	if err := flags.Parse(args); err != nil {
+		return err
+	}
 
 	if *moduleName == "" || *projectName == "" {
-		fmt.Fprintln(os.Stderr, "please specify -module and -project")
-		os.Exit(1)
+		return fmt.Errorf("please specify -module and -project")
 	}
 
-	// Create target directory if not exists
 	if err := os.MkdirAll(*targetDir, 0750); err != nil {
-		fmt.Fprintf(os.Stderr, "failed to create target directory: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to create target directory: %v", err)
 	}
 
-	// Check if the target dir is empty (required for init)
 	empty, err := isEmptyDir(*targetDir)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "failed to check directory: %v\n", err)
-		os.Exit(1)
+		return fmt.Errorf("failed to check directory: %v", err)
 	}
 	if !empty {
-		fmt.Fprintln(os.Stderr, "target directory is not empty")
-		os.Exit(1)
+		return fmt.Errorf("target directory is not empty")
 	}
 
 	data := TemplateData{
@@ -55,78 +60,75 @@ func main() {
 		ProjectName: *projectName,
 	}
 
-	err = generateTemplates("templates", *targetDir, data)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error generating project files: %v\n", err)
-		os.Exit(1)
+	if err := generateTemplates("templates", *targetDir, data); err != nil {
+		return fmt.Errorf("error generating project files: %v", err)
 	}
 
-	fmt.Println("Project scaffolding completed.")
+	return nil
 }
 
-// generateTemplates recursively walks template dir and renders files.
-func generateTemplates(templateRoot, outputRoot string, data TemplateData) error {
-	return fsWalk(templateRoot, func(path string, info os.FileInfo) error {
-		if info.IsDir() {
-			return nil
-		}
+// ReadFileFunc defines a function type for reading files.
+type ReadFileFunc func(name string) ([]byte, error)
 
-		if !strings.HasSuffix(path, ".tmpl") {
-			return nil
-		}
-
-		// Relative path in templates
-		relPath, err := filepath.Rel(templateRoot, path)
-		if err != nil {
-			return err
-		}
-
-		// Output file path: strip ".tmpl" and prefix with outputRoot
-		targetPath := filepath.Join(outputRoot, strings.TrimSuffix(relPath, ".tmpl"))
-
-		// Create parent directories
-		if err := os.MkdirAll(filepath.Dir(targetPath), 0750); err != nil {
-			return err
-		}
-
-		content, err := templatesFS.ReadFile(path)
-		if err != nil {
-			return err
-		}
-
-		tmpl, err := template.New(filepath.Base(path)).Parse(string(content))
-		if err != nil {
-			return err
-		}
-
-		// Validate and ensure targetPath is inside outputRoot
-		absTargetPath, err := filepath.Abs(targetPath)
-		if err != nil {
-			return err
-		}
-		absOutputRoot, err := filepath.Abs(outputRoot)
-		if err != nil {
-			return err
-		}
-		if !strings.HasPrefix(absTargetPath, absOutputRoot) {
-			return fmt.Errorf("invalid target path: %s is outside of %s", absTargetPath, absOutputRoot)
-		}
-
-		// #nosec G304 -- absTargetPath is safely validated above
-		outFile, err := os.Create(absTargetPath)
-		if err != nil {
-			return err
-		}
-		defer func() {
-			_ = outFile.Close()
-		}()
-
-		if err := tmpl.Execute(outFile, data); err != nil {
-			return err
-		}
-
-		fmt.Printf("Generated %s\n", targetPath)
+// processTemplateFile processes a single template file, rendering it with the provided data.
+func processTemplateFile(path string, templateRoot string, outputRoot string, data TemplateData, readFile ReadFileFunc) error {
+	if !strings.HasSuffix(path, ".tmpl") {
 		return nil
+	}
+
+	relPath, err := filepath.Rel(templateRoot, path)
+	if err != nil {
+		return err
+	}
+
+	targetPath := filepath.Join(outputRoot, strings.TrimSuffix(relPath, ".tmpl"))
+
+	if err := os.MkdirAll(filepath.Dir(targetPath), 0750); err != nil {
+		return err
+	}
+
+	content, err := readFile(path)
+	if err != nil {
+		return err
+	}
+
+	tmpl, err := template.New(filepath.Base(path)).Parse(string(content))
+	if err != nil {
+		return err
+	}
+
+	absTargetPath, err := filepath.Abs(targetPath)
+	if err != nil {
+		return err
+	}
+	absOutputRoot, err := filepath.Abs(outputRoot)
+	if err != nil {
+		return err
+	}
+	if !strings.HasPrefix(absTargetPath, absOutputRoot) {
+		return fmt.Errorf("invalid target path: %s is outside of %s", absTargetPath, absOutputRoot)
+	}
+
+	outFile, err := os.Create(absTargetPath) // nolint: gosec
+	if err != nil {
+		return err
+	}
+	defer func() {
+		_ = outFile.Close()
+	}()
+
+	if err := tmpl.Execute(outFile, data); err != nil {
+		return err
+	}
+
+	fmt.Printf("Generated %s\n", targetPath)
+	return nil
+}
+
+// generateTemplates walks the template directory and processes each .tmpl file.
+func generateTemplates(templateRoot, outputRoot string, data TemplateData) error {
+	return fsWalk(templateRoot, func(path string, _ os.FileInfo) error {
+		return processTemplateFile(path, templateRoot, outputRoot, data, templatesFS.ReadFile)
 	})
 }
 
@@ -150,6 +152,7 @@ func fsWalk(root string, fn func(path string, info os.FileInfo) error) error {
 		if err != nil {
 			return err
 		}
+
 		if err := fn(fullPath, info); err != nil {
 			return err
 		}

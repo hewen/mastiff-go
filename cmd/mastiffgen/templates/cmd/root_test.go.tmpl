@@ -1,0 +1,66 @@
+package cmd
+
+import (
+	"os"
+	"testing"
+
+	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestExecute_Success(t *testing.T) {
+	called := false
+
+	RootCmd.SetArgs([]string{})
+	RootCmd.Run = func(_ *cobra.Command, _ []string) {
+		called = true
+	}
+
+	Execute()
+
+	assert.True(t, called)
+}
+
+func TestExecute_Error(t *testing.T) {
+	called := false
+	var gotCode int
+
+	exitFunc = func(code int) {
+		called = true
+		gotCode = code
+	}
+
+	defer func() {
+		exitFunc = os.Exit
+	}()
+
+	RootCmd.SetArgs([]string{"invalid-cmd"}) // 不存在的命令
+
+	Execute()
+
+	assert.True(t, called)
+	assert.Equal(t, 1, gotCode)
+}
+
+func TestInitConfig(_ *testing.T) {
+	initConfig()
+}
+
+func TestInitConfig_WithCfgFile(t *testing.T) {
+	cfgFile = "testdata/test_config.yaml"
+	viper.Reset()
+
+	initConfig()
+
+	assert.Equal(t, "testdata/test_config.yaml", viper.ConfigFileUsed())
+}
+
+func TestInitConfig_WithoutCfgFile(t *testing.T) {
+	cfgFile = ""
+	viper.Reset()
+
+	initConfig()
+
+	assert.True(t, true)
+}

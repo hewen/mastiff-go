@@ -1,3 +1,4 @@
+// Package cmd represents the run command of the application.
 package cmd
 
 import (
@@ -5,10 +6,12 @@ import (
 
 	"{{.ModuleName}}/config"
 	"{{.ModuleName}}/core"
+
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/spf13/cobra"
 )
 
+// runCmd represents the run command.
 var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "run",
@@ -31,6 +34,7 @@ var runCmd = &cobra.Command{
 	},
 }
 
+// init initializes the run command by adding it to the root command.
 func init() {
 	RootCmd.AddCommand(runCmd)
 }

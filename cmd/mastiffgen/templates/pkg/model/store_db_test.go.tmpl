@@ -1,0 +1,24 @@
+package model
+
+import (
+	"testing"
+
+	"github.com/hewen/mastiff-go/store"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewDbStore(t *testing.T) {
+	db, err := store.InitMockMysql("../sql/schema/")
+	assert.Nil(t, err)
+
+	dbStore := NewDbStore(db)
+
+	assert.NotNil(t, dbStore)
+	assert.NotNil(t, dbStore.Queries)
+	assert.NotNil(t, dbStore.CustomQueries)
+
+	err = dbStore.Ping()
+	assert.Nil(t, err)
+	err = dbStore.Close()
+	assert.Nil(t, err)
+}

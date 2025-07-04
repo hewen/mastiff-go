@@ -1,3 +1,4 @@
+// Package cmd represents the root command of the application.
 package cmd
 
 import (
@@ -9,24 +10,31 @@ import (
 	"github.com/spf13/viper"
 )
 
+// cfgFile is the configuration file used by the application.
 var cfgFile string
 
+// exitFunc is the function used to exit the application.
+var exitFunc = os.Exit
+
+// RootCmd is the root command of the application.
 var RootCmd = &cobra.Command{
-	Use:   "{{.ProjectName}}",
-	Short: "{{.ProjectName}}",
-	Long:  `{{.ProjectName}}`,
+	Use:   "usersv",
+	Short: "usersv",
+	Long:  `usersv`,
 }
 
+// Execute adds all child commands to the root command and sets flags appropriately.
 func Execute() {
 	if err := RootCmd.Execute(); err != nil {
 		fmt.Println(err)
-		os.Exit(1)
+		exitFunc(1)
 	}
 }
 
+// init initializes the configuration by reading the config file and environment variables.
 func init() {
 	cobra.OnInitialize(initConfig)
-	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.{{.ProjectName}}.yaml)")
+	RootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.usersv.yaml)")
 }
 
 // initConfig reads in config file and ENV variables if set.
@@ -42,9 +50,9 @@ func initConfig() {
 			os.Exit(1)
 		}
 
-		// Search config in home directory with name ".{{.ProjectName}}" (without extension).
+		// Search config in home directory with name ".usersv" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".{{.ProjectName}}")
+		viper.SetConfigName(".usersv")
 	}
 
 	viper.AutomaticEnv() // read in environment variables that match

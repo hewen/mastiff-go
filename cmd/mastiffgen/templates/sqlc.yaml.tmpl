@@ -1,0 +1,12 @@
+version: '2'
+sql:
+  - name: '{{.ModuleName}}'
+    engine: 'mysql'
+    schema:
+      - 'pkg/sql/schema/test.sql'
+    queries:
+      - 'pkg/sql/queries/test.sql'
+    gen:
+      go:
+        out: 'pkg/model/sqlc'
+        package: 'sqlc'

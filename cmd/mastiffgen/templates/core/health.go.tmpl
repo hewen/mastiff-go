@@ -9,17 +9,18 @@ import (
 	"google.golang.org/grpc/status"
 )
 
+// Check implements the health check for the Core service.
 func (c *Core) Check(_ context.Context, _ *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
-	if model.DbConn != nil {
-		if err := model.DbConn.Ping(); err != nil {
+	if model.DStore != nil {
+		if err := model.DStore.Ping(); err != nil {
 			return &healthpb.HealthCheckResponse{
 				Status: healthpb.HealthCheckResponse_NOT_SERVING,
 			}, err
 		}
 	}
 
-	if model.RedisConn != nil {
-		if _, err := model.RedisConn.Ping().Result(); err != nil {
+	if model.RStore != nil {
+		if err := model.RStore.Ping(); err != nil {
 			return &healthpb.HealthCheckResponse{
 				Status: healthpb.HealthCheckResponse_NOT_SERVING,
 			}, err
@@ -31,10 +32,12 @@ func (c *Core) Check(_ context.Context, _ *healthpb.HealthCheckRequest) (*health
 	}, nil
 }
 
+// Watch implements the health watch functionality for the Core service.
 func (c *Core) Watch(*healthpb.HealthCheckRequest, healthpb.Health_WatchServer) error {
 	return status.Error(codes.Unimplemented, "unimplemented")
 }
 
+// List implements the health list functionality for the Core service.
 func (c *Core) List(context.Context, *healthpb.HealthListRequest) (*healthpb.HealthListResponse, error) {
 	return &healthpb.HealthListResponse{}, nil
 }

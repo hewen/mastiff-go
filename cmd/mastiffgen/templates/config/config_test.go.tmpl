@@ -1,3 +1,4 @@
+// Package config represents the configuration of the application.
 package config
 
 import (
@@ -13,12 +14,46 @@ const (
 
 func TestInitConfig(t *testing.T) {
 	name := testConfigName
-	defer os.Remove(name)
+	defer func() {
+		_ = os.Remove(name)
+	}()
 
-	_, err := os.Create(name)
+	content := []byte(`
+logger:
+  level: "debug"
+http:
+  addr: ":8080"
+grpc:
+  addr: ":9090"
+mysql:
+  dsn: "user:pass@tcp(127.0.0.1:3306)/dbname"
+redis:
+  addr: "localhost:6379"
+`)
+	err := os.WriteFile(name, content, 0600)
 	assert.Nil(t, err)
 
 	c, err := InitConfig(name)
 	assert.Nil(t, err)
 	assert.NotNil(t, c)
+	assert.EqualValues(t, "debug", c.Logger.Level)
+}
+
+func TestInitConfig_FileNotFound(t *testing.T) {
+	_, err := InitConfig("notexist.yaml")
+	assert.Error(t, err)
+}
+
+func TestInitConfig_InvalidContent(t *testing.T) {
+	name := testConfigName
+	defer func() {
+		_ = os.Remove(name)
+	}()
+
+	content := []byte(`{ invalid_yaml`)
+	err := os.WriteFile(name, content, 0600)
+	assert.Nil(t, err)
+
+	_, err = InitConfig(name)
+	assert.Error(t, err)
 }

@@ -1,0 +1,16 @@
+-- test.sql
+
+-- name: GetTestName :one
+SELECT name FROM test WHERE id = ?;
+
+-- name: GetTestIdByName :many
+SELECT id FROM test WHERE name = ?;
+
+-- name: CreateTest :execrows
+INSERT INTO test (name, email) VALUES (?, ?);
+
+-- name: UpdateTest :exec
+UPDATE test SET name = ?, email = ? WHERE id = ?;
+
+-- name: GetTestIdByNames :many
+SELECT id FROM test WHERE name IN (sqlc.slice('names'));

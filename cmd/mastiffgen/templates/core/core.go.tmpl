@@ -1,3 +1,4 @@
+// Package core provides the main application logic and initialization for the Mastiff application.
 package core
 
 import (
@@ -13,11 +14,13 @@ import (
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
 )
 
+// Core represents the main application core, managing configuration and servers.
 type Core struct {
 	conf    *config.Config
 	servers server.Servers
 }
 
+// NewCore initializes a new Core instance with the provided configuration.
 func NewCore(conf *config.Config) (*Core, error) {
 	if conf == nil {
 		return nil, fmt.Errorf("empty config")
@@ -41,23 +44,30 @@ func NewCore(conf *config.Config) (*Core, error) {
 	c.servers.Add(httpServer)
 
 	grpcServer, err := server.NewGrpcServer(conf.Grpc, func(s *grpc.Server) {
-		// TODO rpc.RegisterYourServer(s, c)
 		healthpb.RegisterHealthServer(s, c)
+		// TODO add your gRPC service: rpc.RegisterYourServer(s, c)
 	})
+	if err != nil {
+		return nil, err
+	}
 	c.servers.Add(grpcServer)
 
 	return c, nil
 }
 
+// initGinRoute initializes the Gin routes for the application.
 func (c *Core) initGinRoute(r *gin.Engine) {
-	// TODO add route
-	// api := r.Group("/api/v1")
+	api := r.Group("/api/v1")
+	// TODO remove test route, add your routes
+	api.POST("/test", func(_ *gin.Context) {})
 }
 
+// Start starts all servers managed by the Core instance.
 func (c *Core) Start() {
 	c.servers.Start()
 }
 
+// Stop stops all servers managed by the Core instance.
 func (c *Core) Stop() {
 	c.servers.Stop()
 }
