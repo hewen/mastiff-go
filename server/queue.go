@@ -3,10 +3,12 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"time"
 
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/panjf2000/ants/v2"
+	"google.golang.org/protobuf/proto"
 )
 
 const (
@@ -27,13 +29,60 @@ type QueueServer[T any] struct {
 	EmptySleepInterval time.Duration
 }
 
-// QueueHandler defines the interface for handling queue messages.
-type QueueHandler[T any] interface {
+// Codec interface: encode/decode message.
+type Codec[T any] interface {
 	Encode(msg T) ([]byte, error)
 	Decode(data []byte) (T, error)
-	Push(ctx context.Context, msg T) error
+}
+
+// Queue interface: push/pop raw []byte data.
+type Queue interface {
+	Push(ctx context.Context, data []byte) error
 	Pop(ctx context.Context) ([]byte, error)
+}
+
+// Handler interface: handle decoded message.
+type Handler[T any] interface {
 	Handle(ctx context.Context, msg T) error
+}
+
+// QueueHandler defines the interface for handling queue messages.
+type QueueHandler[T any] interface {
+	Codec[T]
+	Queue
+	Handler[T]
+}
+
+// JSONCodec implements Codec interface with JSON.
+type JSONCodec[T any] struct{}
+
+// Encode implements Codec interface.
+func (c JSONCodec[T]) Encode(msg T) ([]byte, error) {
+	return json.Marshal(msg)
+}
+
+// Decode implements Codec interface.
+func (c JSONCodec[T]) Decode(data []byte) (T, error) {
+	var msg T
+	err := json.Unmarshal(data, &msg)
+	return msg, err
+}
+
+// ProtoCodec implements Codec interface with protobuf.
+type ProtoCodec[T proto.Message] struct {
+	newMsg func() T
+}
+
+// Encode implements Codec interface.
+func (c ProtoCodec[T]) Encode(msg T) ([]byte, error) {
+	return proto.Marshal(msg)
+}
+
+// Decode implements Codec interface.
+func (c ProtoCodec[T]) Decode(data []byte) (T, error) {
+	msg := c.newMsg()
+	err := proto.Unmarshal(data, msg)
+	return msg, err
 }
 
 // NewQueueServer creates a new QueueServer with the specified handler and pool size.

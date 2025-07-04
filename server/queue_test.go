@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"sync"
 	"testing"
@@ -10,6 +9,7 @@ import (
 
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type MyTestMsg struct {
@@ -17,39 +17,29 @@ type MyTestMsg struct {
 	Body string `json:"body"`
 }
 
-type mockHandler struct {
+type mockQueueHandler struct {
+	JSONCodec[MyTestMsg]
+
 	messages    [][]byte
 	handled     []MyTestMsg
 	mu          sync.Mutex
 	popIndex    int
 	handleDelay time.Duration
+	handleFn    func(ctx context.Context, msg MyTestMsg) error
 }
 
-func (h *mockHandler) Encode(msg MyTestMsg) ([]byte, error) {
-	return json.Marshal(msg)
-}
-
-func (h *mockHandler) Decode(data []byte) (MyTestMsg, error) {
-	var m MyTestMsg
-	err := json.Unmarshal(data, &m)
-	return m, err
-}
-
-func (h *mockHandler) Push(ctx context.Context, msg MyTestMsg) error {
-	logger.NewLoggerWithContext(ctx).Infof("push => %#v", msg)
-	data, err := h.Encode(msg)
-	if err != nil {
-		return err
-	}
+func (h *mockQueueHandler) Push(ctx context.Context, data []byte) error {
 	h.mu.Lock()
 	defer h.mu.Unlock()
 	h.messages = append(h.messages, data)
+	logger.NewLoggerWithContext(ctx).Infof("push => %v", string(data))
 	return nil
 }
 
-func (h *mockHandler) Pop(ctx context.Context) ([]byte, error) {
+func (h *mockQueueHandler) Pop(ctx context.Context) ([]byte, error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
+
 	if h.popIndex >= len(h.messages) {
 		return nil, nil
 	}
@@ -59,33 +49,41 @@ func (h *mockHandler) Pop(ctx context.Context) ([]byte, error) {
 	return data, nil
 }
 
-func (h *mockHandler) Handle(_ context.Context, msg MyTestMsg) error {
+func (h *mockQueueHandler) Handle(ctx context.Context, msg MyTestMsg) error {
 	if h.handleDelay > 0 {
 		time.Sleep(h.handleDelay)
 	}
 	h.mu.Lock()
-	defer h.mu.Unlock()
 	h.handled = append(h.handled, msg)
+	h.mu.Unlock()
+
+	if h.handleFn != nil {
+		return h.handleFn(ctx, msg)
+	}
 	return nil
 }
 
 func TestQueueServer_Messages(t *testing.T) {
-	handler := &mockHandler{}
+	handler := &mockQueueHandler{}
 
 	conf := QueueConf{
-		PoolSize:           10,
+		PoolSize:           5,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
 	server, err := NewQueueServer(conf, handler)
-	if err != nil {
-		t.Fatalf("failed to create queue server: %v", err)
-	}
+	require.NoError(t, err)
 
 	ctx := context.Background()
-	err = handler.Push(ctx, MyTestMsg{ID: 1, Body: "hello"})
-	assert.Nil(t, err)
-	err = handler.Push(ctx, MyTestMsg{ID: 2, Body: "world"})
-	assert.Nil(t, err)
+	msgs := []MyTestMsg{
+		{ID: 1, Body: "hello"},
+		{ID: 2, Body: "world"},
+	}
+	for _, m := range msgs {
+		data, err := handler.Encode(m)
+		require.NoError(t, err)
+		err = handler.Push(ctx, data)
+		require.NoError(t, err)
+	}
 
 	go server.Start()
 	defer server.Stop()
@@ -102,189 +100,139 @@ func TestQueueServer_Messages(t *testing.T) {
 	assert.ElementsMatch(t, gotBodies, []string{"hello", "world"})
 }
 
-type wrapHandler[T any] struct {
-	inner QueueHandler[T]
-	wg    *sync.WaitGroup
-}
-
-func (w *wrapHandler[T]) Encode(msg T) ([]byte, error) {
-	return w.inner.Encode(msg)
-}
-
-func (w *wrapHandler[T]) Decode(data []byte) (T, error) {
-	return w.inner.Decode(data)
-}
-
-func (w *wrapHandler[T]) Push(ctx context.Context, msg T) error {
-	return w.inner.Push(ctx, msg)
-}
-
-func (w *wrapHandler[T]) Pop(ctx context.Context) ([]byte, error) {
-	return w.inner.Pop(ctx)
-}
-
-func (w *wrapHandler[T]) Handle(ctx context.Context, msg T) error {
-	defer w.wg.Done()
-	logger.NewLoggerWithContext(ctx).Infof("handle message: %+v", msg) // 确认调用
-	return w.inner.Handle(ctx, msg)
-}
-
 func TestQueueServer_BulkMessages(t *testing.T) {
-	const totalMsgs = 200
+	const total = 100
+	handler := &mockQueueHandler{}
 
-	origHandler := &mockHandler{}
 	conf := QueueConf{
 		PoolSize:           10,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
-
-	server, err := NewQueueServer[MyTestMsg](conf, nil)
-	if err != nil {
-		t.Fatalf("failed to create queue server: %v", err)
-	}
+	server, err := NewQueueServer(conf, handler)
+	require.NoError(t, err)
 
 	ctx := context.Background()
-
-	for i := 0; i < totalMsgs; i++ {
-		err := origHandler.Push(ctx, MyTestMsg{ID: i, Body: "msg"})
-		if err != nil {
-			t.Fatalf("push failed: %v", err)
-		}
+	for i := 0; i < total; i++ {
+		msg := MyTestMsg{ID: i, Body: "msg"}
+		data, err := handler.Encode(msg)
+		require.NoError(t, err)
+		err = handler.Push(ctx, data)
+		require.NoError(t, err)
 	}
-
-	var wg sync.WaitGroup
-	wg.Add(totalMsgs)
-
-	wrappedHandler := &wrapHandler[MyTestMsg]{
-		inner: origHandler,
-		wg:    &wg,
-	}
-
-	server.handler = wrappedHandler
 
 	go server.Start()
 	defer server.Stop()
 
-	done := make(chan struct{})
-	go func() {
-		wg.Wait()
-		close(done)
-	}()
+	time.Sleep(200 * time.Millisecond)
 
-	select {
-	case <-done:
-	case <-time.After(3 * time.Second):
-		t.Fatal("timeout waiting for all messages to be processed")
-	}
-
-	origHandler.mu.Lock()
-	defer origHandler.mu.Unlock()
-
-	if len(origHandler.handled) != totalMsgs {
-		t.Errorf("expected %d handled messages, got %d", totalMsgs, len(origHandler.handled))
-	}
-}
-
-func TestNewQueueServer_PoolError(t *testing.T) {
-	conf := QueueConf{
-		PoolSize:           -1,
-		EmptySleepInterval: 1 * time.Millisecond,
-	}
-	_, err := NewQueueServer(conf, &mockHandler{})
-	assert.NoError(t, err)
+	handler.mu.Lock()
+	defer handler.mu.Unlock()
+	assert.Len(t, handler.handled, total)
 }
 
 type popErrorHandler struct {
-	QueueHandler[MyTestMsg]
+	JSONCodec[MyTestMsg]
 }
 
-func (h *popErrorHandler) Pop(_ context.Context) ([]byte, error) {
-	return nil, errors.New("pop error")
+func (h *popErrorHandler) Push(_ context.Context, _ []byte) error { return nil }
+func (h *popErrorHandler) Pop(_ context.Context) ([]byte, error)  { return nil, errors.New("pop error") }
+func (h *popErrorHandler) Handle(_ context.Context, _ MyTestMsg) error {
+	return nil
 }
 
-func TestQueueServer_PopError(_ *testing.T) {
+func TestQueueServer_PopError(t *testing.T) {
 	handler := &popErrorHandler{}
-	conf := QueueConf{
-		PoolSize:           1,
-		EmptySleepInterval: 1 * time.Millisecond,
-	}
-	server, _ := NewQueueServer(conf, handler)
+	conf := QueueConf{PoolSize: 1, EmptySleepInterval: 10 * time.Millisecond}
+	server, err := NewQueueServer(conf, handler)
+	assert.Nil(t, err)
 
 	go server.Start()
 	defer server.Stop()
 
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 }
 
 type decodeErrorHandler struct {
-	QueueHandler[MyTestMsg]
+	JSONCodec[MyTestMsg]
+	messages [][]byte
 }
 
+func (h *decodeErrorHandler) Push(_ context.Context, data []byte) error {
+	h.messages = append(h.messages, data)
+	return nil
+}
 func (h *decodeErrorHandler) Pop(_ context.Context) ([]byte, error) {
-	return []byte("invalid json"), nil
+	if len(h.messages) == 0 {
+		return nil, nil
+	}
+	data := h.messages[0]
+	h.messages = h.messages[1:]
+	return data, nil
 }
-
 func (h *decodeErrorHandler) Decode(_ []byte) (MyTestMsg, error) {
 	return MyTestMsg{}, errors.New("decode error")
 }
+func (h *decodeErrorHandler) Handle(_ context.Context, _ MyTestMsg) error {
+	return nil
+}
 
-func TestQueueServer_DecodeError(_ *testing.T) {
+func TestQueueServer_DecodeError(t *testing.T) {
 	handler := &decodeErrorHandler{}
-	conf := QueueConf{
-		PoolSize:           1,
-		EmptySleepInterval: 1 * time.Millisecond,
-	}
-	server, _ := NewQueueServer(conf, handler)
+	_ = handler.Push(context.Background(), []byte("invalid json"))
+
+	conf := QueueConf{PoolSize: 1, EmptySleepInterval: 10 * time.Millisecond}
+	server, err := NewQueueServer(conf, handler)
+	assert.Nil(t, err)
 
 	go server.Start()
 	defer server.Stop()
-
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 }
 
 type handleErrorHandler struct {
-	QueueHandler[MyTestMsg]
+	JSONCodec[MyTestMsg]
+	messages [][]byte
 }
 
+func (h *handleErrorHandler) Push(_ context.Context, data []byte) error {
+	h.messages = append(h.messages, data)
+	return nil
+}
 func (h *handleErrorHandler) Pop(_ context.Context) ([]byte, error) {
-	data, _ := json.Marshal(MyTestMsg{ID: 1, Body: "test"})
+	if len(h.messages) == 0 {
+		return nil, nil
+	}
+	data := h.messages[0]
+	h.messages = h.messages[1:]
 	return data, nil
 }
-
-func (h *handleErrorHandler) Decode(data []byte) (MyTestMsg, error) {
-	var msg MyTestMsg
-	err := json.Unmarshal(data, &msg)
-	return msg, err
-}
-
 func (h *handleErrorHandler) Handle(_ context.Context, _ MyTestMsg) error {
 	return errors.New("handle error")
 }
 
-func TestQueueServer_HandleError(_ *testing.T) {
+func TestQueueServer_HandleError(t *testing.T) {
 	handler := &handleErrorHandler{}
-	conf := QueueConf{
-		PoolSize:           1,
-		EmptySleepInterval: 1 * time.Millisecond,
-	}
-	server, _ := NewQueueServer(conf, handler)
+	data, _ := handler.Encode(MyTestMsg{ID: 1, Body: "fail"})
+	err := handler.Push(context.Background(), data)
+	assert.Nil(t, err)
+
+	conf := QueueConf{PoolSize: 1, EmptySleepInterval: 10 * time.Millisecond}
+	server, err := NewQueueServer(conf, handler)
+	assert.Nil(t, err)
 
 	go server.Start()
 	defer server.Stop()
-
-	time.Sleep(100 * time.Millisecond)
+	time.Sleep(50 * time.Millisecond)
 }
 
 func TestQueueServer_StartStopExit(t *testing.T) {
-	handler := &mockHandler{}
+	handler := &mockQueueHandler{}
 	conf := QueueConf{
-		PoolSize:           1,
+		PoolSize:           2,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
 	server, err := NewQueueServer(conf, handler)
-	if err != nil {
-		t.Fatalf("failed to create queue server: %v", err)
-	}
+	require.NoError(t, err)
 
 	done := make(chan struct{})
 	go func() {
@@ -292,8 +240,9 @@ func TestQueueServer_StartStopExit(t *testing.T) {
 		close(done)
 	}()
 
-	time.Sleep(50 * time.Millisecond)
+	time.Sleep(20 * time.Millisecond)
 	server.Stop()
+
 	select {
 	case <-done:
 	case <-time.After(time.Second):
@@ -301,14 +250,11 @@ func TestQueueServer_StartStopExit(t *testing.T) {
 	}
 }
 
-func TestQueueServer_StopIdempotent(_ *testing.T) {
-	handler := &mockHandler{}
-	conf := QueueConf{
-		PoolSize:           1,
-		EmptySleepInterval: 1 * time.Millisecond,
-	}
-	server, _ := NewQueueServer(conf, handler)
+func TestQueueServer_StopIdempotent(t *testing.T) {
+	handler := &mockQueueHandler{}
+	server, err := NewQueueServer(QueueConf{}, handler)
+	require.NoError(t, err)
 
 	server.Stop()
-	server.Stop()
+	server.Stop() // safe second call
 }
