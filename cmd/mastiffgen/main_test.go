@@ -250,7 +250,7 @@ func TestGenerateTemplates_CreateFileError(t *testing.T) {
 }
 
 func TestGenerateTemplates_InvalidTemplateRoot(t *testing.T) {
-	err := generateTemplates("", "outputRoot", TemplateData{})
+	err := generateTemplates("", os.TempDir(), TemplateData{})
 	assert.Error(t, err)
 }
 
@@ -260,7 +260,7 @@ func TestGenerateTemplates_InvalidOutputRoot(t *testing.T) {
 }
 
 func TestGenerateTemplates_EmptyTemplateData(t *testing.T) {
-	err := generateTemplates("templateRoot", "outputRoot", TemplateData{})
+	err := generateTemplates("templateRoot", os.TempDir(), TemplateData{})
 	assert.Error(t, err)
 }
 
@@ -270,7 +270,7 @@ func TestGenerateTemplates_TemplateSyntaxError(t *testing.T) {
 	err := os.WriteFile(tmplPath, []byte("{{ invalid syntax }}"), 0600)
 	assert.NoError(t, err)
 
-	err = generateTemplates("testdata", "outputRoot", TemplateData{})
+	err = generateTemplates("testdata", os.TempDir(), TemplateData{})
 	assert.Error(t, err)
 }
 
@@ -280,7 +280,7 @@ func TestGenerateTemplates_TemplateMissingVariable(t *testing.T) {
 	err := os.WriteFile(tmplPath, []byte("{{ .MissingVariable }}"), 0600)
 	assert.NoError(t, err)
 
-	err = generateTemplates("testdata", "outputRoot", TemplateData{})
+	err = generateTemplates("testdata", os.TempDir(), TemplateData{})
 	assert.Error(t, err)
 }
 
@@ -388,12 +388,10 @@ func TestGenerateTemplates_SkipDirectory(t *testing.T) {
 	subDir := filepath.Join(templateRoot, "subdir")
 	assert.NoError(t, os.MkdirAll(subDir, 0750))
 
-	// 生成目标目录
-	outputRoot := t.TempDir()
 	data := TemplateData{ModuleName: "x", ProjectName: "y"}
 
 	// 使用空子目录测试
-	err := generateTemplates(templateRoot, outputRoot, data)
+	err := generateTemplates(templateRoot, os.TempDir(), data)
 	assert.NotNil(t, err)
 }
 func TestGenerateTemplates_SkipNonTemplateFile(t *testing.T) {
