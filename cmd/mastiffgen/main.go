@@ -87,7 +87,7 @@ func processTemplateFile(path string, templateRoot string, outputRoot string, da
 		return err
 	}
 
-	content, err := readFile(path)
+	content, err := readFile(fsPath(path))
 	if err != nil {
 		return err
 	}
@@ -132,9 +132,13 @@ func generateTemplates(templateRoot, outputRoot string, data TemplateData) error
 	})
 }
 
+func fsPath(path string) string {
+	return strings.ReplaceAll(path, `\`, `/`)
+}
+
 // fsWalk is like filepath.Walk but for embed.FS.
 func fsWalk(root string, fn func(path string, info os.FileInfo) error) error {
-	entries, err := templatesFS.ReadDir(root)
+	entries, err := templatesFS.ReadDir(fsPath(root))
 	if err != nil {
 		return err
 	}

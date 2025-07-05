@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 // TestRun_Success verifies that the CLI runs successfully with valid flags.
@@ -171,10 +172,19 @@ func TestGenerateTemplates_CreateFileFail(t *testing.T) {
 	data := TemplateData{"mod", "proj"}
 
 	tmpDir := t.TempDir()
-	readOnlyDir := filepath.Join(tmpDir, "readonly")
-	_ = os.MkdirAll(readOnlyDir, 0400)
+	conflictPath := filepath.Join(tmpDir, "conflict.txt")
+	err := os.WriteFile(conflictPath, []byte("existing file"), 0400)
+	require.NoError(t, err)
 
-	err := generateTemplates("templates", readOnlyDir, data)
+	err = processTemplateFile(
+		"templates/conflict.txt.tmpl",
+		"templates",
+		tmpDir,
+		data,
+		func(_ string) ([]byte, error) {
+			return []byte("Hello, {{.ProjectName}}"), nil
+		},
+	)
 	assert.Error(t, err)
 }
 
@@ -283,29 +293,26 @@ func TestRun_Coverage(t *testing.T) {
 func TestGenerateTemplates_ErrorCases(t *testing.T) {
 	data := TemplateData{ModuleName: "mod", ProjectName: "proj"}
 
-	// 读文件错误
 	err := generateTemplates("nonexistent_dir", t.TempDir(), data)
 	assert.Error(t, err)
 
-	// 解析错误: 需要放置语法错误模板
 	err = generateTemplates("testdata_with_bad_template", t.TempDir(), data)
 	assert.Error(t, err)
 
-	// Mkdir失败，非法路径
-	err = generateTemplates("templates", string([]byte{0}), data)
+	badPath := string(filepath.Separator) + ":/invalid<>path"
+	err = generateTemplates("templates", badPath, data)
 	assert.Error(t, err)
 
-	// Create失败，设置目录权限
-	roDir := t.TempDir()
-	err = os.Chmod(roDir, 0600)
-	assert.Nil(t, err)
+	tmpDir := t.TempDir()
+	conflictPath := filepath.Join(tmpDir, "proj.go")
+	err = os.MkdirAll(filepath.Dir(conflictPath), 0700)
+	assert.NoError(t, err)
+	err = os.WriteFile(conflictPath, []byte("collision"), 0600)
+	assert.NoError(t, err)
 
-	err = generateTemplates("templates", roDir, data)
+	err = generateTemplates("templates_conflict", tmpDir, data)
 	assert.Error(t, err)
-	err = os.Chmod(roDir, 0600)
-	assert.Nil(t, err)
 
-	// 路径逃逸错误，需要模板文件名中含../
 	err = generateTemplates("testdata_with_evil_template", t.TempDir(), data)
 	assert.Error(t, err)
 }
