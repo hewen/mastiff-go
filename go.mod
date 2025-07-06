@@ -13,11 +13,13 @@ require (
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/panjf2000/ants/v2 v2.11.3
+	github.com/robfig/cron/v3 v3.0.1
 	github.com/spf13/cobra v0.0.3
 	github.com/stretchr/testify v1.10.0
 	github.com/teris-io/shortid v0.0.0-20220617161101-71ec9f2aa569
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	go.uber.org/automaxprocs v1.6.0
+	golang.org/x/text v0.24.0
 	google.golang.org/grpc v1.73.0
 	google.golang.org/protobuf v1.36.6
 	gopkg.in/natefinch/lumberjack.v2 v2.2.1
@@ -69,7 +71,6 @@ require (
 	golang.org/x/net v0.38.0 // indirect
 	golang.org/x/sync v0.13.0 // indirect
 	golang.org/x/sys v0.32.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
 	golang.org/x/tools v0.21.1-0.20240508182429-e35e4ccd0d2d // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20250324211829-b45e905df463 // indirect
 	gopkg.in/src-d/go-errors.v1 v1.0.0 // indirect

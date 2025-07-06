@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/robfig/cron/v3"
 	"github.com/teris-io/shortid"
 	"google.golang.org/grpc/metadata"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -90,12 +91,36 @@ func InitLogger(conf Config) error {
 		return nil
 	}
 
-	log.SetOutput(io.MultiWriter(&lumberjack.Logger{
-		Filename: conf.Output,
-		MaxSize:  conf.MaxSize,
-	}, os.Stdout))
+	log.SetOutput(io.MultiWriter(
+		newDailyRotatingLogger(conf),
+		os.Stdout),
+	)
 
 	return nil
+}
+
+func newDailyRotatingLogger(conf Config) *lumberjack.Logger {
+	logger := &lumberjack.Logger{
+		Filename: conf.Output,
+		MaxSize:  conf.MaxSize,
+	}
+
+	c := cron.New(cron.WithSeconds())
+	_, _ = c.AddFunc("0 0 0 * * *", func() {
+		rotateAndLog(logger)
+	})
+	c.Start()
+	return logger
+}
+
+type rotatable interface {
+	Rotate() error
+}
+
+func rotateAndLog(logger rotatable) {
+	if err := logger.Rotate(); err != nil {
+		log.Printf("log rotation failed: %v", err)
+	}
 }
 
 // SetLevel sets the log level for the logger.

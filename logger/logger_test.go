@@ -1,7 +1,10 @@
 package logger
 
 import (
+	"bytes"
 	"context"
+	"errors"
+	"log"
 	"net/http/httptest"
 	"os"
 	"testing"
@@ -9,6 +12,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func TestSetLevelError(t *testing.T) {
@@ -71,9 +75,6 @@ func TestInitLogger(t *testing.T) {
 
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(t, err)
-	defer func() {
-		_ = os.Remove(tmpFile.Name())
-	}()
 
 	err = InitLogger(Config{
 		Level:   "INFO",
@@ -134,4 +135,33 @@ func TestNewOutgoingContextFromIncomingContext(t *testing.T) {
 	ctx = NewOutgoingContextWithIncomingContext(context.TODO())
 	l = NewLoggerWithContext(ctx)
 	assert.NotEqual(t, traceID, l.traceID)
+}
+
+func TestRotateAndLog(t *testing.T) {
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(t, err)
+
+	logger := &lumberjack.Logger{
+		Filename: tmpFile.Name(),
+	}
+
+	rotateAndLog(logger)
+}
+
+type mockErrorLogger struct{}
+
+func (m *mockErrorLogger) Rotate() error {
+	return errors.New("mock rotate error")
+}
+
+func TestRotateAndLog_Error(t *testing.T) {
+	logger := &mockErrorLogger{}
+
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer log.SetOutput(os.Stderr)
+
+	rotateAndLog(logger)
+
+	assert.Contains(t, buf.String(), "log rotation failed")
 }
