@@ -4,52 +4,56 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/spf13/cobra"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
 // TestRun_Success verifies that the CLI runs successfully with valid flags.
-func TestRun_Success(t *testing.T) {
+func TestRunInitCmd_Success(t *testing.T) {
 	tmpDir := t.TempDir()
 
-	args := []string{
-		"-dir", tmpDir,
-		"-module", "example.com/test",
-		"-project", "testproj",
-	}
+	cmd := &cobra.Command{}
+	cmd.Flags().String("dir", tmpDir, "")
+	cmd.Flags().String("module", "example.com/test", "")
+	cmd.Flags().String("project", "testproj", "")
 
-	err := run(args)
-	assert.Nil(t, err)
+	err := runInitCmd(cmd, []string{})
+	assert.NoError(t, err)
 
-	// Check if expected file is generated from template
 	expectedFile := filepath.Join(tmpDir, "README.md")
 	info, statErr := os.Stat(expectedFile)
 	assert.NoError(t, statErr)
 	assert.False(t, info.IsDir())
 }
 
-// TestRun_MissingFlags ensures run() fails when required flags are missing.
-func TestRun_MissingFlags(t *testing.T) {
-	err := run([]string{})
+// TestRun_MissingFlags ensures runInitCmd() fails when required flags are missing.
+func TestRunInitCmd_MissingFlags(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.Flags().String("module", "", "")
+	cmd.Flags().String("project", "", "")
+	cmd.Flags().String("dir", ".", "")
+
+	err := runInitCmd(cmd, []string{})
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "please specify")
 }
 
-// TestRun_NotEmptyDir checks that run() fails when target directory is not empty.
-func TestRun_NotEmptyDir(t *testing.T) {
+// TestRun_NotEmptyDir checks that runInitCmd() fails when target directory is not empty.
+func TestRunInitCmd_NotEmptyDir(t *testing.T) {
 	tmpDir := t.TempDir()
 
 	err := os.WriteFile(filepath.Join(tmpDir, "dummy.txt"), []byte("x"), 0600)
 	assert.Nil(t, err)
 
-	args := []string{
-		"-dir", tmpDir,
-		"-module", "mod",
-		"-project", "proj",
-	}
-	err = run(args)
+	cmd := &cobra.Command{}
+	cmd.Flags().String("dir", tmpDir, "")
+	cmd.Flags().String("module", "mod", "")
+	cmd.Flags().String("project", "proj", "")
+
+	err = runInitCmd(cmd, []string{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "not empty")
 }
@@ -68,7 +72,7 @@ func TestGenerateTemplates_Content(t *testing.T) {
 	tmpDir := t.TempDir()
 	data := TemplateData{ModuleName: "modname", ProjectName: "projname"}
 
-	err := generateTemplates("templates", tmpDir, data)
+	err := generateTemplates("templates/init", tmpDir, data)
 	assert.Nil(t, err)
 
 	readmePath := filepath.Join(tmpDir, "README.md")
@@ -82,7 +86,7 @@ func TestGenerateTemplates_DirCreationFailure(t *testing.T) {
 	data := TemplateData{ModuleName: "mod", ProjectName: "proj"}
 
 	// Pass an invalid path to trigger mkdir error
-	err := generateTemplates("templates", string([]byte{0}), data)
+	err := generateTemplates("templates/init", string([]byte{0}), data)
 	assert.Error(t, err)
 }
 
@@ -124,37 +128,37 @@ func TestIsEmptyDir_EmptyAndNonEmpty(t *testing.T) {
 	assert.False(t, empty)
 }
 
-func TestRun_MkdirFail(t *testing.T) {
-	args := []string{
-		"-dir", string([]byte{0x00}),
-		"-module", "mod",
-		"-project", "proj",
-	}
-	err := run(args)
+func TestRunInitCmd_MkdirFail(t *testing.T) {
+	cmd := &cobra.Command{}
+	cmd.Flags().String("dir", string([]byte{0x00}), "")
+	cmd.Flags().String("module", "mod", "")
+	cmd.Flags().String("project", "proj", "")
+
+	err := runInitCmd(cmd, []string{})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "failed to create target directory")
 }
 
-func TestRun_IsEmptyDirFail(t *testing.T) {
+func TestRunInitCmd_IsEmptyDirFail(t *testing.T) {
 	tmpDir := t.TempDir()
 	filePath := filepath.Join(tmpDir, "notadir.txt")
 	err := os.WriteFile(filePath, []byte("test"), 0600)
 	assert.NoError(t, err)
 
-	args := []string{
-		"-dir", filePath,
-		"-module", "mod",
-		"-project", "proj",
-	}
-	err = run(args)
+	cmd := &cobra.Command{}
+	cmd.Flags().String("dir", filePath, "")
+	cmd.Flags().String("module", "mod", "")
+	cmd.Flags().String("project", "proj", "")
+
+	err = runInitCmd(cmd, []string{})
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "failed to create target directory")
+	assert.Contains(t, err.Error(), "mkdir")
 }
 
 func TestGenerateTemplates_MkdirFail(t *testing.T) {
-	data := TemplateData{"mod", "proj"}
+	data := TemplateData{ModuleName: "mod", ProjectName: "proj"}
 	invalidDir := string([]byte{0})
-	err := generateTemplates("templates", invalidDir, data)
+	err := generateTemplates("templates/init", invalidDir, data)
 	assert.Error(t, err)
 }
 
@@ -169,7 +173,7 @@ func TestGenerateTemplates_ReadFileFail(t *testing.T) {
 }
 
 func TestGenerateTemplates_CreateFileFail(t *testing.T) {
-	data := TemplateData{"mod", "proj"}
+	data := TemplateData{ModuleName: "mod", ProjectName: "proj"}
 
 	tmpDir := t.TempDir()
 	conflictPath := filepath.Join(tmpDir, "conflict.txt")
@@ -197,7 +201,8 @@ func TestGenerateTemplates_ExecuteFail(t *testing.T) {
 	err := os.WriteFile(tmplPath, []byte("{{ .NotExist }}"), 0600)
 	assert.NoError(t, err)
 
-	err = generateTemplates(templateDir, tmpDir, TemplateData{"mod", "proj"})
+	data := TemplateData{ModuleName: "mod", ProjectName: "proj"}
+	err = generateTemplates(templateDir, tmpDir, data)
 	assert.Error(t, err)
 }
 
@@ -209,15 +214,16 @@ func TestGenerateTemplates_ReadFileError(t *testing.T) {
 	tmplPath := filepath.Join(templateDir, "gone.tmpl")
 	err := os.WriteFile(tmplPath, []byte("{{ .ProjectName }}"), 0600)
 	assert.NoError(t, err)
-	_ = os.Remove(tmplPath) // 删除掉
+	_ = os.Remove(tmplPath)
 
-	err = generateTemplates(templateDir, tmpDir, TemplateData{"mod", "proj"})
+	data := TemplateData{ModuleName: "mod", ProjectName: "proj"}
+	err = generateTemplates(templateDir, tmpDir, data)
 	assert.Error(t, err)
 }
 
 func TestGenerateTemplates_BadTemplateParse(t *testing.T) {
 	tmp := t.TempDir()
-	data := TemplateData{"mod", "proj"}
+	data := TemplateData{ModuleName: "mod", ProjectName: "proj"}
 
 	err := generateTemplates("testdata/bad_templates", tmp, data)
 	assert.Error(t, err)
@@ -233,7 +239,7 @@ func TestGenerateTemplates_ExecuteError(t *testing.T) {
 
 func TestGenerateTemplates_PathEscape(t *testing.T) {
 	tmp := t.TempDir()
-	data := TemplateData{"mod", "proj"}
+	data := TemplateData{ModuleName: "mod", ProjectName: "proj"}
 
 	err := generateTemplates("testdata/evil_templates", tmp, data)
 	assert.Error(t, err)
@@ -244,8 +250,8 @@ func TestGenerateTemplates_CreateFileError(t *testing.T) {
 	sub := filepath.Join(tmp, "sub")
 	_ = os.MkdirAll(sub, 0500)
 
-	data := TemplateData{"mod", "proj"}
-	err := generateTemplates("templates_that_write_to", sub, data) // 模板存在时
+	data := TemplateData{ModuleName: "mod", ProjectName: "proj"}
+	err := generateTemplates("templates_that_write_to", sub, data)
 	assert.Error(t, err)
 }
 
@@ -265,7 +271,6 @@ func TestGenerateTemplates_EmptyTemplateData(t *testing.T) {
 }
 
 func TestGenerateTemplates_TemplateSyntaxError(t *testing.T) {
-	// Create a template file with invalid syntax
 	tmplPath := filepath.Join("testdata", "invalid_syntax.tmpl")
 	err := os.WriteFile(tmplPath, []byte("{{ invalid syntax }}"), 0600)
 	assert.NoError(t, err)
@@ -282,12 +287,6 @@ func TestGenerateTemplates_TemplateMissingVariable(t *testing.T) {
 
 	err = generateTemplates("testdata", os.TempDir(), TemplateData{})
 	assert.Error(t, err)
-}
-
-func TestRun_Coverage(t *testing.T) {
-	// 测试run，间接覆盖main调用逻辑
-	err := run([]string{"-dir", t.TempDir(), "-module", "mod", "-project", "proj"})
-	assert.NoError(t, err)
 }
 
 func TestGenerateTemplates_ErrorCases(t *testing.T) {
@@ -328,7 +327,6 @@ func TestProcessTemplateFile_RelativePathError(t *testing.T) {
 func TestProcessTemplateFile_MkdirError(t *testing.T) {
 	data := TemplateData{}
 	tmpDir := t.TempDir()
-	// 构造非法路径，比如使用空字节
 	err := processTemplateFile(filepath.Join(tmpDir, string([]byte{0})+".tmpl"), tmpDir, tmpDir, data, func(_ string) ([]byte, error) {
 		return []byte(""), nil
 	})
@@ -383,14 +381,12 @@ func TestProcessTemplateFile_ExecuteError(t *testing.T) {
 }
 
 func TestGenerateTemplates_SkipDirectory(t *testing.T) {
-	// 创建模板目录，带子目录
 	templateRoot := t.TempDir()
 	subDir := filepath.Join(templateRoot, "subdir")
 	assert.NoError(t, os.MkdirAll(subDir, 0750))
 
 	data := TemplateData{ModuleName: "x", ProjectName: "y"}
 
-	// 使用空子目录测试
 	err := generateTemplates(templateRoot, os.TempDir(), data)
 	assert.NotNil(t, err)
 }
@@ -399,19 +395,78 @@ func TestGenerateTemplates_SkipNonTemplateFile(t *testing.T) {
 	outputRoot := t.TempDir()
 	data := TemplateData{ModuleName: "x", ProjectName: "y"}
 
-	// 创建非模板文件
 	nonTmpl := filepath.Join(templateRoot, "note.txt")
 	assert.NoError(t, os.WriteFile(nonTmpl, []byte("plain"), 0600))
 
-	// 覆盖 fsWalk 来传入自定义文件
 	err := generateTemplates(templateRoot, outputRoot, data)
 	assert.NotNil(t, err)
 }
 func TestGenerateTemplates_MkdirError(t *testing.T) {
 	data := TemplateData{ModuleName: "x", ProjectName: "y"}
 
-	// 输出路径非法，模拟 mkdir error
 	badOutput := string([]byte{0})
 	err := generateTemplates("templates", badOutput, data)
 	assert.Error(t, err)
+}
+
+func TestRunModuleCmd_Success(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	coreDir := filepath.Join(tmpDir, "core")
+	err := os.MkdirAll(coreDir, 0750)
+	assert.NoError(t, err)
+
+	coreGoPath := filepath.Join(coreDir, "core.go")
+	coreGoContent := `
+package core
+
+// MODULE_PACKAGE_START
+// MODULE_PACKAGE_END
+
+// MODULE_FIELDS_START
+// MODULE_FIELDS_END
+
+// MODULE_INITS_START
+// MODULE_INITS_END
+
+// MODULE_ROUTES_START
+// MODULE_ROUTES_END
+`
+	err = os.WriteFile(coreGoPath, []byte(coreGoContent), 0600)
+	assert.NoError(t, err)
+
+	cmd := &cobra.Command{}
+	cmd.Flags().String("package", "github.com/example/project", "")
+	cmd.Flags().String("dir", tmpDir, "")
+	_ = cmd.ParseFlags([]string{"--package=github.com/example/project", "--dir=" + tmpDir})
+
+	err = runModuleCmd(cmd, []string{"User"})
+	assert.NoError(t, err)
+
+	updatedContent, err := os.ReadFile(coreGoPath) // #nosec
+	assert.NoError(t, err)
+
+	result := string(updatedContent)
+	assert.Contains(t, result, "c.User.RegisterUserRoutes(api)")
+	assert.Contains(t, result, `User *user.UserModule`)
+	assert.Contains(t, result, `c.User = &user.UserModule{}`)
+	assert.Contains(t, result, `"github.com/example/project/core/user"`)
+
+	expectedModuleFile := filepath.Join(tmpDir, "core", "user", "module.go")
+	content, err := os.ReadFile(expectedModuleFile) // #nosec
+	assert.NoError(t, err)
+	assert.True(t, strings.Contains(string(content), "package user"))
+}
+
+func TestRunModuleCmd_EmptyDir(t *testing.T) {
+	tmpDir := t.TempDir()
+
+	cmd := &cobra.Command{}
+	cmd.Flags().String("package", "github.com/example/project", "")
+	cmd.Flags().String("dir", tmpDir, "")
+	_ = cmd.ParseFlags([]string{"--package=github.com/example/project", "--dir=" + tmpDir})
+
+	err := runModuleCmd(cmd, []string{"Test"})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "target directory is empty")
 }

@@ -5,8 +5,10 @@ import (
 	"context"
 	"fmt"
 
-	"{{.ModuleName}}/config"
-	"{{.ModuleName}}/pkg/model"
+	"{{.PackageName}}/config"
+	"{{.PackageName}}/pkg/model"
+    // MODULE_PACKAGE_START
+    // MODULE_PACKAGE_END
 
 	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/logger"
@@ -20,6 +22,9 @@ import (
 type Core struct {
 	conf    *config.Config
 	servers server.Servers
+
+	// MODULE_FIELDS_START
+	// MODULE_FIELDS_END
 }
 
 // NewCore initializes a new Core instance with the provided configuration.
@@ -75,6 +80,9 @@ func NewCore(conf *config.Config) (*Core, error) {
 		c.servers.Add(queueServer)
 	}
 
+	// MODULE_INITS_START
+	// MODULE_INITS_END
+
 	return c, nil
 }
 
@@ -83,6 +91,9 @@ func (c *Core) initGinRoute(r *gin.Engine) {
 	api := r.Group("/api/v1")
 	// TODO remove test route, add your routes
 	api.POST("/test", func(_ *gin.Context) {})
+
+	// MODULE_ROUTES_START
+	// MODULE_ROUTES_END
 }
 
 // Start starts all servers managed by the Core instance.

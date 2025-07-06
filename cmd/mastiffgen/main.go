@@ -3,13 +3,16 @@ package main
 
 import (
 	"embed"
-	"flag"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
 	"strings"
 	"text/template"
+
+	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 //go:embed templates/*
@@ -17,54 +20,203 @@ var templatesFS embed.FS
 
 // TemplateData holds the data used for rendering templates.
 type TemplateData struct {
-	ModuleName  string
-	ProjectName string
+	PackageName     string
+	ProjectName     string
+	ModuleName      string
+	TargetName      string // used for module creation like "user"
+	TitleTargetName string
+	LowerModuleName string
 }
 
 // main is the entry point for the project scaffolding tool.
 func main() {
-	if err := run(os.Args[1:]); err != nil {
+	rootCmd := &cobra.Command{
+		Use:   "mastiffgen",
+		Short: "Mastiff project code generator",
+	}
+
+	// init command
+	initCmd := &cobra.Command{
+		Use:   "init",
+		Short: "Initialize a new project",
+		RunE:  runInitCmd,
+	}
+	initCmd.Flags().String("package", "", "Go package name (required)")
+	initCmd.Flags().String("project", "", "Project name (required)")
+	initCmd.Flags().StringP("dir", "d", ".", "Target directory")
+	_ = initCmd.MarkFlagRequired("package")
+	_ = initCmd.MarkFlagRequired("project")
+
+	// module command
+	moduleCmd := &cobra.Command{
+		Use:   "module [name]",
+		Short: "Create a new module",
+		Args:  cobra.ExactArgs(1),
+		RunE:  runModuleCmd,
+	}
+	moduleCmd.Flags().String("package", "", "Go package name (required)")
+	moduleCmd.Flags().StringP("dir", "d", ".", "Target directory")
+	moduleCmd.Flags().Bool("http", false, "Generate HTTP method")
+	moduleCmd.Flags().Bool("grpc", false, "Generate gRPC method(default)")
+
+	rootCmd.AddCommand(initCmd)
+	rootCmd.AddCommand(moduleCmd)
+
+	if err := rootCmd.Execute(); err != nil {
 		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
 
-func run(args []string) error {
-	flags := flag.NewFlagSet("mastiffgen", flag.ContinueOnError)
-	targetDir := flags.String("dir", ".", "target directory to generate project files")
-	moduleName := flags.String("module", "", "go module name for import paths")
-	projectName := flags.String("project", "", "project name (used in templates)")
+func runInitCmd(cmd *cobra.Command, _ []string) error {
+	packageName, _ := cmd.Flags().GetString("package")
+	projectName, _ := cmd.Flags().GetString("project")
+	targetDir, _ := cmd.Flags().GetString("dir")
 
-	if err := flags.Parse(args); err != nil {
-		return err
-	}
-
-	if *moduleName == "" || *projectName == "" {
-		return fmt.Errorf("please specify -module and -project")
-	}
-
-	if err := os.MkdirAll(*targetDir, 0750); err != nil {
+	if err := os.MkdirAll(targetDir, 0750); err != nil {
 		return fmt.Errorf("failed to create target directory: %v", err)
 	}
-
-	empty, err := isEmptyDir(*targetDir)
-	if err != nil {
+	if empty, err := isEmptyDir(targetDir); err != nil {
 		return fmt.Errorf("failed to check directory: %v", err)
-	}
-	if !empty {
+	} else if !empty {
 		return fmt.Errorf("target directory is not empty")
 	}
 
 	data := TemplateData{
-		ModuleName:  *moduleName,
-		ProjectName: *projectName,
+		PackageName: packageName,
+		ProjectName: projectName,
 	}
 
-	if err := generateTemplates("templates", *targetDir, data); err != nil {
-		return fmt.Errorf("error generating project files: %v", err)
+	return generateTemplates("templates/init", targetDir, data)
+}
+
+func runModuleCmd(cmd *cobra.Command, args []string) error {
+	moduleName := args[0]
+	packageName, _ := cmd.Flags().GetString("package")
+	targetDir, _ := cmd.Flags().GetString("dir")
+
+	if empty, err := isEmptyDir(targetDir); err != nil {
+		return fmt.Errorf("failed to check directory: %v", err)
+	} else if empty {
+		return fmt.Errorf("target directory is empty")
+	}
+
+	caser := cases.Title(language.English)
+	lowerModuleName := strings.ToLower(moduleName)
+	data := TemplateData{
+		PackageName:     packageName,
+		ModuleName:      moduleName,
+		TargetName:      moduleName,
+		TitleTargetName: caser.String(moduleName),
+		LowerModuleName: lowerModuleName,
+	}
+
+	coreGoPath := filepath.Join(targetDir, "core", "core.go")
+	coreModuleDir := filepath.Join(targetDir, "core", strings.ToLower(moduleName))
+
+	if err := generateTemplates("templates/module", coreModuleDir, data); err != nil {
+		return err
+	}
+	routeLine := fmt.Sprintf("c.%s.Register%sRoutes(api)", caser.String(moduleName), caser.String(moduleName))
+	if err := appendToCoreGoRoutes(coreGoPath, routeLine); err != nil {
+		return err
+	}
+
+	fieldLine := fmt.Sprintf("%s *%s.%sModule", caser.String(moduleName), lowerModuleName, caser.String(moduleName))
+	initLine := fmt.Sprintf("c.%s = &%s.%sModule{}", caser.String(moduleName), lowerModuleName, caser.String(moduleName))
+
+	if err := appendToCoreGo(coreGoPath, fieldLine, initLine); err != nil {
+		return err
+	}
+
+	packageLine := fmt.Sprintf(`"%s/core/%s"`, packageName, lowerModuleName)
+	if err := appendToCorePackage(coreGoPath, packageLine); err != nil {
+		return err
 	}
 
 	return nil
+}
+
+func appendToCoreGo(coreGoPath string, fieldLine, initLine string) error {
+	data, err := os.ReadFile(coreGoPath) // #nosec
+	if err != nil {
+		return err
+	}
+	content := string(data)
+
+	fieldStart := "// MODULE_FIELDS_START"
+	fieldEnd := "// MODULE_FIELDS_END"
+	content, err = insertBetweenMarkers(content, fieldStart, fieldEnd, fieldLine)
+	if err != nil {
+		return err
+	}
+
+	initStart := "// MODULE_INITS_START"
+	initEnd := "// MODULE_INITS_END"
+	content, err = insertBetweenMarkers(content, initStart, initEnd, initLine)
+	if err != nil {
+		return err
+	}
+
+	return os.WriteFile(coreGoPath, []byte(content), 0600)
+}
+
+func appendToCoreGoRoutes(coreGoPath string, routeLine string) error {
+	data, err := os.ReadFile(coreGoPath) // #nosec
+	if err != nil {
+		return err
+	}
+	content := string(data)
+
+	routeStart := "// MODULE_ROUTES_START"
+	routeEnd := "// MODULE_ROUTES_END"
+	content, err = insertBetweenMarkers(content, routeStart, routeEnd, routeLine)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(coreGoPath, []byte(content), 0600)
+}
+
+func appendToCorePackage(coreGoPath string, packageLine string) error {
+	data, err := os.ReadFile(coreGoPath) // #nosec
+	if err != nil {
+		return err
+	}
+	content := string(data)
+
+	packageStart := "// MODULE_PACKAGE_START"
+	packageEnd := "// MODULE_PACKAGE_END"
+	content, err = insertBetweenMarkers(content, packageStart, packageEnd, packageLine)
+	if err != nil {
+		return err
+	}
+	return os.WriteFile(coreGoPath, []byte(content), 0600)
+}
+
+func insertBetweenMarkers(content, start, end, line string) (string, error) {
+	startIdx := strings.Index(content, start)
+	endIdx := strings.Index(content, end)
+	if startIdx == -1 || endIdx == -1 || endIdx <= startIdx {
+		return "", fmt.Errorf("markers %q or %q not found or invalid", start, end)
+	}
+
+	before := content[:startIdx+len(start)]
+	middle := content[startIdx+len(start) : endIdx]
+	after := content[endIdx:]
+
+	if strings.Contains(middle, line) {
+		return content, nil
+	}
+
+	middle = strings.TrimRight(middle, "\n\t ")
+
+	var newMiddle string
+	if middle == "" {
+		newMiddle = "\n\t" + line + "\n\t"
+	} else {
+		newMiddle = middle + "\n\t" + line + "\n\t"
+	}
+	return before + newMiddle + after, nil
 }
 
 // ReadFileFunc defines a function type for reading files.

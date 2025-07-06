@@ -76,7 +76,6 @@ func TestInitDB_WithoutHookDriver(t *testing.T) {
 	dataSource := "root:password@tcp(127.0.0.1:3306)/test"
 	driver := mysql.MySQLDriver{}
 
-	// 使用 RegisterHookDriver = false
 	db, err := InitDB(driverName, dataSource, driver, DatabaseOption{
 		RegisterHookDriver: false,
 		Hook:               &SQLHooks{},
@@ -85,8 +84,7 @@ func TestInitDB_WithoutHookDriver(t *testing.T) {
 		ConnMaxLifetime:    time.Minute,
 	})
 
-	// 因为你未实际连通 mysql，此处我们只验证分支和错误返回
 	assert.Nil(t, db)
 	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "dial") // 或其他 mysql 连接错误
+	assert.Contains(t, err.Error(), "dial")
 }

@@ -35,7 +35,7 @@ func TestExecute_Error(t *testing.T) {
 		exitFunc = os.Exit
 	}()
 
-	RootCmd.SetArgs([]string{"invalid-cmd"}) // 不存在的命令
+	RootCmd.SetArgs([]string{"invalid-cmd"})
 
 	Execute()
 
