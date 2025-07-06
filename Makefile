@@ -36,7 +36,7 @@ merge-cover:
 check-cover:
 	@echo "==> Checking Coverage"
 	@go tool cover -func=$(COVER_OUT) \
-	| grep -vE '\s(main|init)\s' \
+	| grep -vE '\s(init)\s' \
 	| awk '{ gsub(/%/, "", $$3); cov = $$3 + 0; if (cov < 80) { print $$1, $$2" coverage ("cov"%) < 80%"; failed=1 } } END { exit failed }'
 
 clean:

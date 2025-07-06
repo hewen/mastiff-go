@@ -12,6 +12,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func TestMain_Success(_ *testing.T) {
+	main()
+}
+
 // TestRun_Success verifies that the CLI runs successfully with valid flags.
 func TestRunInitCmd_Success(t *testing.T) {
 	tmpDir := t.TempDir()
