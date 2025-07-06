@@ -1,12 +1,17 @@
 package logger
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"errors"
+	"io"
 	"log"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
@@ -164,4 +169,67 @@ func TestRotateAndLog_Error(t *testing.T) {
 	rotateAndLog(logger)
 
 	assert.Contains(t, buf.String(), "log rotation failed")
+}
+
+func TestConcurrentLogging(t *testing.T) {
+	tmpFile := filepath.Join(os.TempDir(), "concurrent.log")
+	_ = os.Remove(tmpFile)
+
+	logger := &lumberjack.Logger{
+		Filename:   tmpFile,
+		MaxSize:    5, // MB
+		MaxBackups: 3,
+		MaxAge:     7, // days
+		Compress:   false,
+	}
+
+	defer func() {
+		_ = logger.Close()
+		_ = os.Remove(tmpFile)
+	}()
+
+	log.SetOutput(io.MultiWriter(logger, os.Stdout))
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+
+	const goroutines = 50
+	const logsPerGoroutine = 1000
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	for i := 0; i < goroutines; i++ {
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < logsPerGoroutine; j++ {
+				log.Printf("goroutine-%02d log line number %05d", id, j)
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	file, err := os.Open(tmpFile) // #nosec
+	if err != nil {
+		t.Fatalf("failed to open log file: %v", err)
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	scanner := bufio.NewScanner(file)
+	linesCount := 0
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.Contains(line, "goroutine-") {
+			t.Errorf("log line format unexpected: %s", line)
+		}
+		linesCount++
+	}
+
+	expectedLines := goroutines * logsPerGoroutine
+	if linesCount < expectedLines {
+		t.Errorf("log lines lost: got %d, expected at least %d", linesCount, expectedLines)
+	} else {
+		t.Logf("all logs written successfully: %d lines", linesCount)
+	}
 }
