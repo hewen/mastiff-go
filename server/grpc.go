@@ -13,7 +13,6 @@ import (
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
@@ -129,19 +128,17 @@ func (s *GrpcServer) middleware(ctx context.Context, req any, info *grpc.UnarySe
 
 	resp, err = s.execHandler(ctx, req, handler, l)
 
-	var errStr string
-	if err != nil {
-		errStr = fmt.Sprintf(" | err: %s", err.Error())
-	}
-
-	switch {
-	case errStr != "":
-		l.Errorf("%10s | %15s | %-10s | %v | %v%s", util.FormatDuration(time.Since(begin)), addr, info.FullMethod, req, resp, errStr)
-	case time.Since(begin) > time.Second:
-		l.Infof("SLOW %10s | %15s | %-10s | %v | %v%s", util.FormatDuration(time.Since(begin)), addr, info.FullMethod, req, resp, errStr)
-	default:
-		l.Infof("%10s | %15s | %-10s | %v | %v%s", util.FormatDuration(time.Since(begin)), addr, info.FullMethod, req, resp, errStr)
-	}
+	LogRequest(
+		l,
+		0,
+		time.Since(begin),
+		addr,
+		info.FullMethod,
+		"grpc-go",
+		fmt.Sprintf("%v", req),
+		fmt.Sprintf("%v", resp),
+		err,
+	)
 
 	return resp, err
 }
