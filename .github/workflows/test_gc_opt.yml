@@ -93,13 +93,10 @@ jobs:
       - name: Run integration tests
         run: go test -v -race -tags=gc_opt -coverprofile="codecov.report" -covermode=atomic -timeout 15m -failfast ./...
 
-      - name: Filter out .pb.go files from coverage report
-        run: grep -v '\.pb\.go:' codecov.report > codecov.filtered.report
-
       - name: Upload the code coverage report to codecov.io
         uses: codecov/codecov-action@v5
         with:
-          files: ./codecov.filtered.report
+          files: ./codecov.report
           flags: unittests
           name: codecov-mastiff-go
           fail_ci_if_error: true
