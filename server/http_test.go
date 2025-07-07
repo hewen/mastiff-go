@@ -13,7 +13,7 @@ func TestHTTPServer(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
-	c := &HTTPConfig{
+	c := &HTTPConf{
 		Addr:         fmt.Sprintf("localhost:%d", port),
 		PprofEnabled: true,
 	}
@@ -32,7 +32,7 @@ func TestHTTPServerStop(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
-	c := &HTTPConfig{
+	c := &HTTPConf{
 		Addr: fmt.Sprintf("localhost:%d", port),
 	}
 
@@ -47,7 +47,7 @@ func TestHTTPServerStop(t *testing.T) {
 }
 
 func TestHTTPServerStartError(t *testing.T) {
-	c := &HTTPConfig{
+	c := &HTTPConf{
 		Addr: "error addr",
 	}
 
@@ -61,5 +61,5 @@ func TestHTTPServerStartError(t *testing.T) {
 func TestHTTPServerEmptyConfig(t *testing.T) {
 	handler := func(_ *gin.Engine) {}
 	_, err := NewHTTPServer(nil, handler)
-	assert.EqualValues(t, err, ErrEmptyHTTPConfig)
+	assert.EqualValues(t, err, ErrEmptyHTTPConf)
 }

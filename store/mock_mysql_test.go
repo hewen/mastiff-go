@@ -10,9 +10,6 @@ import (
 )
 
 func TestInitMockMysql(t *testing.T) {
-	_, err := InitMockMysql("")
-	assert.NotNil(t, err)
-
 	db, err := InitMockMysql("./test/")
 	assert.NotNil(t, db)
 	assert.Nil(t, err)
@@ -20,8 +17,8 @@ func TestInitMockMysql(t *testing.T) {
 
 func TestInitMockMysql_EmptyDir(t *testing.T) {
 	db, err := InitMockMysql("")
-	assert.Nil(t, db)
-	assert.EqualError(t, err, "sql dir empty")
+	assert.NotNil(t, db)
+	assert.Nil(t, err)
 }
 
 func TestInitMockMysql_ErrorDir(t *testing.T) {

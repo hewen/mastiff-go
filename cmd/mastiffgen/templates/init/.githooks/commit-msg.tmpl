@@ -1,0 +1,15 @@
+#!/usr/bin/env sh
+
+# Get the current commit message
+commit_msg=$(cat "$1")
+
+# Define the allowed commit message format using regex
+msg_re="^((feat|fix|docs|style|refactor|perf|test|workflow|build|ci|chore|release|workflow)(\(.+\))?:|(Merge)) .{1,100}"
+
+# Validate the commit message
+if [[ ! $commit_msg =~ $msg_re ]]; then
+    echo "❌ Invalid commit message format."
+    echo "Please follow the conventional commit style:"
+    echo "https://github.com/woai3c/Front-end-articles/blob/master/git%20commit%20style.md"
+    exit 1
+fi

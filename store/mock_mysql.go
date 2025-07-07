@@ -26,10 +26,6 @@ var (
 
 // InitMockMysql initializes a MySQL connection with the given configuration.
 func InitMockMysql(sqlDir string) (*DB, error) {
-	if sqlDir == "" {
-		return nil, fmt.Errorf("sql dir empty")
-	}
-
 	// 1. create mock mysql engine
 	dbName := "mockdb"
 	engine, provider := createMockMysqlEngine(dbName)
@@ -101,6 +97,10 @@ func startMockMysqlServer(address string, engine *sqle.Engine, provider *memory.
 }
 
 func loadSQLFiles(dbConn *DB, sqlDir string) error {
+	if sqlDir == "" {
+		return nil
+	}
+
 	entries, err := os.ReadDir(sqlDir)
 	if err != nil {
 		return err

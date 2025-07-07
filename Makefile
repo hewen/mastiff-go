@@ -1,26 +1,52 @@
-lint:
-	@echo Lint start
-	@golangci-lint run -v -E gocritic -E misspell -E revive -E godot --timeout 5m ./...
+.DEFAULT_GOAL := test
+
+PKGS := $(shell go list ./...)
+COVERFILES := $(wildcard *.coverprofile)
+COVER_OUT := coverage.out
+COVER_PKG := ./...
+MAKEFLAGS += --no-print-directory
 
 test:
-	@echo Test start
-	@go list -f '{{if gt (len .TestGoFiles) 0}}"go test -tags test -covermode count -coverprofile {{.Name}}.coverprofile -coverpkg ./... {{.ImportPath}}"{{end}}' ./... | xargs -I {} sh -c {}
-	@gocovmerge `ls *.coverprofile` | grep -v ".pb.go" > coverage.out
-	@go tool cover -func coverage.out | grep total
-	@go tool cover -func coverage.out | grep -v '100.0%' | awk '{if ($$3 < 80) {print $$1, $$2" coverage (",$$3,") < 80%"; exit -1;}}'
+	@echo "==> Running Tests"
+	@set -e; \
+	for pkg in $(PKGS); do \
+		name=$$(basename $$pkg); \
+		go test -tags test -covermode=count -coverprofile=$$name.coverprofile -coverpkg=$(COVER_PKG) $$pkg; \
+	done
+	@$(MAKE) merge-cover
+	@$(MAKE) check-cover
 
 cover:
-	@echo Test start
-	@go list -f '{{if gt (len .TestGoFiles) 0}}"go test -tags test -covermode count -coverprofile {{.Name}}.coverprofile -coverpkg ./... {{.ImportPath}}"{{end}}' ./... | xargs -I {} sh -c {}
-	@gocovmerge `ls *.coverprofile` | grep -v ".pb.go" > coverage.out
-	@go tool cover -func coverage.out | grep total
-	@go tool cover -html coverage.out
+	@echo "==> Generating Coverage Report (HTML)"
+	@$(MAKE) test || true
+	@go tool cover -html=$(COVER_OUT)
+
+lint:
+	@echo "==> Running Linter"
+	@golangci-lint run -v -E gocritic -E misspell -E revive -E godot --timeout 5m ./...
 
 race:
-	@echo race test start
+	@echo "==> Running Race Detector Tests"
 	@go test -v -race -tags=gc_opt -covermode=atomic -timeout 15m -failfast ./...
 
+merge-cover:
+	@gocovmerge $(COVERFILES) | grep -v ".pb.go" > $(COVER_OUT)
+	@go tool cover -func=$(COVER_OUT) | grep total
+
+check-cover:
+	@echo "==> Checking Coverage"
+	@go tool cover -func=$(COVER_OUT) \
+	| grep -vE '\s(init)\s' \
+	| awk '{ gsub(/%/, "", $$3); cov = $$3 + 0; if (cov < 80) { print $$1, $$2" coverage ("cov"%) < 80%"; failed=1 } } END { exit failed }'
+
 clean:
+	@echo "==> Cleaning Generated Files"
 	@rm -f *.coverprofile
 	@rm -f coverage.*
-	@echo Clean Finish
+	@rm -f *.test *.out
+
+.PHONY: test cover lint race clean merge-cover check-cover gen
+
+gen:
+	@echo "==> Running Code Generator"
+	go run ./cmd/mastiffgen/main.go -module=$(m) -name=$(n)

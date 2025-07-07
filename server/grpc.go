@@ -20,8 +20,8 @@ import (
 )
 
 var (
-	// ErrEmptyGrpcConfig is returned when the gRPC configuration is empty.
-	ErrEmptyGrpcConfig = errors.New("empty grpc config")
+	// ErrEmptyGrpcConf is returned when the gRPC configuration is empty.
+	ErrEmptyGrpcConf = errors.New("empty grpc config")
 
 	// ErrGrpcExecPanic is an error that indicates a panic occurred during gRPC execution.
 	ErrGrpcExecPanic = errors.New("grpc exec panic")
@@ -41,9 +41,9 @@ type GrpcServer struct {
 }
 
 // NewGrpcServer creates a new gRPC server.
-func NewGrpcServer(conf *GrpcConfig, registerServerFunc func(*grpc.Server), interceptors ...grpc.UnaryServerInterceptor) (*GrpcServer, error) {
+func NewGrpcServer(conf *GrpcConf, registerServerFunc func(*grpc.Server), interceptors ...grpc.UnaryServerInterceptor) (*GrpcServer, error) {
 	if conf == nil {
-		return nil, ErrEmptyGrpcConfig
+		return nil, ErrEmptyGrpcConf
 	}
 	ln, err := net.Listen("tcp", conf.Addr)
 	if err != nil {

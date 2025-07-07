@@ -1,0 +1,154 @@
+# {{.ProjectName}}
+
+{{.ProjectName}} server.
+
+---
+
+## 📦 Run the Application
+
+After building or generating the code, run the server with:
+
+```bash
+go run ./main.go
+````
+
+You will see usage instructions like:
+
+```
+{{.ProjectName}}
+
+Usage:
+  {{.ProjectName}} [command]
+
+Available Commands:
+  completion  Generate the autocompletion script for the specified shell
+  help        Help about any command
+  run         run
+
+Flags:
+      --config string   config file (default is $HOME/.{{.ProjectName}}.yaml)
+  -h, --help            help for {{.ProjectName}}
+
+Use "{{.ProjectName}} [command] --help" for more information about a command.
+```
+
+To start the server, run:
+
+```bash
+go run ./main.go run --config config/config.yaml
+```
+
+or build and run the binary:
+
+```bash
+go build -o {{.ProjectName}} ./main.go
+./{{.ProjectName}} run --config config/config.yaml
+```
+
+---
+
+## 📁 Project Structure
+
+```
+.
+├── cmd/                # CLI entry point
+├── config/             # Configuration files and loaders
+├── core/               # Core business logic
+├── pkg/                # Internal packages (models, SQL, etc.)
+│   ├── model/
+│   └── sql/
+├── main.go             # Entry point
+├── Makefile            # Build, test and lint automation
+├── .githooks/          # Git hooks scripts
+└── README.md
+```
+
+---
+
+## 🛠 Makefile Usage
+
+This project uses `make` for common tasks:
+
+| Command            | Description                                     |
+| ------------------ | ----------------------------------------------- |
+| `make test`        | Run all tests with coverage                     |
+| `make lint`        | Run linter with common rules                    |
+| `make race`        | Run tests with race detector                    |
+| `make cover`       | Open HTML coverage report                       |
+| `make sqlc`        | Regenerate code from `.sql` files using sqlc    |
+| `make clean`       | Remove all generated files                      |
+| `make setup-hooks` | Install Git hooks for pre-commit and commit-msg |
+
+Run tests and check coverage:
+
+```bash
+make test
+```
+
+Generate HTML coverage report:
+
+```bash
+make cover
+```
+
+Clean generated files:
+
+```bash
+make clean
+```
+
+---
+
+## 🔐 Git Hooks Setup
+
+This project includes Git hooks for:
+
+* `pre-commit`: runs tests and linter before commit
+* `commit-msg`: enforces Conventional Commits format
+
+Enable Git hooks manually:
+
+```bash
+git init
+git config core.hooksPath .githooks
+chmod +x .githooks/pre-commit .githooks/commit-msg
+```
+
+Or via Makefile helper:
+
+```bash
+make setup-hooks
+```
+
+> Ensure you have a POSIX shell environment. Windows users may use Git Bash.
+
+---
+
+## 📖 Commit Message Convention
+
+Use [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) style, e.g.:
+
+```
+feat(auth): add login endpoint
+fix(api): correct HTTP status code
+docs(readme): add usage instructions
+```
+
+---
+
+## 🐳 Docker Support (Optional)
+
+Build and run your app with Docker:
+
+```bash
+docker build -t {{.ProjectName}} .
+docker run -p 8080:8080 {{.ProjectName}}
+```
+
+---
+
+## 📦 Dependencies
+
+* [golangci-lint](https://golangci-lint.run/)
+* [sqlc](https://sqlc.dev/)
+* [gocovmerge](https://github.com/wadey/gocovmerge) (for coverage merging)

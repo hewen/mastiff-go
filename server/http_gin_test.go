@@ -27,7 +27,7 @@ func TestNewGinAPIHandler(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
-	conf := &HTTPConfig{
+	conf := &HTTPConf{
 		Addr:         fmt.Sprintf("localhost:%d", port),
 		PprofEnabled: true,
 		Mode:         "debug",
@@ -77,7 +77,7 @@ func TestGinRecoverHandler(t *testing.T) {
 	assert.Nil(t, err)
 
 	addr := fmt.Sprintf("localhost:%d", port)
-	conf := &HTTPConfig{
+	conf := &HTTPConf{
 		Addr: addr,
 	}
 

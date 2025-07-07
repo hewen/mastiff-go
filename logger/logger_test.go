@@ -1,14 +1,23 @@
 package logger
 
 import (
+	"bufio"
+	"bytes"
 	"context"
+	"errors"
+	"io"
+	"log"
 	"net/http/httptest"
 	"os"
+	"path/filepath"
+	"strings"
+	"sync"
 	"testing"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func TestSetLevelError(t *testing.T) {
@@ -71,9 +80,6 @@ func TestInitLogger(t *testing.T) {
 
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(t, err)
-	defer func() {
-		_ = os.Remove(tmpFile.Name())
-	}()
 
 	err = InitLogger(Config{
 		Level:   "INFO",
@@ -134,4 +140,96 @@ func TestNewOutgoingContextFromIncomingContext(t *testing.T) {
 	ctx = NewOutgoingContextWithIncomingContext(context.TODO())
 	l = NewLoggerWithContext(ctx)
 	assert.NotEqual(t, traceID, l.traceID)
+}
+
+func TestRotateAndLog(t *testing.T) {
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(t, err)
+
+	logger := &lumberjack.Logger{
+		Filename: tmpFile.Name(),
+	}
+
+	rotateAndLog(logger)
+}
+
+type mockErrorLogger struct{}
+
+func (m *mockErrorLogger) Rotate() error {
+	return errors.New("mock rotate error")
+}
+
+func TestRotateAndLog_Error(t *testing.T) {
+	logger := &mockErrorLogger{}
+
+	var buf bytes.Buffer
+	log.SetOutput(&buf)
+	defer log.SetOutput(os.Stderr)
+
+	rotateAndLog(logger)
+
+	assert.Contains(t, buf.String(), "log rotation failed")
+}
+
+func TestConcurrentLogging(t *testing.T) {
+	tmpFile := filepath.Join(os.TempDir(), "concurrent.log")
+	_ = os.Remove(tmpFile)
+
+	logger := &lumberjack.Logger{
+		Filename:   tmpFile,
+		MaxSize:    5, // MB
+		MaxBackups: 3,
+		MaxAge:     7, // days
+		Compress:   false,
+	}
+
+	defer func() {
+		_ = logger.Close()
+		_ = os.Remove(tmpFile)
+	}()
+
+	log.SetOutput(io.MultiWriter(logger, os.Stdout))
+	log.SetFlags(log.LstdFlags | log.Lmicroseconds)
+
+	const goroutines = 50
+	const logsPerGoroutine = 1000
+
+	var wg sync.WaitGroup
+	wg.Add(goroutines)
+
+	for i := 0; i < goroutines; i++ {
+		go func(id int) {
+			defer wg.Done()
+			for j := 0; j < logsPerGoroutine; j++ {
+				log.Printf("goroutine-%02d log line number %05d", id, j)
+			}
+		}(i)
+	}
+
+	wg.Wait()
+
+	file, err := os.Open(tmpFile) // #nosec
+	if err != nil {
+		t.Fatalf("failed to open log file: %v", err)
+	}
+	defer func() {
+		_ = file.Close()
+	}()
+
+	scanner := bufio.NewScanner(file)
+	linesCount := 0
+	for scanner.Scan() {
+		line := scanner.Text()
+		if !strings.Contains(line, "goroutine-") {
+			t.Errorf("log line format unexpected: %s", line)
+		}
+		linesCount++
+	}
+
+	expectedLines := goroutines * logsPerGoroutine
+	if linesCount < expectedLines {
+		t.Errorf("log lines lost: got %d, expected at least %d", linesCount, expectedLines)
+	} else {
+		t.Logf("all logs written successfully: %d lines", linesCount)
+	}
 }

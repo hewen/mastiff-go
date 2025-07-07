@@ -15,6 +15,7 @@ import (
 // DB represents a database connection with sqlx capabilities.
 type DB struct {
 	*sqlx.DB
+	DataSourceName string
 }
 
 // DatabaseOption defines options for initializing a database connection.
@@ -63,7 +64,7 @@ func InitDB(driverName, dataSourceName string, driver driver.Driver, opt ...Data
 		return nil, err
 	}
 
-	return &DB{sqlx.NewDb(conn, driverName)}, nil
+	return &DB{DB: sqlx.NewDb(conn, driverName), DataSourceName: dataSourceName}, nil
 }
 
 // registerHookDriver registers a driver with sqlhooks if it is not already registered.

@@ -13,8 +13,8 @@ import (
 )
 
 var (
-	// ErrEmptyHTTPConfig is returned when the HTTP config is empty.
-	ErrEmptyHTTPConfig = errors.New("empty http config")
+	// ErrEmptyHTTPConf is returned when the HTTP config is empty.
+	ErrEmptyHTTPConf = errors.New("empty http config")
 )
 
 const (
@@ -33,9 +33,9 @@ type HTTPService struct {
 }
 
 // NewHTTPServer creates a new HTTP server.
-func NewHTTPServer(conf *HTTPConfig, initRoute func(r *gin.Engine)) (*HTTPService, error) {
+func NewHTTPServer(conf *HTTPConf, initRoute func(r *gin.Engine)) (*HTTPService, error) {
 	if conf == nil {
-		return nil, ErrEmptyHTTPConfig
+		return nil, ErrEmptyHTTPConf
 	}
 
 	if conf.TimeoutRead == 0 {
