@@ -2,6 +2,12 @@ syntax = "proto3";
 
 package test;
 
+option go_package = "github.com/hewen/mastiff-go/server/test";
+
+service Test {
+  rpc Echo(TestMsg) returns (TestMsg) {}
+}
+
 message TestMsg {
   int32 id = 1;
   string name = 2;

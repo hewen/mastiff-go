@@ -61,7 +61,11 @@ func NewGrpcServer(conf *GrpcConf, registerServerFunc func(*grpc.Server), interc
 
 	var serverInterceptors []grpc.UnaryServerInterceptor
 
-	serverInterceptors = append(serverInterceptors, srv.timeoutInterceptor(time.Duration(conf.Timeout)*time.Second), srv.middleware)
+	serverInterceptors = append(serverInterceptors,
+		srv.timeoutInterceptor(time.Duration(conf.Timeout)*time.Second),
+		srv.loggerInterceptor,
+	)
+
 	if len(interceptors) > 0 {
 		serverInterceptors = append(serverInterceptors, interceptors...)
 	}
@@ -115,7 +119,7 @@ func (s *GrpcServer) Stop() {
 }
 
 // middleware is a gRPC interceptor that logs the request and response details, including execution time and any errors.
-func (s *GrpcServer) middleware(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+func (s *GrpcServer) loggerInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	begin := time.Now()
 	pr, ok := peer.FromContext(ctx)
 	var addr string
@@ -134,7 +138,7 @@ func (s *GrpcServer) middleware(ctx context.Context, req any, info *grpc.UnarySe
 		time.Since(begin),
 		addr,
 		info.FullMethod,
-		"grpc-go",
+		"GRPC-GO-SERVER",
 		fmt.Sprintf("%v", req),
 		fmt.Sprintf("%v", resp),
 		err,
@@ -165,5 +169,36 @@ func (s *GrpcServer) timeoutInterceptor(timeout time.Duration) grpc.UnaryServerI
 		defer cancel()
 
 		return handler(ctx, req)
+	}
+}
+
+// NewGrpcClientLoggerInterceptor creates a gRPC client interceptor that logs the request and response details, including execution time and any errors.
+func NewGrpcClientLoggerInterceptor() grpc.UnaryClientInterceptor {
+	return func(
+		ctx context.Context,
+		method string,
+		req any,
+		reply any,
+		cc *grpc.ClientConn,
+		invoker grpc.UnaryInvoker,
+		opts ...grpc.CallOption,
+	) error {
+		start := time.Now()
+		l := logger.NewLoggerWithContext(ctx)
+		err := invoker(ctx, method, req, reply, cc, opts...)
+
+		LogRequest(
+			l,
+			0,
+			time.Since(start),
+			cc.Target(),
+			method,
+			"GRPC-GO-CLIENT",
+			fmt.Sprintf("%v", req),
+			fmt.Sprintf("%v", reply),
+			err,
+		)
+
+		return err
 	}
 }
