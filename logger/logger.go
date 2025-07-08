@@ -13,9 +13,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
-	"github.com/teris-io/shortid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc/metadata"
@@ -146,6 +146,7 @@ func InitLogger(conf Config) error {
 		zl := newZeroLogger(out)
 		defaultLogger = &zerologLogger{logger: zl, traceID: traceID}
 	}
+
 	return err
 }
 
@@ -218,7 +219,7 @@ func SetLevel(level LogLevel) error {
 
 // NewTraceID generates a new trace ID using the shortid package.
 func NewTraceID() string {
-	id, _ := shortid.Generate()
+	id, _ := gonanoid.New()
 	return id
 }
 

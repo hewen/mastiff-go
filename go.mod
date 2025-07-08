@@ -11,12 +11,12 @@ require (
 	github.com/go-sql-driver/mysql v1.9.3
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/panjf2000/ants/v2 v2.11.3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.34.0
 	github.com/spf13/cobra v0.0.3
 	github.com/stretchr/testify v1.10.0
-	github.com/teris-io/shortid v0.0.0-20220617161101-71ec9f2aa569
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	go.uber.org/automaxprocs v1.6.0
 	go.uber.org/zap v1.18.1
