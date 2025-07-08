@@ -9,7 +9,7 @@ import (
 )
 
 // LogRequest logs a request.
-func LogRequest(l *logger.Logger, statusCode int, duration time.Duration, ip, method, ua, req, resp string, err error) {
+func LogRequest(l logger.Logger, statusCode int, duration time.Duration, ip, method, ua, req, resp string, err error) {
 	msg := fmt.Sprintf("%3d | %10s | %-15s | %-30s | UA: %s",
 		statusCode,
 		util.FormatDuration(duration),

@@ -5,6 +5,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"log"
 	"net/http/httptest"
@@ -29,42 +30,50 @@ func TestSetLevelError(t *testing.T) {
 }
 
 func TestLogger(t *testing.T) {
-	err := SetLevel(LogLevelInfo)
-	assert.Nil(t, err)
-	trace := NewTraceID()
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, LoggerTraceKey, trace)
-
-	testCase := []struct {
-		l        *Logger
-		traceRes bool
-	}{
-		{
-			l:        NewLogger(),
-			traceRes: false,
-		},
-		{
-			l:        NewLoggerWithContext(context.Background()),
-			traceRes: false,
-		},
-		{
-			l:        NewLoggerWithTraceID(trace),
-			traceRes: true,
-		},
-		{
-			l:        NewLoggerWithContext(ctx),
-			traceRes: true,
-		},
+	backends := []string{
+		"std", "zap", "zerolog",
 	}
-	for i := range testCase {
-		l := testCase[i].l
-		assert.Equal(t, testCase[i].traceRes, l.GetTraceID() == trace)
-		l.Debugf("tmp")
-		l.Infof("tmp")
-		l.Errorf("tmp")
-		l.Warnf("tmp")
-		l.Panicf("tmp")
-		l.Fatalf("tmp")
+
+	for i := range backends {
+		err := InitLogger(Config{
+			Backend: backends[i],
+		})
+		assert.Nil(t, err)
+		trace := NewTraceID()
+		ctx := context.Background()
+		ctx = context.WithValue(ctx, LoggerTraceKey, trace)
+
+		testCase := []struct {
+			l        Logger
+			traceRes bool
+		}{
+			{
+				l:        NewLogger(),
+				traceRes: false,
+			},
+			{
+				l:        NewLoggerWithContext(context.Background()),
+				traceRes: false,
+			},
+			{
+				l:        NewLoggerWithTraceID(trace),
+				traceRes: true,
+			},
+			{
+				l:        NewLoggerWithContext(ctx),
+				traceRes: true,
+			},
+		}
+		for i := range testCase {
+			l := testCase[i].l
+			assert.Equal(t, testCase[i].traceRes, l.GetTraceID() == trace, fmt.Sprintf("case: %v logger trace: %v trace:%v", i, l.GetTraceID(), trace))
+			l.Debugf("tmp")
+			l.Infof("tmp")
+			l.Errorf("tmp")
+			l.Warnf("tmp")
+			l.Panicf("tmp")
+			l.Fatalf("tmp")
+		}
 	}
 }
 
@@ -109,7 +118,7 @@ func TestNewLoggerWithGinContext(t *testing.T) {
 	ctx.Set(string(LoggerTraceKey), traceID)
 
 	l := NewLoggerWithGinContext(ctx)
-	assert.Equal(t, traceID, l.traceID)
+	assert.Equal(t, traceID, l.GetTraceID())
 }
 
 func TestNewOutgoingContextFromGinContext(t *testing.T) {
@@ -135,11 +144,11 @@ func TestNewOutgoingContextFromIncomingContext(t *testing.T) {
 
 	ctx := NewOutgoingContextWithIncomingContext(ictx)
 	l := NewLoggerWithContext(ctx)
-	assert.Equal(t, traceID, l.traceID)
+	assert.Equal(t, traceID, l.GetTraceID())
 
 	ctx = NewOutgoingContextWithIncomingContext(context.TODO())
 	l = NewLoggerWithContext(ctx)
-	assert.NotEqual(t, traceID, l.traceID)
+	assert.NotEqual(t, traceID, l.GetTraceID())
 }
 
 func TestRotateAndLog(t *testing.T) {

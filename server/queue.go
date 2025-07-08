@@ -24,7 +24,7 @@ type QueueServer[T any] struct {
 	done               chan struct{}
 	handler            QueueHandler[T]
 	pool               *ants.Pool
-	logger             *logger.Logger
+	logger             logger.Logger
 	poolSize           int
 	EmptySleepInterval time.Duration
 }

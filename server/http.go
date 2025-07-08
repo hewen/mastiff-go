@@ -28,7 +28,7 @@ const (
 type HTTPService struct {
 	addr string
 	s    *http.Server
-	l    *logger.Logger
+	l    logger.Logger
 	mu   sync.Mutex
 }
 

@@ -34,7 +34,7 @@ const (
 type GrpcServer struct {
 	addr string
 	s    *grpc.Server
-	l    *logger.Logger
+	l    logger.Logger
 	ln   net.Listener
 	mu   sync.Mutex
 }
@@ -148,7 +148,7 @@ func (s *GrpcServer) loggerInterceptor(ctx context.Context, req any, info *grpc.
 }
 
 // execHandler executes the handler and recovers from any panic, logging the error if it occurs.
-func (s *GrpcServer) execHandler(ctx context.Context, req any, handler grpc.UnaryHandler, l *logger.Logger) (data any, err error) {
+func (s *GrpcServer) execHandler(ctx context.Context, req any, handler grpc.UnaryHandler, l logger.Logger) (data any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = ErrGrpcExecPanic
