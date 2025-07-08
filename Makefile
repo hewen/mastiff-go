@@ -11,7 +11,7 @@ test:
 	@set -e; \
 	for pkg in $(PKGS); do \
 		name=$$(basename $$pkg); \
-		go test -tags test -covermode=count -coverprofile=$$name.coverprofile -coverpkg=$(COVER_PKG) $$pkg; \
+		go test -tags test -race -tags=gc_opt -coverprofile=$$name.coverprofile -coverpkg=$(COVER_PKG) $$pkg -covermode=atomic -timeout 15m -failfast; \
 	done
 	@$(MAKE) merge-cover
 	@$(MAKE) check-cover

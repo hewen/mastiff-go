@@ -4,7 +4,6 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"runtime/debug"
 	"strings"
@@ -13,7 +12,6 @@ import (
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 	"google.golang.org/grpc/reflection"
@@ -35,7 +33,7 @@ const (
 type GrpcServer struct {
 	addr string
 	s    *grpc.Server
-	l    *logger.Logger
+	l    logger.Logger
 	ln   net.Listener
 	mu   sync.Mutex
 }
@@ -62,7 +60,11 @@ func NewGrpcServer(conf *GrpcConf, registerServerFunc func(*grpc.Server), interc
 
 	var serverInterceptors []grpc.UnaryServerInterceptor
 
-	serverInterceptors = append(serverInterceptors, srv.timeoutInterceptor(time.Duration(conf.Timeout)*time.Second), srv.middleware)
+	serverInterceptors = append(serverInterceptors,
+		srv.timeoutInterceptor(time.Duration(conf.Timeout)*time.Second),
+		srv.loggerInterceptor,
+	)
+
 	if len(interceptors) > 0 {
 		serverInterceptors = append(serverInterceptors, interceptors...)
 	}
@@ -116,7 +118,7 @@ func (s *GrpcServer) Stop() {
 }
 
 // middleware is a gRPC interceptor that logs the request and response details, including execution time and any errors.
-func (s *GrpcServer) middleware(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
+func (s *GrpcServer) loggerInterceptor(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (resp any, err error) {
 	begin := time.Now()
 	pr, ok := peer.FromContext(ctx)
 	var addr string
@@ -129,25 +131,23 @@ func (s *GrpcServer) middleware(ctx context.Context, req any, info *grpc.UnarySe
 
 	resp, err = s.execHandler(ctx, req, handler, l)
 
-	var errStr string
-	if err != nil {
-		errStr = fmt.Sprintf(" | err: %s", err.Error())
-	}
-
-	switch {
-	case errStr != "":
-		l.Errorf("%10s | %15s | %-10s | %v | %v%s", util.FormatDuration(time.Since(begin)), addr, info.FullMethod, req, resp, errStr)
-	case time.Since(begin) > time.Second:
-		l.Infof("SLOW %10s | %15s | %-10s | %v | %v%s", util.FormatDuration(time.Since(begin)), addr, info.FullMethod, req, resp, errStr)
-	default:
-		l.Infof("%10s | %15s | %-10s | %v | %v%s", util.FormatDuration(time.Since(begin)), addr, info.FullMethod, req, resp, errStr)
-	}
+	LogRequest(
+		l,
+		0,
+		time.Since(begin),
+		addr,
+		info.FullMethod,
+		"GRPC-GO-SERVER",
+		req,
+		resp,
+		err,
+	)
 
 	return resp, err
 }
 
 // execHandler executes the handler and recovers from any panic, logging the error if it occurs.
-func (s *GrpcServer) execHandler(ctx context.Context, req any, handler grpc.UnaryHandler, l *logger.Logger) (data any, err error) {
+func (s *GrpcServer) execHandler(ctx context.Context, req any, handler grpc.UnaryHandler, l logger.Logger) (data any, err error) {
 	defer func() {
 		if r := recover(); r != nil {
 			err = ErrGrpcExecPanic
@@ -168,5 +168,36 @@ func (s *GrpcServer) timeoutInterceptor(timeout time.Duration) grpc.UnaryServerI
 		defer cancel()
 
 		return handler(ctx, req)
+	}
+}
+
+// NewGrpcClientLoggerInterceptor creates a gRPC client interceptor that logs the request and response details, including execution time and any errors.
+func NewGrpcClientLoggerInterceptor() grpc.UnaryClientInterceptor {
+	return func(
+		ctx context.Context,
+		method string,
+		req any,
+		reply any,
+		cc *grpc.ClientConn,
+		invoker grpc.UnaryInvoker,
+		opts ...grpc.CallOption,
+	) error {
+		start := time.Now()
+		l := logger.NewLoggerWithContext(ctx)
+		err := invoker(ctx, method, req, reply, cc, opts...)
+
+		LogRequest(
+			l,
+			0,
+			time.Since(start),
+			cc.Target(),
+			method,
+			"GRPC-GO-CLIENT",
+			req,
+			reply,
+			err,
+		)
+
+		return err
 	}
 }

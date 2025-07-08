@@ -3,6 +3,7 @@ package server
 
 import (
 	"bytes"
+	"fmt"
 	"io"
 	"net/http"
 	"runtime/debug"
@@ -12,7 +13,6 @@ import (
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/util"
 	"github.com/tomasen/realip"
 )
 
@@ -65,36 +65,59 @@ func GinLoggerHandler() gin.HandlerFunc {
 			responseBody = "[binary]"
 		}
 
-		log := logger.NewLoggerWithTraceID(traceID)
-		log.Infof(
-			"%3d | %10s | %15s | %-7s | %s | %s | %s | %s | UA: %s | req: %s | resp: %s",
+		l := logger.NewLoggerWithTraceID(traceID)
+		isStatic := isStaticResource(c.Request.URL.Path, respContentType)
+		if isStatic {
+			requestBody = ""
+			responseBody = ""
+		}
+
+		var err error
+		if c.Errors != nil {
+			err = c.Errors.Last().Err
+		}
+
+		LogRequest(
+			l,
 			c.Writer.Status(),
-			util.FormatDuration(time.Since(start)),
+			time.Since(start),
 			realip.FromRequest(c.Request),
-			c.Request.Method,
-			reqContentType,
-			c.Request.Host,
-			c.Request.URL.Path,
-			c.Request.Proto,
+			fmt.Sprintf("%s %s", c.Request.Method, c.Request.URL.Path),
 			c.Request.UserAgent(),
 			requestBody,
 			responseBody,
+			err,
 		)
-
-		if c.Errors != nil {
-			log.Errorf("%v", c.Errors)
-		}
 	}
 }
 
+// isTextContent checks if the content type is text-like.
 func isTextContent(contentType string) bool {
 	ct := strings.ToLower(contentType)
-
 	return strings.Contains(ct, "application/json") ||
 		strings.Contains(ct, "application/xml") ||
 		strings.Contains(ct, "application/x-www-form-urlencoded") ||
 		strings.Contains(ct, "text/") ||
 		strings.Contains(ct, "application/javascript")
+}
+
+// isStaticResource checks if the path or content-type indicates a static resource.
+func isStaticResource(path string, contentType string) bool {
+	exts := []string{
+		".js", ".css", ".html", ".ico", ".svg", ".ttf", ".woff", ".woff2",
+		".eot", ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".map", ".json",
+	}
+	for _, ext := range exts {
+		if strings.HasSuffix(strings.ToLower(path), ext) {
+			return true
+		}
+	}
+	ct := strings.ToLower(contentType)
+	return strings.HasPrefix(ct, "image/") ||
+		strings.Contains(ct, "text/css") ||
+		strings.Contains(ct, "text/html") ||
+		strings.Contains(ct, "application/javascript") ||
+		strings.Contains(ct, "font/")
 }
 
 // GinRecoverHandler is a middleware for recovering from panics in Gin framework.
@@ -103,7 +126,7 @@ func GinRecoverHandler() gin.HandlerFunc {
 		defer func() {
 			if r := recover(); r != nil {
 				l := logger.NewLoggerWithGinContext(c)
-				l.Panicf("%s | %s | %s | $%s", realip.FromRequest(c.Request), c.Request.UserAgent(), r, strings.ReplaceAll(string(debug.Stack()), "\n", "$"))
+				l.Errorf("%s | %s | %s | $%s", realip.FromRequest(c.Request), c.Request.UserAgent(), r, strings.ReplaceAll(string(debug.Stack()), "\n", "$"))
 			}
 		}()
 		c.Next()
