@@ -113,6 +113,10 @@ var (
 	defaultLogger Logger
 )
 
+func init() {
+	zerolog.TimeFieldFormat = time.RFC3339Nano
+}
+
 // InitLogger initializes the global logger with the given configuration.
 func InitLogger(conf Config) error {
 	err := SetLevel(conf.Level)
@@ -190,7 +194,6 @@ func newZapLogger(out io.Writer) *zap.Logger {
 
 // newZeroLogger creates a new zerolog logger with the specified output.
 func newZeroLogger(out io.Writer) zerolog.Logger {
-	zerolog.TimeFieldFormat = time.RFC3339Nano
 	return zerolog.New(out).With().Timestamp().Logger()
 }
 

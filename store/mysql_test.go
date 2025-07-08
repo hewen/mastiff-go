@@ -72,11 +72,14 @@ func TestGetContext(t *testing.T) {
 }
 
 func TestInitDB_WithoutHookDriver(t *testing.T) {
+	db, err := InitMockMysql("./test/")
+	assert.Nil(t, err)
+
 	driverName := "mysql"
-	dataSource := "root:password@tcp(127.0.0.1:3306)/test"
+	dataSource := db.DataSourceName
 	driver := mysql.MySQLDriver{}
 
-	db, err := InitDB(driverName, dataSource, driver, DatabaseOption{
+	_, err = InitDB(driverName, dataSource, driver, DatabaseOption{
 		RegisterHookDriver: false,
 		Hook:               &SQLHooks{},
 		MaxIdleConns:       1,
@@ -84,7 +87,5 @@ func TestInitDB_WithoutHookDriver(t *testing.T) {
 		ConnMaxLifetime:    time.Minute,
 	})
 
-	assert.Nil(t, db)
-	assert.NotNil(t, err)
-	assert.Contains(t, err.Error(), "dial")
+	assert.Nil(t, err)
 }
