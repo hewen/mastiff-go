@@ -1,147 +1,151 @@
-package logger
+package server
 
 import (
+	"bytes"
 	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"testing"
 
+	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/logger"
 	"github.com/stretchr/testify/assert"
 )
 
-func BenchmarkStdLogger(b *testing.B) {
+func BenchmarkGinHttpStdLogger(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "std",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	l := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	b.ResetTimer()
 	fmt.Println("")
 	for i := 0; i < b.N; i++ {
-		l.Infof("Benchmark std logger test message #%d", i)
+		testGinLogger()
 	}
 }
 
-func BenchmarkZapLogger(b *testing.B) {
+func BenchmarkGinHttpZapLogger(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "zap",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	l := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	b.ResetTimer()
 	fmt.Println("")
 	for i := 0; i < b.N; i++ {
-		l.Infof("Benchmark zap logger test message #%d", i)
+		testGinLogger()
 	}
 }
 
-func BenchmarkZerologLogger(b *testing.B) {
+func BenchmarkGinHttpZerologLogger(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "zerolog",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	l := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	b.ResetTimer()
 	fmt.Println("")
 	for i := 0; i < b.N; i++ {
-		l.Infof("Benchmark zer logger test message #%d", i)
+		testGinLogger()
 	}
 }
 
-func BenchmarkStdLoggerParallel(b *testing.B) {
+func BenchmarkGinHttpStdLoggerParallel(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "std",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	logger := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	fmt.Println("")
 	b.SetParallelism(10)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Infof("Benchmark std logger test message")
+			testGinLogger()
 		}
 	})
 }
 
-func BenchmarkZapLoggerParallel(b *testing.B) {
+func BenchmarkGinHttpZapLoggerParallel(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "zap",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	logger := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	fmt.Println("")
 	b.SetParallelism(10)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Infof("Benchmark zap logger test message")
+			testGinLogger()
 		}
 	})
 }
 
-func BenchmarkZerologLoggerParallel(b *testing.B) {
+func BenchmarkGinHttpZerologLoggerParallel(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "zerolog",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	logger := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	fmt.Println("")
 	b.SetParallelism(10)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Infof("Benchmark zer logger test message")
+			testGinLogger()
 		}
 	})
+}
+
+func testGinLogger() {
+	handler := GinLoggerHandler()
+	gin.SetMode(gin.ReleaseMode)
+	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ctx.Request, _ = http.NewRequest("GET", "/test", bytes.NewReader([]byte("{'test':1}")))
+	ctx.Request.Header.Add("Content-Type", "application/json")
+	ctx.Request.Header.Set("User-Agent", "GIN-GO-SERVER")
+
+	handler(ctx)
 }

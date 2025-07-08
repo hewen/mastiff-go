@@ -126,7 +126,7 @@ func GinRecoverHandler() gin.HandlerFunc {
 		defer func() {
 			if r := recover(); r != nil {
 				l := logger.NewLoggerWithGinContext(c)
-				l.Panicf("%s | %s | %s | $%s", realip.FromRequest(c.Request), c.Request.UserAgent(), r, strings.ReplaceAll(string(debug.Stack()), "\n", "$"))
+				l.Errorf("%s | %s | %s | $%s", realip.FromRequest(c.Request), c.Request.UserAgent(), r, strings.ReplaceAll(string(debug.Stack()), "\n", "$"))
 			}
 		}()
 		c.Next()

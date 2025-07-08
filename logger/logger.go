@@ -5,10 +5,12 @@ package logger
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
@@ -47,17 +49,26 @@ const (
 	LogLevelFlagDebug LogLevelFlag = 6
 
 	// LogLevelFatal is the log level string for fatal errors.
-	LogLevelFatal LogLevel = "FATAL"
+	LogLevelFatal LogLevel = "fatal"
 	// LogLevelPanic is the log level string for panic errors.
-	LogLevelPanic LogLevel = "PANIC"
+	LogLevelPanic LogLevel = "panic"
 	// LogLevelError is the log level string for error messages.
-	LogLevelError LogLevel = "ERROR"
+	LogLevelError LogLevel = "error"
 	// LogLevelWarn is the log level string for warning messages.
-	LogLevelWarn LogLevel = "WARN"
+	LogLevelWarn LogLevel = "warn"
 	// LogLevelInfo is the log level string for informational messages.
-	LogLevelInfo LogLevel = "INFO"
+	LogLevelInfo LogLevel = "info"
 	// LogLevelDebug is the log level string for debug messages.
-	LogLevelDebug LogLevel = "DEBUG"
+	LogLevelDebug LogLevel = "debug"
+
+	// TimestampFieldName is the field name for the timestamp in log entries.
+	TimestampFieldName = "time"
+	// LevelFieldName is the field name for the log level in log entries.
+	LevelFieldName = "level"
+	// TraceFieldName is the field name for the trace ID in log entries.
+	TraceFieldName = "trace"
+	// MessageFieldName is the field name for the log message in log entries.
+	MessageFieldName = "message"
 )
 
 var (
@@ -93,6 +104,8 @@ type Logger interface {
 	Errorf(format string, v ...any)
 	Panicf(format string, v ...any)
 	Fatalf(format string, v ...any)
+
+	Fields(fields map[string]any) Logger
 }
 
 var (
@@ -122,10 +135,12 @@ func InitLogger(conf Config) error {
 	case "zerolog":
 		zl := newZeroLogger(out)
 		defaultLogger = &zerologLogger{logger: zl, traceID: traceID}
-	default:
-		// std
+	case "std":
 		stdLog := newStdLogger(out)
 		defaultLogger = &stdLogger{logger: stdLog, traceID: traceID}
+	default:
+		zl := newZeroLogger(out)
+		defaultLogger = &zerologLogger{logger: zl, traceID: traceID}
 	}
 	return err
 }
@@ -161,25 +176,27 @@ func newZapLogger(out io.Writer) *zap.Logger {
 	writeSyncer := zapcore.AddSync(out)
 
 	encoderConfig := zap.NewProductionEncoderConfig()
-	encoderConfig.TimeKey = "ts"
-	encoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+	encoderConfig.TimeKey = TimestampFieldName
+	encoderConfig.MessageKey = MessageFieldName
+	encoderConfig.EncodeTime = zapcore.RFC3339NanoTimeEncoder
 
 	encoder := zapcore.NewJSONEncoder(encoderConfig)
 	core := zapcore.NewCore(encoder, writeSyncer, zap.InfoLevel)
 
-	logger := zap.New(core, zap.AddCaller())
+	logger := zap.New(core)
 
 	return logger
 }
 
 // newZeroLogger creates a new zerolog logger with the specified output.
 func newZeroLogger(out io.Writer) zerolog.Logger {
+	zerolog.TimeFieldFormat = time.RFC3339Nano
 	return zerolog.New(out).With().Timestamp().Logger()
 }
 
 // newStdLogger creates a new standard logger with the specified output.
 func newStdLogger(out io.Writer) *log.Logger {
-	return log.New(out, "", log.Ldate|log.Lmicroseconds)
+	return log.New(out, "", 0)
 }
 
 // SetLevel sets the global logging level.
@@ -246,7 +263,7 @@ func NewLoggerWithTraceID(traceID string) Logger {
 	case *zerologLogger:
 		return &zerologLogger{logger: v.logger, traceID: traceID}
 	default:
-		return &stdLogger{logger: log.Default(), traceID: traceID}
+		return &zerologLogger{logger: newZeroLogger(os.Stdout), traceID: traceID}
 	}
 }
 
@@ -279,6 +296,7 @@ func NewOutgoingContextWithGinContext(ctx *gin.Context) context.Context {
 type stdLogger struct {
 	logger  *log.Logger
 	traceID string
+	fields  map[string]any
 }
 
 func (l *stdLogger) GetTraceID() string { return l.traceID }
@@ -287,8 +305,17 @@ func (l *stdLogger) logOutput(level LogLevelFlag, format string, v ...any) {
 	if level > logLevel {
 		return
 	}
-	prefix := fmt.Sprintf("[%s] [%s]", l.GetTraceID(), logLevelValueMap[level])
-	_ = l.logger.Output(3, prefix+" "+fmt.Sprintf(format, v...))
+	fields := make(map[string]any, len(l.fields)+2)
+	for i := range l.fields {
+		fields[i] = l.fields[i]
+	}
+
+	fields[TimestampFieldName] = time.Now()
+	fields[LevelFieldName] = string(logLevelValueMap[level])
+	fields[TraceFieldName] = l.GetTraceID()
+	fields[MessageFieldName] = fmt.Sprintf(format, v...)
+	b, _ := json.Marshal(fields)
+	_ = l.logger.Output(3, string(b))
 }
 
 func (l *stdLogger) Debugf(format string, v ...any) { l.logOutput(LogLevelFlagDebug, format, v...) }
@@ -297,6 +324,17 @@ func (l *stdLogger) Warnf(format string, v ...any)  { l.logOutput(LogLevelFlagWa
 func (l *stdLogger) Errorf(format string, v ...any) { l.logOutput(LogLevelFlagError, format, v...) }
 func (l *stdLogger) Panicf(format string, v ...any) { l.logOutput(LogLevelFlagPanic, format, v...) }
 func (l *stdLogger) Fatalf(format string, v ...any) { l.logOutput(LogLevelFlagFatal, format, v...) }
+func (l *stdLogger) Fields(fields map[string]any) Logger {
+	merged := make(map[string]any, len(l.fields)+len(fields))
+	for i := range l.fields {
+		merged[i] = l.fields[i]
+	}
+	for i := range fields {
+		merged[i] = fields[i]
+	}
+	l.fields = merged
+	return l
+}
 
 // zapLogger is a Logger implementation using Uber's zap package.
 type zapLogger struct {
@@ -310,10 +348,23 @@ func (l *zapLogger) logOutput(level LogLevelFlag, format string, v ...any) {
 	if level > logLevel {
 		return
 	}
-	l.logger.
-		With("loglevel", string(logLevelValueMap[level])).
-		With("trace", l.GetTraceID()).
-		Infof(format, v...)
+
+	zl := l.logger.With(TraceFieldName, l.GetTraceID())
+
+	switch level {
+	case LogLevelFlagDebug:
+		zl.Debugf(format, v...)
+	case LogLevelFlagInfo:
+		zl.Infof(format, v...)
+	case LogLevelFlagWarn:
+		zl.Warnf(format, v...)
+	case LogLevelFlagError:
+		zl.Errorf(format, v...)
+	case LogLevelFlagPanic:
+		zl.Panicf(format, v...)
+	case LogLevelFlagFatal:
+		zl.Fatalf(format, v...)
+	}
 }
 
 func (l *zapLogger) Debugf(format string, v ...any) { l.logOutput(LogLevelFlagDebug, format, v...) }
@@ -322,6 +373,12 @@ func (l *zapLogger) Warnf(format string, v ...any)  { l.logOutput(LogLevelFlagWa
 func (l *zapLogger) Errorf(format string, v ...any) { l.logOutput(LogLevelFlagError, format, v...) }
 func (l *zapLogger) Panicf(format string, v ...any) { l.logOutput(LogLevelFlagPanic, format, v...) }
 func (l *zapLogger) Fatalf(format string, v ...any) { l.logOutput(LogLevelFlagFatal, format, v...) }
+func (l *zapLogger) Fields(fields map[string]any) Logger {
+	for k, v := range fields {
+		l.logger = l.logger.With(k, v)
+	}
+	return l
+}
 
 // zerologLogger is a Logger implementation using the zerolog package.
 type zerologLogger struct {
@@ -335,10 +392,23 @@ func (l *zerologLogger) logOutput(level LogLevelFlag, format string, v ...any) {
 	if level > logLevel {
 		return
 	}
-	l.logger.Info().
-		Str("loglevel", string(logLevelValueMap[level])).
-		Str("strace", l.GetTraceID()).
-		Msgf(format, v...)
+	var e *zerolog.Event
+	switch level {
+	case LogLevelFlagDebug:
+		e = l.logger.Debug()
+	case LogLevelFlagInfo:
+		e = l.logger.Info()
+	case LogLevelFlagWarn:
+		e = l.logger.Warn()
+	case LogLevelFlagError:
+		e = l.logger.Error()
+	case LogLevelFlagPanic:
+		e = l.logger.Panic()
+	case LogLevelFlagFatal:
+		e = l.logger.Fatal()
+	}
+
+	e.Str(TraceFieldName, l.GetTraceID()).Msgf(format, v...)
 }
 
 func (l *zerologLogger) Debugf(format string, v ...any) { l.logOutput(LogLevelFlagDebug, format, v...) }
@@ -347,3 +417,7 @@ func (l *zerologLogger) Warnf(format string, v ...any)  { l.logOutput(LogLevelFl
 func (l *zerologLogger) Errorf(format string, v ...any) { l.logOutput(LogLevelFlagError, format, v...) }
 func (l *zerologLogger) Panicf(format string, v ...any) { l.logOutput(LogLevelFlagPanic, format, v...) }
 func (l *zerologLogger) Fatalf(format string, v ...any) { l.logOutput(LogLevelFlagFatal, format, v...) }
+func (l *zerologLogger) Fields(fields map[string]any) Logger {
+	l.logger = l.logger.With().Fields(fields).Logger()
+	return l
+}

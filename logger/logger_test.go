@@ -10,7 +10,7 @@ import (
 	"log"
 	"net/http/httptest"
 	"os"
-	"path/filepath"
+	"os/exec"
 	"strings"
 	"sync"
 	"testing"
@@ -30,6 +30,10 @@ func TestSetLevelError(t *testing.T) {
 }
 
 func TestLogger(t *testing.T) {
+	defer func() {
+		_ = recover()
+	}()
+
 	backends := []string{
 		"std", "zap", "zerolog",
 	}
@@ -37,6 +41,7 @@ func TestLogger(t *testing.T) {
 	for i := range backends {
 		err := InitLogger(Config{
 			Backend: backends[i],
+			Level:   LogLevelDebug,
 		})
 		assert.Nil(t, err)
 		trace := NewTraceID()
@@ -67,13 +72,96 @@ func TestLogger(t *testing.T) {
 		for i := range testCase {
 			l := testCase[i].l
 			assert.Equal(t, testCase[i].traceRes, l.GetTraceID() == trace, fmt.Sprintf("case: %v logger trace: %v trace:%v", i, l.GetTraceID(), trace))
+			l.Fields(map[string]any{
+				"test": "test",
+			})
 			l.Debugf("tmp")
 			l.Infof("tmp")
 			l.Errorf("tmp")
 			l.Warnf("tmp")
-			l.Panicf("tmp")
-			l.Fatalf("tmp")
 		}
+	}
+}
+
+func TestStdLoggerPanicAndFatalf(_ *testing.T) {
+	_ = InitLogger(Config{
+		Backend: "std",
+	})
+	NewLogger().Panicf("tmp")
+	NewLogger().Fatalf("tmp")
+}
+
+func TestZapLoggerPanic(_ *testing.T) {
+	defer func() {
+		_ = recover()
+	}()
+	_ = InitLogger(Config{
+		Backend: "zap",
+	})
+	NewLogger().Panicf("test")
+}
+
+func TestZerologLoggerPanic(_ *testing.T) {
+	defer func() {
+		_ = recover()
+	}()
+	_ = InitLogger(Config{
+		Backend: "zerolog",
+	})
+	NewLogger().Panicf("test")
+}
+
+func TestZapLoggerFatalf(t *testing.T) {
+	const fatalEnv = "TEST_FATAL"
+	if os.Getenv(fatalEnv) == "1" {
+		_ = InitLogger(Config{
+			Backend: "zap",
+			Level:   LogLevelDebug,
+		})
+		NewLogger().Fatalf("fatal test")
+		return
+	}
+
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatalf("failed to get executable path: %v", err)
+	}
+
+	cmd := exec.Command(exe, "-test.run=TestZapLoggerFatalf") // #nosec
+	cmd.Env = append(os.Environ(), fatalEnv+"=1")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+	if err == nil {
+		t.Fatal("expected Fatalf to call os.Exit(1), but it did not")
+	}
+}
+
+func TestZerologLoggerFatalf(t *testing.T) {
+	const fatalEnv = "TEST_FATAL"
+	if os.Getenv(fatalEnv) == "1" {
+		_ = InitLogger(Config{
+			Backend: "zerolog",
+			Level:   LogLevelDebug,
+		})
+		NewLogger().Fatalf("fatal test")
+		return
+	}
+
+	exe, err := os.Executable()
+	if err != nil {
+		t.Fatalf("failed to get executable path: %v", err)
+	}
+
+	cmd := exec.Command(exe, "-test.run=TestZerologLoggerFatalf") // #nosec
+	cmd.Env = append(os.Environ(), fatalEnv+"=1")
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	err = cmd.Run()
+	if err == nil {
+		t.Fatal("expected Fatalf to call os.Exit(1), but it did not")
 	}
 }
 
@@ -82,16 +170,19 @@ func TestInitLogger(t *testing.T) {
 	assert.Nil(t, err)
 
 	err = InitLogger(Config{
-		Level:   "INFO",
+		Level:   LogLevelInfo,
 		MaxSize: 100,
 	})
 	assert.Nil(t, err)
 
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(t, err)
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
 
 	err = InitLogger(Config{
-		Level:   "INFO",
+		Level:   LogLevelInfo,
 		Output:  tmpFile.Name(),
 		MaxSize: 100,
 	})
@@ -155,6 +246,10 @@ func TestRotateAndLog(t *testing.T) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(t, err)
 
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
+
 	logger := &lumberjack.Logger{
 		Filename: tmpFile.Name(),
 	}
@@ -181,11 +276,10 @@ func TestRotateAndLog_Error(t *testing.T) {
 }
 
 func TestConcurrentLogging(t *testing.T) {
-	tmpFile := filepath.Join(os.TempDir(), "concurrent.log")
-	_ = os.Remove(tmpFile)
-
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(t, err)
 	logger := &lumberjack.Logger{
-		Filename:   tmpFile,
+		Filename:   tmpFile.Name(),
 		MaxSize:    5, // MB
 		MaxBackups: 3,
 		MaxAge:     7, // days
@@ -194,7 +288,7 @@ func TestConcurrentLogging(t *testing.T) {
 
 	defer func() {
 		_ = logger.Close()
-		_ = os.Remove(tmpFile)
+		_ = os.Remove(tmpFile.Name())
 	}()
 
 	log.SetOutput(io.MultiWriter(logger, os.Stdout))
@@ -217,15 +311,7 @@ func TestConcurrentLogging(t *testing.T) {
 
 	wg.Wait()
 
-	file, err := os.Open(tmpFile) // #nosec
-	if err != nil {
-		t.Fatalf("failed to open log file: %v", err)
-	}
-	defer func() {
-		_ = file.Close()
-	}()
-
-	scanner := bufio.NewScanner(file)
+	scanner := bufio.NewScanner(tmpFile)
 	linesCount := 0
 	for scanner.Scan() {
 		line := scanner.Text()

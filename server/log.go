@@ -1,37 +1,35 @@
 package server
 
 import (
-	"fmt"
 	"time"
 
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/util"
 )
 
 // LogRequest logs a request.
-func LogRequest(l logger.Logger, statusCode int, duration time.Duration, ip, method, ua, req, resp string, err error) {
-	msg := fmt.Sprintf("%3d | %10s | %-15s | %-30s | UA: %s",
-		statusCode,
-		util.FormatDuration(duration),
-		ip,
-		method,
-		ua,
-	)
-
-	if req != "" || resp != "" {
-		msg += fmt.Sprintf(" | req: %s", req)
-		msg += fmt.Sprintf(" | resp: %s", resp)
+// LogRequest logs an HTTP or gRPC request in structured format (JSON-style if backend supports).
+func LogRequest(l logger.Logger, statusCode int, duration time.Duration, ip, method, ua string, req, resp any, err error) {
+	// Type assertion to see if logger backend supports structured logging (e.g. zerologLogger).
+	fields := map[string]any{
+		"status":   statusCode,
+		"duration": duration.String(),
+		"ip":       ip,
+		"method":   method,
+		"ua":       ua,
+		"req":      req,
+		"resp":     resp,
 	}
 	if err != nil {
-		msg += fmt.Sprintf(" | err: %v", err)
+		fields["err"] = err.Error()
 	}
 
+	l.Fields(fields)
 	switch {
 	case err != nil:
-		l.Errorf(msg)
+		l.Errorf("req")
 	case duration > time.Second:
-		l.Infof("[SLOW] " + msg)
+		l.Infof("slow req")
 	default:
-		l.Infof(msg)
+		l.Infof("req")
 	}
 }

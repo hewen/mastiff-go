@@ -1,147 +1,147 @@
-package logger
+package server
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"testing"
 
+	"github.com/hewen/mastiff-go/logger"
 	"github.com/stretchr/testify/assert"
+	"google.golang.org/grpc"
 )
 
-func BenchmarkStdLogger(b *testing.B) {
+func BenchmarkGrpcStdLogger(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "std",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	l := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	b.ResetTimer()
 	fmt.Println("")
 	for i := 0; i < b.N; i++ {
-		l.Infof("Benchmark std logger test message #%d", i)
+		testLoggerInterceptor()
 	}
 }
 
-func BenchmarkZapLogger(b *testing.B) {
+func BenchmarkGrpcZapLogger(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "zap",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	l := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	b.ResetTimer()
 	fmt.Println("")
 	for i := 0; i < b.N; i++ {
-		l.Infof("Benchmark zap logger test message #%d", i)
+		testLoggerInterceptor()
 	}
 }
 
-func BenchmarkZerologLogger(b *testing.B) {
+func BenchmarkGrpcZerologLogger(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "zerolog",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	l := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	b.ResetTimer()
 	fmt.Println("")
 	for i := 0; i < b.N; i++ {
-		l.Infof("Benchmark zer logger test message #%d", i)
+		testLoggerInterceptor()
 	}
 }
 
-func BenchmarkStdLoggerParallel(b *testing.B) {
+func BenchmarkGrpcStdLoggerParallel(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "std",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	logger := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	fmt.Println("")
 	b.SetParallelism(10)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Infof("Benchmark std logger test message")
+			testLoggerInterceptor()
 		}
 	})
 }
 
-func BenchmarkZapLoggerParallel(b *testing.B) {
+func BenchmarkGrpcZapLoggerParallel(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "zap",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	logger := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	fmt.Println("")
 	b.SetParallelism(10)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Infof("Benchmark zap logger test message")
+			testLoggerInterceptor()
 		}
 	})
 }
 
-func BenchmarkZerologLoggerParallel(b *testing.B) {
+func BenchmarkGrpcZerologLoggerParallel(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = logger.InitLogger(logger.Config{
 		Backend: "zerolog",
 		Output:  tmpFile.Name(),
 	})
 	assert.Nil(b, err)
 
-	logger := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
-
 	fmt.Println("")
 	b.SetParallelism(10)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			logger.Infof("Benchmark zer logger test message")
+			testLoggerInterceptor()
 		}
+	})
+}
+
+func testLoggerInterceptor() {
+	gs := GrpcServer{}
+	_, _ = gs.loggerInterceptor(context.TODO(), nil, &grpc.UnaryServerInfo{
+		FullMethod: "test",
+	}, func(_ context.Context, _ any) (any, error) {
+		return nil, nil
 	})
 }

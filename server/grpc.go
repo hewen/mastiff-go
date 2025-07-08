@@ -4,7 +4,6 @@ package server
 import (
 	"context"
 	"errors"
-	"fmt"
 	"net"
 	"runtime/debug"
 	"strings"
@@ -139,8 +138,8 @@ func (s *GrpcServer) loggerInterceptor(ctx context.Context, req any, info *grpc.
 		addr,
 		info.FullMethod,
 		"GRPC-GO-SERVER",
-		fmt.Sprintf("%v", req),
-		fmt.Sprintf("%v", resp),
+		req,
+		resp,
 		err,
 	)
 
@@ -194,8 +193,8 @@ func NewGrpcClientLoggerInterceptor() grpc.UnaryClientInterceptor {
 			cc.Target(),
 			method,
 			"GRPC-GO-CLIENT",
-			fmt.Sprintf("%v", req),
-			fmt.Sprintf("%v", reply),
+			req,
+			reply,
 			err,
 		)
 
