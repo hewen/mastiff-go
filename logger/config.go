@@ -11,4 +11,6 @@ type Config struct {
 	MaxSize int
 	// Backend specifies the logging backend: "std", "zap", or "zerolog".
 	Backend string
+
+	EnableMasking bool
 }

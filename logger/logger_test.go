@@ -70,16 +70,18 @@ func TestLogger(t *testing.T) {
 				traceRes: true,
 			},
 		}
-		for i := range testCase {
-			l := testCase[i].l
-			assert.Equal(t, testCase[i].traceRes, l.GetTraceID() == trace, fmt.Sprintf("case: %v logger trace: %v trace:%v", i, l.GetTraceID(), trace))
-			l.Fields(map[string]any{
-				"test": "test",
-			})
-			l.Debugf("tmp")
-			l.Infof("tmp")
-			l.Errorf("tmp")
-			l.Warnf("tmp")
+		for j := range testCase {
+			l := testCase[j].l
+			assert.Equal(t, testCase[j].traceRes, l.GetTraceID() == trace, fmt.Sprintf("case: %v logger trace: %v trace:%v", i, l.GetTraceID(), trace))
+			data := map[string]any{
+				"backend": backends[i],
+			}
+
+			entry := l.Fields(data)
+			entry.Debugf("tmp")
+			entry.Infof("tmp")
+			entry.Errorf("tmp")
+			entry.Warnf("tmp")
 		}
 	}
 }

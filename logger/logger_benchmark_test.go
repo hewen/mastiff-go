@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func BenchmarkStdLogger(b *testing.B) {
+func BenchmarkLoggerStd(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
@@ -30,7 +30,7 @@ func BenchmarkStdLogger(b *testing.B) {
 	}
 }
 
-func BenchmarkZapLogger(b *testing.B) {
+func BenchmarkLoggerZap(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
@@ -52,7 +52,7 @@ func BenchmarkZapLogger(b *testing.B) {
 	}
 }
 
-func BenchmarkZerologLogger(b *testing.B) {
+func BenchmarkLoggerZerolog(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
@@ -74,7 +74,7 @@ func BenchmarkZerologLogger(b *testing.B) {
 	}
 }
 
-func BenchmarkStdLoggerParallel(b *testing.B) {
+func BenchmarkLoggerParallelStd(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
@@ -98,7 +98,7 @@ func BenchmarkStdLoggerParallel(b *testing.B) {
 	})
 }
 
-func BenchmarkZapLoggerParallel(b *testing.B) {
+func BenchmarkLoggerParallelZap(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
@@ -122,7 +122,7 @@ func BenchmarkZapLoggerParallel(b *testing.B) {
 	})
 }
 
-func BenchmarkZerologLoggerParallel(b *testing.B) {
+func BenchmarkLoggerParallelZerolog(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {

@@ -5,6 +5,7 @@ require (
 	github.com/dolthub/go-mysql-server v0.20.0
 	github.com/dolthub/vitess v0.0.0-20250512224608-8fb9c6ea092c
 	github.com/gchaincl/sqlhooks v1.3.0
+	github.com/ggwhite/go-masker/v2 v2.1.0
 	github.com/gin-contrib/pprof v1.5.3
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-redis/redis/v7 v7.4.1

@@ -51,6 +51,6 @@ func TestGetPeerIP(t *testing.T) {
 			Addr: addr,
 		}
 		ip := getPeerIP(pr)
-		assert.Equal(t, "192.168.1.100:8080", ip) // 因为 Addr.String() 返回 ip:port
+		assert.Equal(t, "192.168.1.100:8080", ip)
 	})
 }

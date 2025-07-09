@@ -67,8 +67,10 @@ const (
 )
 
 var (
+	// logLevel is the current log level.
 	logLevel = LogLevelFlagInfo
 
+	// logLevelMap is a map of log level strings to their corresponding LogLevelFlag values.
 	logLevelMap = map[LogLevel]LogLevelFlag{
 		LogLevelFatal: LogLevelFlagFatal,
 		LogLevelPanic: LogLevelFlagPanic,
@@ -78,6 +80,7 @@ var (
 		LogLevelDebug: LogLevelFlagDebug,
 	}
 
+	// logLevelValueMap is a map of LogLevelFlag values to their corresponding LogLevel strings.
 	logLevelValueMap = map[LogLevelFlag]LogLevel{
 		LogLevelFlagFatal: LogLevelFatal,
 		LogLevelFlagPanic: LogLevelPanic,
@@ -118,6 +121,8 @@ func InitLogger(conf Config) error {
 	if err != nil {
 		return err
 	}
+
+	SetLogMasking(conf.EnableMasking)
 
 	var out io.Writer = os.Stdout
 	if conf.Output != "" {
@@ -293,9 +298,10 @@ func NewOutgoingContextWithGinContext(ctx *gin.Context) context.Context {
 
 // stdLogger is a Logger implementation using the standard log package.
 type stdLogger struct {
-	logger  *log.Logger
-	traceID string
-	fields  map[string]any
+	logger        *log.Logger
+	traceID       string
+	fields        map[string]any
+	EnableMasking bool
 }
 
 func (l *stdLogger) GetTraceID() string { return l.traceID }
@@ -325,20 +331,24 @@ func (l *stdLogger) Panicf(format string, v ...any) { l.logOutput(LogLevelFlagPa
 func (l *stdLogger) Fatalf(format string, v ...any) { l.logOutput(LogLevelFlagFatal, format, v...) }
 func (l *stdLogger) Fields(fields map[string]any) Logger {
 	merged := make(map[string]any, len(l.fields)+len(fields))
-	for i := range l.fields {
-		merged[i] = l.fields[i]
+	for k, v := range l.fields {
+		merged[k] = v
 	}
-	for i := range fields {
-		merged[i] = fields[i]
+	for k, v := range fields {
+		merged[k] = v
 	}
-	l.fields = merged
-	return l
+	return &stdLogger{
+		logger:  l.logger,
+		traceID: l.traceID,
+		fields:  merged,
+	}
 }
 
 // zapLogger is a Logger implementation using Uber's zap package.
 type zapLogger struct {
-	logger  *zap.SugaredLogger
-	traceID string
+	logger        *zap.SugaredLogger
+	traceID       string
+	EnableMasking bool
 }
 
 func (l *zapLogger) GetTraceID() string { return l.traceID }
@@ -373,16 +383,21 @@ func (l *zapLogger) Errorf(format string, v ...any) { l.logOutput(LogLevelFlagEr
 func (l *zapLogger) Panicf(format string, v ...any) { l.logOutput(LogLevelFlagPanic, format, v...) }
 func (l *zapLogger) Fatalf(format string, v ...any) { l.logOutput(LogLevelFlagFatal, format, v...) }
 func (l *zapLogger) Fields(fields map[string]any) Logger {
+	newLogger := l.logger
 	for k, v := range fields {
-		l.logger = l.logger.With(k, v)
+		newLogger = newLogger.With(k, v)
 	}
-	return l
+	return &zapLogger{
+		logger:  newLogger,
+		traceID: l.GetTraceID(),
+	}
 }
 
 // zerologLogger is a Logger implementation using the zerolog package.
 type zerologLogger struct {
-	logger  zerolog.Logger
-	traceID string
+	logger        zerolog.Logger
+	traceID       string
+	EnableMasking string
 }
 
 func (l *zerologLogger) GetTraceID() string { return l.traceID }
@@ -417,6 +432,9 @@ func (l *zerologLogger) Errorf(format string, v ...any) { l.logOutput(LogLevelFl
 func (l *zerologLogger) Panicf(format string, v ...any) { l.logOutput(LogLevelFlagPanic, format, v...) }
 func (l *zerologLogger) Fatalf(format string, v ...any) { l.logOutput(LogLevelFlagFatal, format, v...) }
 func (l *zerologLogger) Fields(fields map[string]any) Logger {
-	l.logger = l.logger.With().Fields(fields).Logger()
-	return l
+	newLogger := l.logger.With().Fields(fields).Logger()
+	return &zerologLogger{
+		logger:  newLogger,
+		traceID: l.GetTraceID(),
+	}
 }

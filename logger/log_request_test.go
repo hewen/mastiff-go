@@ -2,6 +2,7 @@ package logger
 
 import (
 	"errors"
+	"fmt"
 	"testing"
 	"time"
 
@@ -24,9 +25,10 @@ func (m *mockLogger) Debugf(format string, _ ...any) {
 	m.lastMsg = format
 }
 
-func (m *mockLogger) Infof(format string, _ ...any) {
+func (m *mockLogger) Infof(format string, v ...any) {
 	m.lastLevel = "info"
 	m.lastMsg = format
+	NewLogger().Infof(format, v...)
 }
 
 func (m *mockLogger) Warnf(format string, _ ...any) {
@@ -55,6 +57,8 @@ func (m *mockLogger) Fields(f map[string]any) Logger {
 }
 
 func TestLogRequest(t *testing.T) {
+	enableMasking = false
+
 	t.Run("Normal request", func(t *testing.T) {
 		mock := &mockLogger{}
 		LogRequest(mock, 200, 500*time.Millisecond, "127.0.0.1", "GET /ping", "curl/1.0", "req-body", "resp-body", nil)
@@ -86,4 +90,69 @@ func TestLogRequest(t *testing.T) {
 		assert.Equal(t, "req", mock.lastMsg)
 		assert.Equal(t, "db error", mock.fields["err"])
 	})
+
+	t.Run("Request with nil", func(t *testing.T) {
+		mock := &mockLogger{}
+		LogRequest(mock, 500, 100*time.Millisecond, "127.0.0.1", "POST /api", "agent", "nil", "nil", nil)
+
+		assert.Equal(t, "req", mock.lastMsg)
+	})
+}
+
+type TestPayload struct {
+	Name     string `mask:"name"`
+	Mobile   string `mask:"mobile"`
+	Password string `mask:"password"`
+	Email    string `mask:"email"`
+}
+
+type TestNoMaskPayload struct {
+	Name     string
+	Mobile   string
+	Password string
+	Email    string
+}
+
+var req = TestPayload{
+	Name:     "Alice",
+	Mobile:   "13912345678",
+	Password: "SuperSecret",
+	Email:    "alice@example.com",
+}
+
+var resp = TestPayload{
+	Name:     "Alice",
+	Mobile:   "13912345678",
+	Password: "SuperSecret",
+	Email:    "alice@example.com",
+}
+
+func BenchmarkLogRequestWithoutMask(b *testing.B) {
+	enableMasking = false
+	l := NewLogger()
+	fmt.Println("")
+	for i := 0; i < b.N; i++ {
+		LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
+	}
+}
+
+func BenchmarkLogRequestWithMask(b *testing.B) {
+	enableMasking = true
+	l := NewLogger()
+	fmt.Println("")
+	for i := 0; i < b.N; i++ {
+		LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
+	}
+}
+
+func TestLogRequestWithMask(_ *testing.T) {
+	enableMasking = true
+	// test repeat log
+	l := NewLogger()
+	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
+	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
+
+	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", nil, nil, nil)
+	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", []string{"test"}, nil, nil)
+	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", 1, nil, nil)
 }

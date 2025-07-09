@@ -36,10 +36,8 @@ func TestTestMsg_Descriptor(t *testing.T) {
 	}
 	_, _ = msg.Descriptor()
 
-	// 获取 protoreflect.MessageDescriptor
 	desc := msg.ProtoReflect().Descriptor()
 
-	// 添加断言
 	assert.Equal(t, protoreflect.Name("TestMsg"), desc.Name())
 	assert.Equal(t, protoreflect.FullName("test.TestMsg"), desc.FullName())
 	assert.Equal(t, 2, desc.Fields().Len(), "Should have exactly 2 fields")
