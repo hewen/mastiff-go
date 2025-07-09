@@ -1,14 +1,11 @@
-package server
+package logger
 
 import (
 	"time"
-
-	"github.com/hewen/mastiff-go/logger"
 )
 
-// LogRequest logs a request.
 // LogRequest logs an HTTP or gRPC request in structured format (JSON-style if backend supports).
-func LogRequest(l logger.Logger, statusCode int, duration time.Duration, ip, method, ua string, req, resp any, err error) {
+func LogRequest(l Logger, statusCode int, duration time.Duration, ip, method, ua string, req, resp any, err error) {
 	// Type assertion to see if logger backend supports structured logging (e.g. zerologLogger).
 	fields := map[string]any{
 		"status":   statusCode,

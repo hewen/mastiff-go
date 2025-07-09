@@ -81,9 +81,7 @@ const file_test_proto_rawDesc = "" +
 	"test.proto\x12\x04test\"-\n" +
 	"\aTestMsg\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\x05R\x02id\x12\x12\n" +
-	"\x04name\x18\x02 \x01(\tR\x04name2.\n" +
-	"\x04Test\x12&\n" +
-	"\x04Echo\x12\r.test.TestMsg\x1a\r.test.TestMsg\"\x00B)Z'github.com/hewen/mastiff-go/server/testb\x06proto3"
+	"\x04name\x18\x02 \x01(\tR\x04nameB)Z'github.com/hewen/mastiff-go/server/testb\x06proto3"
 
 var (
 	file_test_proto_rawDescOnce sync.Once
@@ -102,10 +100,8 @@ var file_test_proto_goTypes = []any{
 	(*TestMsg)(nil), // 0: test.TestMsg
 }
 var file_test_proto_depIdxs = []int32{
-	0, // 0: test.Test.Echo:input_type -> test.TestMsg
-	0, // 1: test.Test.Echo:output_type -> test.TestMsg
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
+	0, // [0:0] is the sub-list for method output_type
+	0, // [0:0] is the sub-list for method input_type
 	0, // [0:0] is the sub-list for extension type_name
 	0, // [0:0] is the sub-list for extension extendee
 	0, // [0:0] is the sub-list for field type_name
@@ -124,7 +120,7 @@ func file_test_proto_init() {
 			NumEnums:      0,
 			NumMessages:   1,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   0,
 		},
 		GoTypes:           file_test_proto_goTypes,
 		DependencyIndexes: file_test_proto_depIdxs,
