@@ -100,7 +100,7 @@ func TestLogRequest(t *testing.T) {
 }
 
 type TestPayload struct {
-	Name     string `mask:"name"`
+	Name     string
 	Mobile   string `mask:"mobile"`
 	Password string `mask:"password"`
 	Email    string `mask:"email"`
@@ -128,7 +128,7 @@ var resp = TestPayload{
 }
 
 func BenchmarkLogRequestWithoutMask(b *testing.B) {
-	enableMasking = false
+	SetLogMasking(false)
 	l := NewLogger()
 	fmt.Println("")
 	for i := 0; i < b.N; i++ {
@@ -137,7 +137,7 @@ func BenchmarkLogRequestWithoutMask(b *testing.B) {
 }
 
 func BenchmarkLogRequestWithMask(b *testing.B) {
-	enableMasking = true
+	SetLogMasking(true)
 	l := NewLogger()
 	fmt.Println("")
 	for i := 0; i < b.N; i++ {
@@ -146,7 +146,7 @@ func BenchmarkLogRequestWithMask(b *testing.B) {
 }
 
 func TestLogRequestWithMask(_ *testing.T) {
-	enableMasking = true
+	SetLogMasking(true)
 	// test repeat log
 	l := NewLogger()
 	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
@@ -155,4 +155,25 @@ func TestLogRequestWithMask(_ *testing.T) {
 	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", nil, nil, nil)
 	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", []string{"test"}, nil, nil)
 	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", 1, nil, nil)
+}
+
+func TestMaskValue(t *testing.T) {
+	SetLogMasking(true)
+	res := MaskValue("test")
+	assert.Equal(t, "test", res)
+
+	res = MaskValue(nil)
+	assert.Equal(t, nil, res)
+
+	res = MaskValue(1)
+	assert.Equal(t, 1, res)
+
+	res = MaskValue(req)
+	assert.EqualValues(t, &TestPayload{
+		Name:     "Alice",
+		Mobile:   "1391***5678",
+		Password: "**************",
+		Email:    "ali****@example.com",
+	}, res)
+
 }
