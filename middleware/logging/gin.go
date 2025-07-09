@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/tomasen/realip"
 )
@@ -17,7 +18,7 @@ func GinLoggingHandler() gin.HandlerFunc {
 
 		traceID := logger.NewTraceID()
 
-		c.Set(string(logger.LoggerTraceKey), traceID)
+		c.Set(string(contextkeys.LoggerTraceIDKey), traceID)
 
 		c.Next()
 

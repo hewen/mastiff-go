@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/internal/contextkeys"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
@@ -28,13 +29,7 @@ type LogLevelFlag int
 // LogLevel represents the log level as a string.
 type LogLevel string
 
-// contextKey is a type alias for string used as context key type.
-type contextKey string
-
 const (
-	// LoggerTraceKey is the key used to store the trace ID in the context.
-	LoggerTraceKey contextKey = "logid"
-
 	// LogLevelFlagFatal is the log level flag for fatal errors.
 	LogLevelFlagFatal LogLevelFlag = 1
 	// LogLevelFlagPanic is the log level flag for panic errors.
@@ -217,7 +212,7 @@ func SetLevel(level LogLevel) error {
 	return nil
 }
 
-// NewTraceID generates a new trace ID using the shortid package.
+// NewTraceID generates a new trace ID using the nanoid package.
 func NewTraceID() string {
 	id, _ := gonanoid.New()
 	return id
@@ -235,7 +230,7 @@ func NewLoggerWithContext(ctx context.Context) Logger {
 
 // GetTraceIDWithGinContext returns the trace ID from Gin context or generates a new one.
 func GetTraceIDWithGinContext(ctx *gin.Context) string {
-	if v, exists := ctx.Get(string(LoggerTraceKey)); exists {
+	if v, exists := ctx.Get(string(contextkeys.LoggerTraceIDKey)); exists {
 		if s, ok := v.(string); ok && s != "" {
 			return s
 		}
@@ -245,7 +240,7 @@ func GetTraceIDWithGinContext(ctx *gin.Context) string {
 
 // GetTraceIDWithContext returns the trace ID from context or generates a new one.
 func GetTraceIDWithContext(ctx context.Context) string {
-	if v, exists := ctx.Value(LoggerTraceKey).(string); exists {
+	if v, exists := ctx.Value(contextkeys.LoggerTraceIDKey).(string); exists {
 		return v
 	}
 	return NewTraceID()
@@ -275,22 +270,22 @@ func NewLoggerWithTraceID(traceID string) Logger {
 func NewOutgoingContextWithIncomingContext(ctx context.Context) context.Context {
 	var traceID string
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if tid, ok := md[string(LoggerTraceKey)]; ok && len(tid) > 0 {
+		if tid, ok := md[string(contextkeys.LoggerTraceIDKey)]; ok && len(tid) > 0 {
 			traceID = tid[0]
 		}
 	}
 	if traceID == "" {
 		traceID = NewTraceID()
 	}
-	md := metadata.Pairs(string(LoggerTraceKey), traceID)
+	md := metadata.Pairs(string(contextkeys.LoggerTraceIDKey), traceID)
 	ctx = metadata.NewOutgoingContext(ctx, md)
-	return context.WithValue(ctx, LoggerTraceKey, traceID)
+	return context.WithValue(ctx, contextkeys.LoggerTraceIDKey, traceID)
 }
 
 // NewOutgoingContextWithGinContext creates a new outgoing context with the trace ID from the Gin context.
 func NewOutgoingContextWithGinContext(ctx *gin.Context) context.Context {
 	m := make(map[string]string)
-	m[string(LoggerTraceKey)] = GetTraceIDWithGinContext(ctx)
+	m[string(contextkeys.LoggerTraceIDKey)] = GetTraceIDWithGinContext(ctx)
 	md := metadata.New(m)
 	return metadata.NewOutgoingContext(context.TODO(), md)
 

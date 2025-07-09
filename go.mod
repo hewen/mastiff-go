@@ -9,6 +9,7 @@ require (
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-redis/redis/v7 v7.4.1
 	github.com/go-sql-driver/mysql v1.9.3
+	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/matoous/go-nanoid/v2 v2.1.0

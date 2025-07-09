@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -46,7 +47,7 @@ func TestLogger(t *testing.T) {
 		assert.Nil(t, err)
 		trace := NewTraceID()
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, LoggerTraceKey, trace)
+		ctx = context.WithValue(ctx, contextkeys.LoggerTraceIDKey, trace)
 
 		testCase := []struct {
 			l        Logger
@@ -196,7 +197,7 @@ func TestGetTraceIDWithGinContext(t *testing.T) {
 
 	traceID := NewTraceID()
 	ctx, _ = gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set(string(LoggerTraceKey), traceID)
+	ctx.Set(string(contextkeys.LoggerTraceIDKey), traceID)
 
 	res = GetTraceIDWithGinContext(ctx)
 	assert.Equal(t, traceID, res)
@@ -206,7 +207,7 @@ func TestNewLoggerWithGinContext(t *testing.T) {
 	traceID := NewTraceID()
 
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set(string(LoggerTraceKey), traceID)
+	ctx.Set(string(contextkeys.LoggerTraceIDKey), traceID)
 
 	l := NewLoggerWithGinContext(ctx)
 	assert.Equal(t, traceID, l.GetTraceID())
@@ -215,13 +216,13 @@ func TestNewLoggerWithGinContext(t *testing.T) {
 func TestNewOutgoingContextFromGinContext(t *testing.T) {
 	traceID := NewTraceID()
 	gctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	gctx.Set(string(LoggerTraceKey), traceID)
+	gctx.Set(string(contextkeys.LoggerTraceIDKey), traceID)
 
 	ctx := NewOutgoingContextWithGinContext(gctx)
 	md, ok := metadata.FromOutgoingContext(ctx)
 	assert.Equal(t, true, ok)
 
-	trace, ok := md[string(LoggerTraceKey)]
+	trace, ok := md[string(contextkeys.LoggerTraceIDKey)]
 	assert.Equal(t, true, ok)
 	assert.Equal(t, traceID, trace[0])
 }
@@ -229,7 +230,7 @@ func TestNewOutgoingContextFromGinContext(t *testing.T) {
 func TestNewOutgoingContextFromIncomingContext(t *testing.T) {
 	traceID := NewTraceID()
 	m := make(map[string]string)
-	m[string(LoggerTraceKey)] = traceID
+	m[string(contextkeys.LoggerTraceIDKey)] = traceID
 	md := metadata.New(m)
 	ictx := metadata.NewIncomingContext(context.TODO(), md)
 
