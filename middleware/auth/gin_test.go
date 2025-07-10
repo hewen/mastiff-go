@@ -12,7 +12,7 @@ import (
 )
 
 func TestGinMiddleware(t *testing.T) {
-	conf := Config{
+	conf := &Config{
 		HeaderKey:     "Authorization",
 		TokenPrefixes: []string{"Bearer"},
 		JWTSecret:     "secret",
@@ -40,7 +40,7 @@ func TestGinMiddleware(t *testing.T) {
 	})
 }
 
-func testWhiteList(t *testing.T, conf Config) {
+func testWhiteList(t *testing.T, conf *Config) {
 	r := gin.New()
 	r.Use(GinMiddleware(conf))
 	r.GET("/public", func(c *gin.Context) {
@@ -55,7 +55,7 @@ func testWhiteList(t *testing.T, conf Config) {
 	assert.Equal(t, "ok", w.Body.String())
 }
 
-func testMissingToken(t *testing.T, conf Config) {
+func testMissingToken(t *testing.T, conf *Config) {
 	r := gin.New()
 	r.Use(GinMiddleware(conf))
 	r.GET("/secure", func(c *gin.Context) {
@@ -69,7 +69,7 @@ func testMissingToken(t *testing.T, conf Config) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, w.Body.String(), "missing token")
 }
-func testInvalidToken(t *testing.T, conf Config) {
+func testInvalidToken(t *testing.T, conf *Config) {
 	r := gin.New()
 	r.Use(GinMiddleware(conf))
 	r.GET("/secure", func(c *gin.Context) {
@@ -85,7 +85,7 @@ func testInvalidToken(t *testing.T, conf Config) {
 	assert.Contains(t, w.Body.String(), "invalid token")
 }
 
-func testValidToken(t *testing.T, conf Config) {
+func testValidToken(t *testing.T, conf *Config) {
 	r := gin.New()
 	r.Use(GinMiddleware(conf))
 	r.GET("/secure", func(c *gin.Context) {

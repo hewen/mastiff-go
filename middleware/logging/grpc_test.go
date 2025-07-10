@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hewen/mastiff-go/middleware"
+	"github.com/hewen/mastiff-go/middleware/internal/shared"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )
@@ -24,7 +24,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 	fn := StreamServerInterceptor()
 	err := fn(
 		nil,
-		&middleware.GrpcServerStream{Ctx: context.Background()},
+		&shared.GrpcServerStream{Ctx: context.Background()},
 		&grpc.StreamServerInfo{
 			FullMethod: "test",
 		},

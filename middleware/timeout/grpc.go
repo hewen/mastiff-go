@@ -5,7 +5,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/hewen/mastiff-go/middleware"
+	"github.com/hewen/mastiff-go/middleware/internal/shared"
 	"google.golang.org/grpc"
 )
 
@@ -29,7 +29,7 @@ func StreamServerInterceptor(timeout time.Duration) grpc.StreamServerInterceptor
 		ctx, cancel := context.WithTimeout(ss.Context(), timeout)
 		defer cancel()
 
-		wrapped := &middleware.GrpcServerStream{
+		wrapped := &shared.GrpcServerStream{
 			ServerStream: ss,
 			Ctx:          ctx,
 		}

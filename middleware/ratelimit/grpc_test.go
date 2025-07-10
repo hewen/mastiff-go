@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hewen/mastiff-go/middleware"
+	"github.com/hewen/mastiff-go/middleware/internal/shared"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -70,7 +70,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 	handle := StreamServerInterceptor(mgr)
 	err := handle(
 		nil,
-		&middleware.GrpcServerStream{Ctx: context.Background()},
+		&shared.GrpcServerStream{Ctx: context.Background()},
 		&grpc.StreamServerInfo{
 			FullMethod: "/ratelimit.TestService/Ping",
 		},
@@ -82,7 +82,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 
 	err = handle(
 		nil,
-		&middleware.GrpcServerStream{Ctx: context.Background()},
+		&shared.GrpcServerStream{Ctx: context.Background()},
 		&grpc.StreamServerInfo{
 			FullMethod: "/ratelimit.TestService/Ping",
 		},

@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hewen/mastiff-go/middleware"
+	"github.com/hewen/mastiff-go/middleware/internal/shared"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -34,7 +34,7 @@ func TestStreamServerInterceptor(t *testing.T) {
 	}
 	info := &grpc.StreamServerInfo{FullMethod: "/package.Service/StreamMethod"}
 
-	stream := &middleware.GrpcServerStream{}
+	stream := &shared.GrpcServerStream{}
 
 	err := interceptor(nil, stream, info, handler)
 	assert.NoError(t, err)

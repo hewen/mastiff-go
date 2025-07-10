@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/hewen/mastiff-go/internal/contextkeys"
-	"github.com/hewen/mastiff-go/middleware"
+	"github.com/hewen/mastiff-go/middleware/internal/shared"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -101,7 +101,7 @@ func TestStreamServerInterceptor_ValidToken(t *testing.T) {
 	tk, _ := GenerateJWTToken(map[string]any{"user_id": "123"}, testConf.JWTSecret, time.Minute)
 	md := metadata.Pairs("authorization", "Bearer "+tk)
 	ctx := metadata.NewIncomingContext(context.Background(), md)
-	stream := &middleware.GrpcServerStream{Ctx: ctx}
+	stream := &shared.GrpcServerStream{Ctx: ctx}
 	info := &grpc.StreamServerInfo{FullMethod: "/TestService/Private"}
 
 	called := false

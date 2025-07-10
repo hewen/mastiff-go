@@ -9,7 +9,7 @@ import (
 )
 
 // GinMiddleware is a gin middleware for authentication and authorization.
-func GinMiddleware(conf Config) gin.HandlerFunc {
+func GinMiddleware(conf *Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if isWhiteListed(c.Request.URL.Path, conf.WhiteList) {
 			c.Next()

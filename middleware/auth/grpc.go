@@ -4,7 +4,7 @@ import (
 	"context"
 
 	"github.com/hewen/mastiff-go/internal/contextkeys"
-	"github.com/hewen/mastiff-go/middleware"
+	"github.com/hewen/mastiff-go/middleware/internal/shared"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -65,7 +65,7 @@ func StreamServerInterceptor(conf Config) grpc.StreamServerInterceptor {
 			return err
 		}
 
-		wrapped := &middleware.GrpcServerStream{
+		wrapped := &shared.GrpcServerStream{
 			ServerStream: ss,
 			Ctx:          newCtx,
 		}

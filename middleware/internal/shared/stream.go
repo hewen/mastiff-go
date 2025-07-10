@@ -1,5 +1,5 @@
-// Package middleware provides common middleware for HTTP and gRPC.
-package middleware
+// Package shared provides shared utilities for middleware.
+package shared
 
 import (
 	"context"

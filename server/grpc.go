@@ -5,13 +5,10 @@ import (
 	"errors"
 	"net"
 	"sync"
-	"time"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/middleware/logging"
-	"github.com/hewen/mastiff-go/middleware/recovery"
-	"github.com/hewen/mastiff-go/middleware/timeout"
+	"github.com/hewen/mastiff-go/middleware"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 )
@@ -19,13 +16,6 @@ import (
 var (
 	// ErrEmptyGrpcConf is returned when the gRPC configuration is empty.
 	ErrEmptyGrpcConf = errors.New("empty grpc config")
-
-	// ErrGrpcExecPanic is an error that indicates a panic occurred during gRPC execution.
-	ErrGrpcExecPanic = errors.New("grpc exec panic")
-)
-
-const (
-	defaultTimeout = 30
 )
 
 // GrpcServer represents a gRPC server.
@@ -37,48 +27,47 @@ type GrpcServer struct {
 	mu   sync.Mutex
 }
 
-// NewGrpcServer creates a new gRPC server.
-func NewGrpcServer(conf *GrpcConf, registerServerFunc func(*grpc.Server), interceptors ...grpc.UnaryServerInterceptor) (*GrpcServer, error) {
+// NewGrpcServer creates and initializes a new gRPC server with configured middlewares.
+func NewGrpcServer(
+	conf *GrpcConf,
+	registerServerFunc func(*grpc.Server),
+	extraInterceptors ...grpc.UnaryServerInterceptor,
+) (*GrpcServer, error) {
 	if conf == nil {
 		return nil, ErrEmptyGrpcConf
 	}
+
+	// Start listening on configured address
 	ln, err := net.Listen("tcp", conf.Addr)
 	if err != nil {
+		logger.NewLogger().Errorf("failed to listen on %s: %v", conf.Addr, err)
 		return nil, err
 	}
 
+	// Initialize GrpcServer struct
 	srv := &GrpcServer{
 		addr: conf.Addr,
-		l:    logger.NewLogger(),
 		ln:   ln,
+		l:    logger.NewLogger(),
 	}
 
-	if conf.Timeout == 0 {
-		conf.Timeout = defaultTimeout
-	}
+	// Load built-in middleware based on configuration
+	interceptors := middleware.LoadGRPCMiddlewares(conf.Middlewares)
 
-	var serverInterceptors []grpc.UnaryServerInterceptor
+	// Append extra user-defined interceptors
+	interceptors = append(interceptors, extraInterceptors...)
 
-	serverInterceptors = append(serverInterceptors,
-		timeout.UnaryServerInterceptor(time.Duration(conf.Timeout)*time.Second),
-		recovery.UnaryServerInterceptor(),
-		logging.UnaryServerInterceptor(),
-	)
-
-	if len(interceptors) > 0 {
-		serverInterceptors = append(serverInterceptors, interceptors...)
-	}
-
+	// Apply chained interceptors
 	opts := []grpc.ServerOption{
-		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(
-			serverInterceptors...,
-		)),
+		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(interceptors...)),
 	}
 
 	srv.s = grpc.NewServer(opts...)
 
+	// Register application-specific services
 	registerServerFunc(srv.s)
 
+	// Enable reflection if configured
 	if conf.Reflection {
 		reflection.Register(srv.s)
 	}

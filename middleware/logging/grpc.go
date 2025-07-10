@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/middleware"
+	"github.com/hewen/mastiff-go/middleware/internal/shared"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 )
@@ -49,7 +49,7 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 		start := time.Now()
 
 		ctx := logger.NewOutgoingContextWithIncomingContext(ss.Context())
-		wrapped := &middleware.GrpcServerStream{
+		wrapped := &shared.GrpcServerStream{
 			ServerStream: ss,
 			Ctx:          ctx,
 		}
