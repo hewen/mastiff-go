@@ -56,3 +56,43 @@ func TestUnaryServerInterceptor_Failure(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, status.Convert(err).Message(), "circuit breaker triggered")
 }
+
+func TestStreamServerInterceptor_Success(t *testing.T) {
+	cfg := &Config{
+		MaxRequests: 3,
+		Interval:    1,
+		Timeout:     1,
+		ReadyToTrip: func(_ gobreaker.Counts) bool {
+			return false
+		},
+	}
+	mgr := NewManager(cfg)
+
+	interceptor := StreamServerInterceptor(mgr)
+
+	err := interceptor(context.Background(), nil, &grpc.StreamServerInfo{FullMethod: "/test"}, func(_ any, _ grpc.ServerStream) error {
+		return nil
+	})
+	assert.NoError(t, err)
+}
+
+func TestStreamServerInterceptor_Failure(t *testing.T) {
+	cfg := &Config{
+		MaxRequests: 1,
+		Interval:    1,
+		Timeout:     1,
+		ReadyToTrip: func(_ gobreaker.Counts) bool {
+			return true
+		},
+	}
+	mgr := NewManager(cfg)
+	mgr.Break("/fail", 1)
+
+	interceptor := StreamServerInterceptor(mgr)
+
+	err := interceptor(context.Background(), nil, &grpc.StreamServerInfo{FullMethod: "/fail"}, func(_ any, _ grpc.ServerStream) error {
+		return nil
+	})
+	assert.Error(t, err)
+	assert.Contains(t, status.Convert(err).Message(), "circuit breaker triggered")
+}

@@ -5,6 +5,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/hewen/mastiff-go/middleware"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -46,6 +47,47 @@ func TestUnaryServerInterceptor(t *testing.T) {
 		},
 		func(_ context.Context, _ any) (any, error) {
 			return &emptypb.Empty{}, nil
+		},
+	)
+	assert.Equal(t, status.Errorf(codes.ResourceExhausted, "rate limit exceeded"), err)
+}
+
+func TestStreamServerInterceptor(t *testing.T) {
+	cfg := &Config{
+		Default: &RouteLimitConfig{
+			Rate:  1,
+			Burst: 1,
+			Mode:  ModeAllow,
+			Strategy: Strategy{
+				EnableRoute: true,
+				EnableIP:    true,
+			},
+		},
+	}
+	mgr := NewLimiterManager(cfg)
+	defer mgr.Stop()
+
+	handle := StreamServerInterceptor(mgr)
+	err := handle(
+		nil,
+		&middleware.GrpcServerStream{Ctx: context.Background()},
+		&grpc.StreamServerInfo{
+			FullMethod: "/ratelimit.TestService/Ping",
+		},
+		func(_ any, _ grpc.ServerStream) error {
+			return nil
+		},
+	)
+	assert.Nil(t, err)
+
+	err = handle(
+		nil,
+		&middleware.GrpcServerStream{Ctx: context.Background()},
+		&grpc.StreamServerInfo{
+			FullMethod: "/ratelimit.TestService/Ping",
+		},
+		func(_ any, _ grpc.ServerStream) error {
+			return nil
 		},
 	)
 	assert.Equal(t, status.Errorf(codes.ResourceExhausted, "rate limit exceeded"), err)

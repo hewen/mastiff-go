@@ -9,23 +9,45 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// UnaryServerInterceptor creates a gRPC unary interceptor with circuit breaker.
+// executeWithBreaker executes the function with circuit breaker.
+func executeWithBreaker(
+	mgr *Manager,
+	method string,
+	fn func() (any, error),
+) (any, error) {
+	breaker := mgr.Get(method)
+	result, err := breaker.Execute(fn)
+	if err != nil {
+		return nil, status.Errorf(codes.Unavailable, "circuit breaker triggered: %v", err)
+	}
+	return result, nil
+}
+
+// UnaryServerInterceptor returns a unary server interceptor with circuit breaker.
 func UnaryServerInterceptor(mgr *Manager) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
-		req interface{},
+		req any,
 		info *grpc.UnaryServerInfo,
 		handler grpc.UnaryHandler,
-	) (interface{}, error) {
-		breaker := mgr.Get(info.FullMethod)
-
-		result, err := breaker.Execute(func() (interface{}, error) {
+	) (any, error) {
+		return executeWithBreaker(mgr, info.FullMethod, func() (any, error) {
 			return handler(ctx, req)
 		})
+	}
+}
 
-		if err != nil {
-			return nil, status.Errorf(codes.Unavailable, "circuit breaker triggered: %v", err)
-		}
-		return result, nil
+// StreamServerInterceptor returns a stream server interceptor with circuit breaker.
+func StreamServerInterceptor(mgr *Manager) grpc.StreamServerInterceptor {
+	return func(
+		srv interface{},
+		ss grpc.ServerStream,
+		info *grpc.StreamServerInfo,
+		handler grpc.StreamHandler,
+	) error {
+		_, err := executeWithBreaker(mgr, info.FullMethod, func() (any, error) {
+			return nil, handler(srv, ss)
+		})
+		return err
 	}
 }

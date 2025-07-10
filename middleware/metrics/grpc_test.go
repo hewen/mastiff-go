@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hewen/mastiff-go/middleware"
 	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -33,16 +34,11 @@ func TestStreamServerInterceptor(t *testing.T) {
 	}
 	info := &grpc.StreamServerInfo{FullMethod: "/package.Service/StreamMethod"}
 
-	stream := &mockStream{}
+	stream := &middleware.GrpcServerStream{}
 
 	err := interceptor(nil, stream, info, handler)
 	assert.NoError(t, err)
 
 	count := testutil.CollectAndCount(GRPCDuration)
 	assert.Greater(t, count, 0, "Expected GRPCDuration to have collected a metric")
-}
-
-// mockStream implements grpc.ServerStream for test.
-type mockStream struct {
-	grpc.ServerStream
 }

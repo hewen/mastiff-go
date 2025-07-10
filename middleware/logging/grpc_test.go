@@ -4,13 +4,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/hewen/mastiff-go/middleware"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )
 
 func TestUnaryServerInterceptor(t *testing.T) {
-	handle := UnaryServerInterceptor()
-	resp, err := handle(context.TODO(), nil, &grpc.UnaryServerInfo{
+	fn := UnaryServerInterceptor()
+	resp, err := fn(context.TODO(), nil, &grpc.UnaryServerInfo{
 		FullMethod: "test",
 	}, func(_ context.Context, _ any) (any, error) {
 		return "test", nil
@@ -19,9 +20,24 @@ func TestUnaryServerInterceptor(t *testing.T) {
 	assert.Equal(t, "test", resp)
 }
 
-func TestUnaryClientLoggingInterceptor(t *testing.T) {
-	handle := UnaryClientLoggingInterceptor()
-	err := handle(
+func TestStreamServerInterceptor(t *testing.T) {
+	fn := StreamServerInterceptor()
+	err := fn(
+		nil,
+		&middleware.GrpcServerStream{Ctx: context.Background()},
+		&grpc.StreamServerInfo{
+			FullMethod: "test",
+		},
+		func(_ any, _ grpc.ServerStream) error {
+			return nil
+		},
+	)
+	assert.Nil(t, err)
+}
+
+func TestUnaryClientInterceptor(t *testing.T) {
+	fn := UnaryClientInterceptor()
+	err := fn(
 		context.TODO(),
 		"test",
 		"req",
