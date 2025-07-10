@@ -138,10 +138,17 @@ func TestLoadSQLFiles_ReadDirError(t *testing.T) {
 
 func TestLoadSQLFiles_OpenFileError(t *testing.T) {
 	tmpDir := t.TempDir()
-	err := os.WriteFile(filepath.Join(tmpDir, "test.sql"), []byte("SELECT 1;"), 0000) // no read perm
-	assert.NoError(t, err)
 
-	err = loadSQLFiles(&DB{}, tmpDir)
+	badFile := filepath.Join(tmpDir, "test.sql")
+	f, err := os.OpenFile(badFile, os.O_CREATE|os.O_WRONLY, 0222) // #nosec
+	require.NoError(t, err)
+	_ = f.Close()
+
+	db, _, err := sqlmock.New()
+	require.NoError(t, err)
+
+	sqlxDB := sqlx.NewDb(db, "sqlmock")
+	err = loadSQLFiles(&DB{DB: sqlxDB}, tmpDir)
 	assert.Error(t, err)
 }
 
