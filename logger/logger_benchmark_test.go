@@ -1,14 +1,13 @@
 package logger
 
 import (
-	"fmt"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
 
-func BenchmarkStdLogger(b *testing.B) {
+func BenchmarkLoggerStd(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
@@ -17,20 +16,22 @@ func BenchmarkStdLogger(b *testing.B) {
 
 	err = InitLogger(Config{
 		Backend: "std",
-		Output:  tmpFile.Name(),
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
 	})
 	assert.Nil(b, err)
 
 	l := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
 
 	b.ResetTimer()
-	fmt.Println("")
 	for i := 0; i < b.N; i++ {
 		l.Infof("Benchmark std logger test message #%d", i)
 	}
 }
 
-func BenchmarkZapLogger(b *testing.B) {
+func BenchmarkLoggerZap(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
@@ -39,20 +40,22 @@ func BenchmarkZapLogger(b *testing.B) {
 
 	err = InitLogger(Config{
 		Backend: "zap",
-		Output:  tmpFile.Name(),
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
 	})
 	assert.Nil(b, err)
 
 	l := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
 
 	b.ResetTimer()
-	fmt.Println("")
 	for i := 0; i < b.N; i++ {
 		l.Infof("Benchmark zap logger test message #%d", i)
 	}
 }
 
-func BenchmarkZerologLogger(b *testing.B) {
+func BenchmarkLoggerZerolog(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
@@ -61,20 +64,22 @@ func BenchmarkZerologLogger(b *testing.B) {
 
 	err = InitLogger(Config{
 		Backend: "zerolog",
-		Output:  tmpFile.Name(),
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
 	})
 	assert.Nil(b, err)
 
 	l := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
 
 	b.ResetTimer()
-	fmt.Println("")
 	for i := 0; i < b.N; i++ {
 		l.Infof("Benchmark zer logger test message #%d", i)
 	}
 }
 
-func BenchmarkStdLoggerParallel(b *testing.B) {
+func BenchmarkLoggerParallelStd(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
@@ -83,13 +88,15 @@ func BenchmarkStdLoggerParallel(b *testing.B) {
 
 	err = InitLogger(Config{
 		Backend: "std",
-		Output:  tmpFile.Name(),
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
 	})
 	assert.Nil(b, err)
 
 	logger := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
 
-	fmt.Println("")
 	b.SetParallelism(10)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -98,7 +105,7 @@ func BenchmarkStdLoggerParallel(b *testing.B) {
 	})
 }
 
-func BenchmarkZapLoggerParallel(b *testing.B) {
+func BenchmarkLoggerParallelZap(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
@@ -107,13 +114,15 @@ func BenchmarkZapLoggerParallel(b *testing.B) {
 
 	err = InitLogger(Config{
 		Backend: "zap",
-		Output:  tmpFile.Name(),
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
 	})
 	assert.Nil(b, err)
 
 	logger := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
 
-	fmt.Println("")
 	b.SetParallelism(10)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
@@ -122,7 +131,7 @@ func BenchmarkZapLoggerParallel(b *testing.B) {
 	})
 }
 
-func BenchmarkZerologLoggerParallel(b *testing.B) {
+func BenchmarkLoggerParallelZerolog(b *testing.B) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(b, err)
 	defer func() {
@@ -131,13 +140,15 @@ func BenchmarkZerologLoggerParallel(b *testing.B) {
 
 	err = InitLogger(Config{
 		Backend: "zerolog",
-		Output:  tmpFile.Name(),
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
 	})
 	assert.Nil(b, err)
 
 	logger := NewLoggerWithTraceID("BENCHMARK_TRACE_ID")
 
-	fmt.Println("")
 	b.SetParallelism(10)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {

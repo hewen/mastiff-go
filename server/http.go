@@ -45,7 +45,10 @@ func NewHTTPServer(conf *HTTPConf, initRoute func(r *gin.Engine)) (*HTTPService,
 		conf.TimeoutWrite = HTTPTimeoutWriteDefault
 	}
 
-	handler := NewGinAPIHandler(conf, initRoute)
+	handler, err := NewGinAPIHandler(conf, initRoute)
+	if err != nil {
+		return nil, err
+	}
 
 	srv := &http.Server{
 		Addr:         conf.Addr,

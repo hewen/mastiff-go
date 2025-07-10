@@ -22,6 +22,7 @@ var (
 	startMockMysqlFunc = startMockMysqlServer
 	initMysqlFunc      = InitMysql
 	loadSQLFilesFunc   = loadSQLFiles
+	newMysqlServerFunc = server.NewServer
 )
 
 // InitMockMysql initializes a MySQL connection with the given configuration.
@@ -71,7 +72,6 @@ func startMockMysqlServer(address string, engine *sqle.Engine, provider *memory.
 		Address:  address,
 	}
 
-	// since we're using a memory db, we can't rely on server.DefaultSessionBuilder as it causes panics, so explicitly build a memorySessionBuilder
 	sessionBuilder := func(_ context.Context, c *vsql.Conn, addr string) (gsql.Session, error) {
 		var host, user string
 		mysqlConnectionUser, ok := c.UserData.(gsql.MysqlConnectionUser)
@@ -82,7 +82,8 @@ func startMockMysqlServer(address string, engine *sqle.Engine, provider *memory.
 		client := gsql.Client{Address: host, User: user, Capabilities: c.Capabilities}
 		return memory.NewSession(gsql.NewBaseSessionWithClientServer(addr, client, c.ConnectionID), provider), nil
 	}
-	srv, err := server.NewServer(cfg, engine, gsql.NewContext, sessionBuilder, nil)
+
+	srv, err := newMysqlServerFunc(cfg, engine, gsql.NewContext, sessionBuilder, nil)
 	if err != nil {
 		return err
 	}

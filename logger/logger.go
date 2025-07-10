@@ -6,16 +6,19 @@ package logger
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"slices"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/internal/contextkeys"
+	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"
-	"github.com/teris-io/shortid"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 	"google.golang.org/grpc/metadata"
@@ -28,13 +31,7 @@ type LogLevelFlag int
 // LogLevel represents the log level as a string.
 type LogLevel string
 
-// contextKey is a type alias for string used as context key type.
-type contextKey string
-
 const (
-	// LoggerTraceKey is the key used to store the trace ID in the context.
-	LoggerTraceKey contextKey = "logid"
-
 	// LogLevelFlagFatal is the log level flag for fatal errors.
 	LogLevelFlagFatal LogLevelFlag = 1
 	// LogLevelFlagPanic is the log level flag for panic errors.
@@ -72,8 +69,10 @@ const (
 )
 
 var (
+	// logLevel is the current log level.
 	logLevel = LogLevelFlagInfo
 
+	// logLevelMap is a map of log level strings to their corresponding LogLevelFlag values.
 	logLevelMap = map[LogLevel]LogLevelFlag{
 		LogLevelFatal: LogLevelFlagFatal,
 		LogLevelPanic: LogLevelFlagPanic,
@@ -83,6 +82,7 @@ var (
 		LogLevelDebug: LogLevelFlagDebug,
 	}
 
+	// logLevelValueMap is a map of LogLevelFlag values to their corresponding LogLevel strings.
 	logLevelValueMap = map[LogLevelFlag]LogLevel{
 		LogLevelFlagFatal: LogLevelFatal,
 		LogLevelFlagPanic: LogLevelPanic,
@@ -119,16 +119,38 @@ func init() {
 
 // InitLogger initializes the global logger with the given configuration.
 func InitLogger(conf Config) error {
+	if err := conf.Validate(); err != nil {
+		return err
+	}
+
 	err := SetLevel(conf.Level)
 	if err != nil {
 		return err
 	}
 
-	var out io.Writer = os.Stdout
-	if conf.Output != "" {
-		rotator := newDailyRotatingLogger(conf)
-		out = io.MultiWriter(out, rotator)
+	SetLogMasking(conf.EnableMasking)
+
+	var writers []io.Writer
+	for _, output := range conf.Outputs {
+		switch output {
+		case "stdout":
+			writers = append(writers, os.Stdout)
+		case "stderr":
+			writers = append(writers, os.Stderr)
+		case "file":
+			if conf.FileOutput != nil {
+				writers = append(writers, createFileWriter(*conf.FileOutput))
+			}
+		default:
+			writers = append(writers, os.Stdout)
+		}
 	}
+
+	if len(writers) == 0 {
+		writers = append(writers, os.Stdout)
+	}
+
+	out := io.MultiWriter(writers...)
 
 	traceID := NewTraceID()
 	switch conf.Backend {
@@ -146,13 +168,49 @@ func InitLogger(conf Config) error {
 		zl := newZeroLogger(out)
 		defaultLogger = &zerologLogger{logger: zl, traceID: traceID}
 	}
+
 	return err
 }
 
-func newDailyRotatingLogger(conf Config) *lumberjack.Logger {
+// Validate checks the configuration for errors.
+func (cfg *Config) Validate() error {
+	if slices.Contains(cfg.Outputs, "file") && (cfg.FileOutput == nil || cfg.FileOutput.Path == "") {
+		return errors.New("file output selected but FileOutput.Path is empty")
+	}
+	if cfg.Backend != "zap" && cfg.Backend != "zerolog" && cfg.Backend != "std" && cfg.Backend != "" {
+		return fmt.Errorf("unsupported backend: %s", cfg.Backend)
+	}
+	return nil
+}
+
+// createFileWriter creates a new file writer based on the configuration.
+func createFileWriter(cfg FileOutputConfig) io.Writer {
+	switch cfg.RotatePolicy {
+	case "daily":
+		return newDailyRotatingLogger(cfg)
+	case "size":
+		return newSizeLogger(cfg)
+	case "none":
+		return newPlainFileLogger(cfg)
+	default:
+		return newDailyRotatingLogger(cfg)
+	}
+}
+
+// ensureLogDirExists creates the directory for the log file if it does not exist.
+func ensureLogDirExists(path string) {
+	dir := filepath.Dir(path)
+	_ = os.MkdirAll(dir, 0750)
+}
+
+// newDailyRotatingLogger creates a new logger that rotates daily.
+func newDailyRotatingLogger(cfg FileOutputConfig) *lumberjack.Logger {
+	ensureLogDirExists(cfg.Path)
+
 	logger := &lumberjack.Logger{
-		Filename: conf.Output,
-		MaxSize:  conf.MaxSize,
+		Filename: cfg.Path,
+		MaxSize:  cfg.MaxSize,
+		Compress: cfg.Compress,
 	}
 
 	c := cron.New(cron.WithSeconds())
@@ -161,6 +219,29 @@ func newDailyRotatingLogger(conf Config) *lumberjack.Logger {
 	})
 	c.Start()
 	return logger
+}
+
+// newSizeLogger creates a new logger that rotates when the log file reaches a certain size.
+func newSizeLogger(cfg FileOutputConfig) *lumberjack.Logger {
+	ensureLogDirExists(cfg.Path)
+
+	return &lumberjack.Logger{
+		Filename: cfg.Path,
+		MaxSize:  cfg.MaxSize,
+		Compress: cfg.Compress,
+	}
+}
+
+// newPlainFileLogger creates a new logger that writes to a plain file without rotation.
+func newPlainFileLogger(cfg FileOutputConfig) io.Writer {
+	ensureLogDirExists(cfg.Path)
+
+	f, err := os.OpenFile(cfg.Path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Printf("failed to open log file: %v", err)
+		return os.Stdout
+	}
+	return f
 }
 
 // rotatable interface defines the Rotate method for log rotation.
@@ -216,9 +297,9 @@ func SetLevel(level LogLevel) error {
 	return nil
 }
 
-// NewTraceID generates a new trace ID using the shortid package.
+// NewTraceID generates a new trace ID using the nanoid package.
 func NewTraceID() string {
-	id, _ := shortid.Generate()
+	id, _ := gonanoid.New()
 	return id
 }
 
@@ -232,27 +313,12 @@ func NewLoggerWithContext(ctx context.Context) Logger {
 	return NewLoggerWithTraceID(GetTraceIDWithContext(ctx))
 }
 
-// GetTraceIDWithGinContext returns the trace ID from Gin context or generates a new one.
-func GetTraceIDWithGinContext(ctx *gin.Context) string {
-	if v, exists := ctx.Get(string(LoggerTraceKey)); exists {
-		if s, ok := v.(string); ok && s != "" {
-			return s
-		}
-	}
-	return NewTraceID()
-}
-
 // GetTraceIDWithContext returns the trace ID from context or generates a new one.
 func GetTraceIDWithContext(ctx context.Context) string {
-	if v, exists := ctx.Value(LoggerTraceKey).(string); exists {
+	if v, exists := contextkeys.GetTraceID(ctx); exists {
 		return v
 	}
 	return NewTraceID()
-}
-
-// NewLoggerWithGinContext returns a new Logger with trace ID extracted from Gin context.
-func NewLoggerWithGinContext(ctx *gin.Context) Logger {
-	return NewLoggerWithTraceID(GetTraceIDWithGinContext(ctx))
 }
 
 // NewLoggerWithTraceID returns a new Logger with the specified trace ID.
@@ -274,32 +340,24 @@ func NewLoggerWithTraceID(traceID string) Logger {
 func NewOutgoingContextWithIncomingContext(ctx context.Context) context.Context {
 	var traceID string
 	if md, ok := metadata.FromIncomingContext(ctx); ok {
-		if tid, ok := md[string(LoggerTraceKey)]; ok && len(tid) > 0 {
+		if tid, ok := md[string(contextkeys.LoggerTraceIDKey)]; ok && len(tid) > 0 {
 			traceID = tid[0]
 		}
 	}
 	if traceID == "" {
 		traceID = NewTraceID()
 	}
-	md := metadata.Pairs(string(LoggerTraceKey), traceID)
+	md := metadata.Pairs(string(contextkeys.LoggerTraceIDKey), traceID)
 	ctx = metadata.NewOutgoingContext(ctx, md)
-	return context.WithValue(ctx, LoggerTraceKey, traceID)
-}
-
-// NewOutgoingContextWithGinContext creates a new outgoing context with the trace ID from the Gin context.
-func NewOutgoingContextWithGinContext(ctx *gin.Context) context.Context {
-	m := make(map[string]string)
-	m[string(LoggerTraceKey)] = GetTraceIDWithGinContext(ctx)
-	md := metadata.New(m)
-	return metadata.NewOutgoingContext(context.TODO(), md)
-
+	return contextkeys.SetTraceID(ctx, traceID)
 }
 
 // stdLogger is a Logger implementation using the standard log package.
 type stdLogger struct {
-	logger  *log.Logger
-	traceID string
-	fields  map[string]any
+	logger        *log.Logger
+	traceID       string
+	fields        map[string]any
+	EnableMasking bool
 }
 
 func (l *stdLogger) GetTraceID() string { return l.traceID }
@@ -329,20 +387,24 @@ func (l *stdLogger) Panicf(format string, v ...any) { l.logOutput(LogLevelFlagPa
 func (l *stdLogger) Fatalf(format string, v ...any) { l.logOutput(LogLevelFlagFatal, format, v...) }
 func (l *stdLogger) Fields(fields map[string]any) Logger {
 	merged := make(map[string]any, len(l.fields)+len(fields))
-	for i := range l.fields {
-		merged[i] = l.fields[i]
+	for k, v := range l.fields {
+		merged[k] = v
 	}
-	for i := range fields {
-		merged[i] = fields[i]
+	for k, v := range fields {
+		merged[k] = v
 	}
-	l.fields = merged
-	return l
+	return &stdLogger{
+		logger:  l.logger,
+		traceID: l.traceID,
+		fields:  merged,
+	}
 }
 
 // zapLogger is a Logger implementation using Uber's zap package.
 type zapLogger struct {
-	logger  *zap.SugaredLogger
-	traceID string
+	logger        *zap.SugaredLogger
+	traceID       string
+	EnableMasking bool
 }
 
 func (l *zapLogger) GetTraceID() string { return l.traceID }
@@ -377,16 +439,21 @@ func (l *zapLogger) Errorf(format string, v ...any) { l.logOutput(LogLevelFlagEr
 func (l *zapLogger) Panicf(format string, v ...any) { l.logOutput(LogLevelFlagPanic, format, v...) }
 func (l *zapLogger) Fatalf(format string, v ...any) { l.logOutput(LogLevelFlagFatal, format, v...) }
 func (l *zapLogger) Fields(fields map[string]any) Logger {
+	newLogger := l.logger
 	for k, v := range fields {
-		l.logger = l.logger.With(k, v)
+		newLogger = newLogger.With(k, v)
 	}
-	return l
+	return &zapLogger{
+		logger:  newLogger,
+		traceID: l.GetTraceID(),
+	}
 }
 
 // zerologLogger is a Logger implementation using the zerolog package.
 type zerologLogger struct {
-	logger  zerolog.Logger
-	traceID string
+	logger        zerolog.Logger
+	traceID       string
+	EnableMasking string
 }
 
 func (l *zerologLogger) GetTraceID() string { return l.traceID }
@@ -421,6 +488,9 @@ func (l *zerologLogger) Errorf(format string, v ...any) { l.logOutput(LogLevelFl
 func (l *zerologLogger) Panicf(format string, v ...any) { l.logOutput(LogLevelFlagPanic, format, v...) }
 func (l *zerologLogger) Fatalf(format string, v ...any) { l.logOutput(LogLevelFlagFatal, format, v...) }
 func (l *zerologLogger) Fields(fields map[string]any) Logger {
-	l.logger = l.logger.With().Fields(fields).Logger()
-	return l
+	newLogger := l.logger.With().Fields(fields).Logger()
+	return &zerologLogger{
+		logger:  newLogger,
+		traceID: l.GetTraceID(),
+	}
 }

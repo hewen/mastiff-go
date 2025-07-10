@@ -10,6 +10,10 @@ Grpc:
   Timeout: 10000                  # Timeout for gRPC requests in milliseconds
   Reflection: true                # Enable gRPC reflection service
 
+Queue:
+  PoolSize: 10                  # Goroutine pool size for processing queue messages
+  EmptySleepInterval: 500ms    # Sleep duration when queue is empty (in Go duration format)
+
 Mysql:
   DataSourceName: "user:password@tcp(127.0.0.1)/dbname?charset=utf8mb4&parseTime=true"
                                  # MySQL data source name
@@ -22,10 +26,14 @@ Redis:
   RegisterHookDriver: false       # Whether to register driver hook
 
 Logger:
-  Level: "INFO"                  # Log level: DEBUG, INFO, WARN, ERROR, etc.
-  Output: "/var/log/myapp/access.log"  # Log file output path
-  Maxsize: 100                   # Max log file size in megabytes before rotation
-
-Queue:
-  PoolSize: 10                  # Goroutine pool size for processing queue messages
-  EmptySleepInterval: 500ms    # Sleep duration when queue is empty (in Go duration format)
+  Level: "info"                   # log level: debug, info, warn, error, etc.
+  Outputs: ["stdout", "file"]    # List of output targets: "stdout", "stderr", "file", default stdout
+  Backend: "zerolog"             # Logging backend: "std", "zap", or "zerolog", default zerolog
+  EnableMasking: false           # Enable masking of sensitive fields
+  FileOutput:                    # File output config (used when "file" is in Outputs)
+    Path: "/var/log/myapp/access.log"  # Log file path
+    RotatePolicy: "daily"        # Rotation policy: "daily", "size", or "none"
+    MaxSize: 100                 # Max file size in MB (used when RotatePolicy is "size")
+    MaxBackups: 7                # Max number of old log files to retain
+    MaxAge: 30                   # Max age (in days) to keep old log files
+    Compress: true               # Compress rotated log files (gzip)

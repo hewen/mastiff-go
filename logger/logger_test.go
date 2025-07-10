@@ -8,14 +8,13 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http/httptest"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"testing"
 
-	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 	"gopkg.in/natefinch/lumberjack.v2"
@@ -46,7 +45,7 @@ func TestLogger(t *testing.T) {
 		assert.Nil(t, err)
 		trace := NewTraceID()
 		ctx := context.Background()
-		ctx = context.WithValue(ctx, LoggerTraceKey, trace)
+		ctx = context.WithValue(ctx, contextkeys.LoggerTraceIDKey, trace)
 
 		testCase := []struct {
 			l        Logger
@@ -69,16 +68,18 @@ func TestLogger(t *testing.T) {
 				traceRes: true,
 			},
 		}
-		for i := range testCase {
-			l := testCase[i].l
-			assert.Equal(t, testCase[i].traceRes, l.GetTraceID() == trace, fmt.Sprintf("case: %v logger trace: %v trace:%v", i, l.GetTraceID(), trace))
-			l.Fields(map[string]any{
-				"test": "test",
-			})
-			l.Debugf("tmp")
-			l.Infof("tmp")
-			l.Errorf("tmp")
-			l.Warnf("tmp")
+		for j := range testCase {
+			l := testCase[j].l
+			assert.Equal(t, testCase[j].traceRes, l.GetTraceID() == trace, fmt.Sprintf("case: %v logger trace: %v trace:%v", i, l.GetTraceID(), trace))
+			data := map[string]any{
+				"backend": backends[i],
+			}
+
+			entry := l.Fields(data)
+			entry.Debugf("tmp")
+			entry.Infof("tmp")
+			entry.Errorf("tmp")
+			entry.Warnf("tmp")
 		}
 	}
 }
@@ -170,8 +171,7 @@ func TestInitLogger(t *testing.T) {
 	assert.Nil(t, err)
 
 	err = InitLogger(Config{
-		Level:   LogLevelInfo,
-		MaxSize: 100,
+		Level: LogLevelInfo,
 	})
 	assert.Nil(t, err)
 
@@ -183,53 +183,18 @@ func TestInitLogger(t *testing.T) {
 
 	err = InitLogger(Config{
 		Level:   LogLevelInfo,
-		Output:  tmpFile.Name(),
-		MaxSize: 100,
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
 	})
 	assert.Nil(t, err)
-}
-
-func TestGetTraceIDWithGinContext(t *testing.T) {
-	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	res := GetTraceIDWithGinContext(ctx)
-	assert.Equal(t, true, res != "")
-
-	traceID := NewTraceID()
-	ctx, _ = gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set(string(LoggerTraceKey), traceID)
-
-	res = GetTraceIDWithGinContext(ctx)
-	assert.Equal(t, traceID, res)
-}
-
-func TestNewLoggerWithGinContext(t *testing.T) {
-	traceID := NewTraceID()
-
-	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set(string(LoggerTraceKey), traceID)
-
-	l := NewLoggerWithGinContext(ctx)
-	assert.Equal(t, traceID, l.GetTraceID())
-}
-
-func TestNewOutgoingContextFromGinContext(t *testing.T) {
-	traceID := NewTraceID()
-	gctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	gctx.Set(string(LoggerTraceKey), traceID)
-
-	ctx := NewOutgoingContextWithGinContext(gctx)
-	md, ok := metadata.FromOutgoingContext(ctx)
-	assert.Equal(t, true, ok)
-
-	trace, ok := md[string(LoggerTraceKey)]
-	assert.Equal(t, true, ok)
-	assert.Equal(t, traceID, trace[0])
 }
 
 func TestNewOutgoingContextFromIncomingContext(t *testing.T) {
 	traceID := NewTraceID()
 	m := make(map[string]string)
-	m[string(LoggerTraceKey)] = traceID
+	m[string(contextkeys.LoggerTraceIDKey)] = traceID
 	md := metadata.New(m)
 	ictx := metadata.NewIncomingContext(context.TODO(), md)
 
@@ -327,4 +292,94 @@ func TestConcurrentLogging(t *testing.T) {
 	} else {
 		t.Logf("all logs written successfully: %d lines", linesCount)
 	}
+}
+
+func TestValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		conf    Config
+		wantErr bool
+	}{
+		{
+			name: "valid config with file",
+			conf: Config{
+				Outputs: []string{"file"},
+				FileOutput: &FileOutputConfig{
+					Path: "/tmp/test.log",
+				},
+				Backend: "zerolog",
+			},
+			wantErr: false,
+		},
+		{
+			name: "file output missing path",
+			conf: Config{
+				Outputs:    []string{"file"},
+				FileOutput: &FileOutputConfig{}, // missing Path
+				Backend:    "zap",
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid backend",
+			conf: Config{
+				Outputs: []string{"stdout"},
+				Backend: "unknown",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.conf.Validate()
+			assert.Equal(t, err != nil, tt.wantErr)
+		})
+	}
+}
+
+func TestCreateFileWriter(t *testing.T) {
+	tests := []struct {
+		policy string
+	}{
+		{"daily"},
+		{"size"},
+		{"none"},
+		{"invalid"}, // should fallback to daily
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.policy, func(t *testing.T) {
+			cfg := FileOutputConfig{
+				Path:         "/tmp/test.log",
+				RotatePolicy: tt.policy,
+				MaxSize:      1,
+			}
+			writer := createFileWriter(cfg)
+			assert.NotNil(t, writer)
+		})
+	}
+}
+
+func TestNewSizeLogger(t *testing.T) {
+	cfg := FileOutputConfig{
+		Path:    "/tmp/test-size.log",
+		MaxSize: 5,
+	}
+	l := newSizeLogger(cfg)
+	assert.NotNil(t, l)
+}
+
+func TestNewPlainFileLogger_Success(t *testing.T) {
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(t, err)
+	cfg := FileOutputConfig{Path: tmpFile.Name()}
+	w := newPlainFileLogger(cfg)
+	assert.NotNil(t, w)
+}
+
+func TestNewPlainFileLogger_Failure(t *testing.T) {
+	cfg := FileOutputConfig{Path: "/root/forbidden.log"} // or "///invalid"
+	w := newPlainFileLogger(cfg)
+	assert.NotNil(t, w)
 }
