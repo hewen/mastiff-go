@@ -8,14 +8,12 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"net/http/httptest"
 	"os"
 	"os/exec"
 	"strings"
 	"sync"
 	"testing"
 
-	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
@@ -190,43 +188,6 @@ func TestInitLogger(t *testing.T) {
 		MaxSize: 100,
 	})
 	assert.Nil(t, err)
-}
-
-func TestGetTraceIDWithGinContext(t *testing.T) {
-	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	res := GetTraceIDWithGinContext(ctx)
-	assert.Equal(t, true, res != "")
-
-	traceID := NewTraceID()
-	ctx, _ = gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set(string(contextkeys.LoggerTraceIDKey), traceID)
-
-	res = GetTraceIDWithGinContext(ctx)
-	assert.Equal(t, traceID, res)
-}
-
-func TestNewLoggerWithGinContext(t *testing.T) {
-	traceID := NewTraceID()
-
-	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	ctx.Set(string(contextkeys.LoggerTraceIDKey), traceID)
-
-	l := NewLoggerWithGinContext(ctx)
-	assert.Equal(t, traceID, l.GetTraceID())
-}
-
-func TestNewOutgoingContextFromGinContext(t *testing.T) {
-	traceID := NewTraceID()
-	gctx, _ := gin.CreateTestContext(httptest.NewRecorder())
-	gctx.Set(string(contextkeys.LoggerTraceIDKey), traceID)
-
-	ctx := NewOutgoingContextWithGinContext(gctx)
-	md, ok := metadata.FromOutgoingContext(ctx)
-	assert.Equal(t, true, ok)
-
-	trace, ok := md[string(contextkeys.LoggerTraceIDKey)]
-	assert.Equal(t, true, ok)
-	assert.Equal(t, traceID, trace[0])
 }
 
 func TestNewOutgoingContextFromIncomingContext(t *testing.T) {

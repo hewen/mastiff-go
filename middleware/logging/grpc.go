@@ -13,18 +13,20 @@ import (
 func UnaryLoggingInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		start := time.Now()
-		pr, _ := peer.FromContext(ctx)
-
 		ctx = logger.NewOutgoingContextWithIncomingContext(ctx)
-		l := logger.NewLoggerWithContext(ctx)
 
 		resp, err := handler(ctx, req)
 
+		l := logger.NewLoggerWithContext(ctx)
+		var ip string
+		if pr, _ := peer.FromContext(ctx); pr != nil {
+			ip = pr.Addr.String()
+		}
 		logger.LogRequest(
 			l,
 			0,
 			time.Since(start),
-			getPeerIP(pr),
+			ip,
 			info.FullMethod,
 			"GRPC-GO-SERVER",
 			req,
@@ -33,13 +35,6 @@ func UnaryLoggingInterceptor() grpc.UnaryServerInterceptor {
 		)
 		return resp, err
 	}
-}
-
-func getPeerIP(pr *peer.Peer) string {
-	if pr != nil {
-		return pr.Addr.String()
-	}
-	return ""
 }
 
 // UnaryClientLoggingInterceptor creates a gRPC client interceptor that logs the request and response details, including execution time and any errors.

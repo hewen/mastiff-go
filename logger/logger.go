@@ -12,7 +12,6 @@ import (
 	"os"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/robfig/cron/v3"
@@ -233,27 +232,12 @@ func NewLoggerWithContext(ctx context.Context) Logger {
 	return NewLoggerWithTraceID(GetTraceIDWithContext(ctx))
 }
 
-// GetTraceIDWithGinContext returns the trace ID from Gin context or generates a new one.
-func GetTraceIDWithGinContext(ctx *gin.Context) string {
-	if v, exists := ctx.Get(string(contextkeys.LoggerTraceIDKey)); exists {
-		if s, ok := v.(string); ok && s != "" {
-			return s
-		}
-	}
-	return NewTraceID()
-}
-
 // GetTraceIDWithContext returns the trace ID from context or generates a new one.
 func GetTraceIDWithContext(ctx context.Context) string {
-	if v, exists := ctx.Value(contextkeys.LoggerTraceIDKey).(string); exists {
+	if v, exists := contextkeys.GetTraceID(ctx); exists {
 		return v
 	}
 	return NewTraceID()
-}
-
-// NewLoggerWithGinContext returns a new Logger with trace ID extracted from Gin context.
-func NewLoggerWithGinContext(ctx *gin.Context) Logger {
-	return NewLoggerWithTraceID(GetTraceIDWithGinContext(ctx))
 }
 
 // NewLoggerWithTraceID returns a new Logger with the specified trace ID.
@@ -284,16 +268,7 @@ func NewOutgoingContextWithIncomingContext(ctx context.Context) context.Context 
 	}
 	md := metadata.Pairs(string(contextkeys.LoggerTraceIDKey), traceID)
 	ctx = metadata.NewOutgoingContext(ctx, md)
-	return context.WithValue(ctx, contextkeys.LoggerTraceIDKey, traceID)
-}
-
-// NewOutgoingContextWithGinContext creates a new outgoing context with the trace ID from the Gin context.
-func NewOutgoingContextWithGinContext(ctx *gin.Context) context.Context {
-	m := make(map[string]string)
-	m[string(contextkeys.LoggerTraceIDKey)] = GetTraceIDWithGinContext(ctx)
-	md := metadata.New(m)
-	return metadata.NewOutgoingContext(context.TODO(), md)
-
+	return contextkeys.SetTraceID(ctx, traceID)
 }
 
 // stdLogger is a Logger implementation using the standard log package.

@@ -1,3 +1,4 @@
+// Package server provides a queue server.
 package server
 
 import (
@@ -188,7 +189,7 @@ func TestQueueJSONRedisHandler_Handle_NilHandler(t *testing.T) {
 }
 
 func TestQueueProtoRedisHandler_Handle_NilHandler(t *testing.T) {
-	dummy := NewQueueProtoRedisHandler[*test.TestMsg](nil, "test", nil, func() *test.TestMsg {
+	dummy := NewQueueProtoRedisHandler(nil, "test", nil, func() *test.TestMsg {
 		return &test.TestMsg{}
 	})
 

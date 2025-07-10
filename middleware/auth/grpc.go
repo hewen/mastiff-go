@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 
+	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"
@@ -36,7 +37,7 @@ func GRPCAuthInterceptor(conf Config) grpc.UnaryServerInterceptor {
 			return nil, status.Error(codes.Unauthenticated, "invalid token")
 		}
 
-		ctx = SetAuthInfoToContext(ctx, authInfo)
+		ctx = contextkeys.SetAuthInfo(ctx, authInfo)
 		return handler(ctx, req)
 	}
 }

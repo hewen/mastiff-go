@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -28,7 +29,7 @@ func TestGRPCAuthInterceptor(t *testing.T) {
 	}
 
 	handlerCheckAuth := func(ctx context.Context, _ any) (any, error) {
-		authInfo, ok := GetAuthInfoFromContext(ctx)
+		authInfo, ok := contextkeys.GetAuthInfo(ctx)
 		if !ok || authInfo.UserID != "123" {
 			return nil, status.Error(codes.Unauthenticated, "auth info missing or invalid")
 		}

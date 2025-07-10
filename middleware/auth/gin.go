@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/internal/contextkeys"
 )
 
 // GinAuthMiddleware is a gin middleware for authentication and authorization.
@@ -27,7 +28,10 @@ func GinAuthMiddleware(conf Config) gin.HandlerFunc {
 			return
 		}
 
-		SetAuthInfoToGin(c, info)
+		ctx := c.Request.Context()
+		ctx = contextkeys.SetAuthInfo(ctx, info)
+		ctx = contextkeys.SetUserID(ctx, info.UserID)
+		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
 }

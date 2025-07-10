@@ -2,12 +2,10 @@ package logging
 
 import (
 	"context"
-	"net"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/peer"
 )
 
 func TestUnaryLoggingInterceptor(t *testing.T) {
@@ -34,23 +32,4 @@ func TestUnaryClientLoggingInterceptor(t *testing.T) {
 		},
 	)
 	assert.Nil(t, err)
-}
-
-func TestGetPeerIP(t *testing.T) {
-	t.Run("peer is nil", func(t *testing.T) {
-		ip := getPeerIP(nil)
-		assert.Equal(t, "", ip)
-	})
-
-	t.Run("peer is not nil", func(t *testing.T) {
-		addr := &net.TCPAddr{
-			IP:   net.ParseIP("192.168.1.100"),
-			Port: 8080,
-		}
-		pr := &peer.Peer{
-			Addr: addr,
-		}
-		ip := getPeerIP(pr)
-		assert.Equal(t, "192.168.1.100:8080", ip)
-	})
 }

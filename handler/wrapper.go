@@ -14,7 +14,7 @@ type WithRequest[T any, R any] func(c *gin.Context, req T) (R, error)
 func WrapHandler[T any, R any](handle WithRequest[T, R]) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		var req T
-		l := logger.NewLoggerWithGinContext(c)
+		l := logger.NewLoggerWithContext(c.Request.Context())
 
 		if err := c.ShouldBindJSON(&req); err != nil {
 			l.Fields(map[string]any{"err": err}).Errorf("invalid request")

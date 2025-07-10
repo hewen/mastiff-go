@@ -2,48 +2,14 @@
 package auth
 
 import (
-	"context"
 	"errors"
 	"strings"
 	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"google.golang.org/grpc/metadata"
 )
-
-// Info represents the authentication information.
-type Info struct {
-	UserID string
-	Claims jwt.MapClaims
-}
-
-// SetAuthInfoToContext sets auth info to context.
-func SetAuthInfoToContext(ctx context.Context, info *Info) context.Context {
-	return context.WithValue(ctx, contextkeys.AuthInfoKey, info)
-}
-
-// GetAuthInfoFromContext gets auth info from context.
-func GetAuthInfoFromContext(ctx context.Context) (*Info, bool) {
-	info, ok := ctx.Value(contextkeys.AuthInfoKey).(*Info)
-	return info, ok
-}
-
-// SetAuthInfoToGin sets auth info to gin context.
-func SetAuthInfoToGin(c *gin.Context, info *Info) {
-	c.Set(string(contextkeys.AuthInfoKey), info)
-}
-
-// GetAuthInfoFromGin gets auth info from gin context.
-func GetAuthInfoFromGin(c *gin.Context) (*Info, bool) {
-	val, ok := c.Get(string(contextkeys.AuthInfoKey))
-	if !ok {
-		return nil, false
-	}
-	info, ok := val.(*Info)
-	return info, ok
-}
 
 // ExtractTokenFromHeader extracts token from header.
 func extractTokenFromHeader(value string, prefixes []string) string {
@@ -76,7 +42,7 @@ func isWhiteListed(path string, whitelist []string) bool {
 }
 
 // ValidateJWTToken validates a JWT token string with the given secret.
-func validateJWTToken(tokenStr, secret string) (*Info, error) {
+func validateJWTToken(tokenStr, secret string) (*contextkeys.Info, error) {
 	t, err := jwt.ParseWithClaims(tokenStr, jwt.MapClaims{}, func(_ *jwt.Token) (any, error) {
 		return []byte(secret), nil
 	}, jwt.WithValidMethods([]string{"HS256"}))
@@ -90,12 +56,12 @@ func validateJWTToken(tokenStr, secret string) (*Info, error) {
 		return nil, errors.New("invalid claims")
 	}
 
-	userID, ok := claims["user_id"].(string)
+	userID, ok := claims[string(contextkeys.UserIDKey)].(string)
 	if !ok {
 		return nil, errors.New("missing user_id")
 	}
 
-	return &Info{
+	return &contextkeys.Info{
 		UserID: userID,
 		Claims: claims,
 	}, nil

@@ -14,7 +14,7 @@ func GinRecoverHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {
-				l := logger.NewLoggerWithGinContext(c)
+				l := logger.NewLoggerWithContext(c.Request.Context())
 				l.Errorf("panic: %v $%s", r, strings.ReplaceAll(string(debug.Stack()), "\n", "$"))
 			}
 		}()

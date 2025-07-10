@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -15,6 +16,9 @@ import (
 func TestNewGinAPIHandler(t *testing.T) {
 	handler := func(r *gin.Engine) {
 		r.GET("/test", func(c *gin.Context) {
+			l := logger.NewLoggerWithContext(c.Request.Context())
+			l.Infof("test")
+
 			c.JSON(http.StatusOK, gin.H{
 				"message": "ok",
 			})

@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -88,7 +89,7 @@ func testValidToken(t *testing.T, conf Config) {
 	r := gin.New()
 	r.Use(GinAuthMiddleware(conf))
 	r.GET("/secure", func(c *gin.Context) {
-		ai, exists := GetAuthInfoFromGin(c)
+		ai, exists := contextkeys.GetAuthInfo(c.Request.Context())
 		if !exists || ai.UserID != "123" {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "auth info missing"})
 			return

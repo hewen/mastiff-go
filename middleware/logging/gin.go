@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/tomasen/realip"
 )
@@ -16,16 +15,15 @@ func GinLoggingHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 
-		traceID := logger.NewTraceID()
-
-		c.Set(string(contextkeys.LoggerTraceIDKey), traceID)
+		ctx := logger.NewOutgoingContextWithIncomingContext(c.Request.Context())
+		c.Request = c.Request.WithContext(ctx)
 
 		c.Next()
 
 		req, _ := c.Get("req")
 		resp, _ := c.Get("resp")
 
-		l := logger.NewLoggerWithGinContext(c)
+		l := logger.NewLoggerWithContext(ctx)
 		logger.LogRequest(
 			l,
 			c.Writer.Status(),
