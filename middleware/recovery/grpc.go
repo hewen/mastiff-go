@@ -1,3 +1,4 @@
+// Package recovery provides a gRPC interceptor that recovers from panics.
 package recovery
 
 import (

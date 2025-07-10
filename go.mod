@@ -17,6 +17,7 @@ require (
 	github.com/panjf2000/ants/v2 v2.11.3
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.34.0
+	github.com/sony/gobreaker v0.4.1
 	github.com/spf13/cobra v0.0.3
 	github.com/stretchr/testify v1.10.0
 	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce

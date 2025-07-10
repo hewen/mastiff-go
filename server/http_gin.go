@@ -1,4 +1,4 @@
-// Package server gin server implementation
+// Package server provides a Gin server implementation.
 package server
 
 import (
