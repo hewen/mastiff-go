@@ -8,9 +8,12 @@ import (
 	"testing"
 	"time"
 
+	"github.com/DATA-DOG/go-sqlmock"
+	"github.com/gchaincl/sqlhooks"
 	"github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type TestDriver struct {
@@ -88,4 +91,102 @@ func TestInitDB_WithoutHookDriver(t *testing.T) {
 	})
 
 	assert.Nil(t, err)
+}
+
+func TestInitDB_OpenError(t *testing.T) {
+	_, err := InitDB("invalidDriver", "bad-dsn", nil)
+	assert.Error(t, err)
+}
+
+func TestInitDB_PingError(t *testing.T) {
+	db, mock, err := sqlmock.New(sqlmock.MonitorPingsOption(true))
+	require.Nil(t, err)
+	mock.ExpectPing().WillReturnError(fmt.Errorf("ping failed"))
+
+	defer func() {
+		_ = db.Close()
+	}()
+
+	sql.Register("mock", sqlhooks.Wrap(db.Driver(), &SQLHooks{}))
+	_, err = InitDB("mock", "any-dsn", db.Driver(), DatabaseOption{
+		RegisterHookDriver: false,
+	})
+	assert.Error(t, err)
+}
+
+func TestTransact_BeginError(t *testing.T) {
+	sqlDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() {
+		_ = sqlDB.Close()
+	}()
+
+	mock.ExpectBegin().WillReturnError(fmt.Errorf("begin failed"))
+
+	db := sqlx.NewDb(sqlDB, "sqlmock")
+
+	storeDB := &DB{DB: db}
+	err = storeDB.Transact(func(_ *sqlx.Tx) error {
+		return nil
+	})
+
+	assert.Error(t, err)
+	assert.EqualError(t, err, "begin failed")
+}
+
+func TestTransact_FuncReturnsError(t *testing.T) {
+	sqlDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() {
+		_ = sqlDB.Close()
+	}()
+
+	db := sqlx.NewDb(sqlDB, "sqlmock")
+	mock.ExpectBegin()
+	mock.ExpectRollback()
+
+	storeDB := &DB{DB: db}
+	err = storeDB.Transact(func(_ *sqlx.Tx) error {
+		return fmt.Errorf("expected error")
+	})
+	assert.Error(t, err)
+	assert.EqualError(t, err, "expected error")
+}
+
+func TestTransact_Panic(t *testing.T) {
+	sqlDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() {
+		_ = sqlDB.Close()
+	}()
+
+	db := sqlx.NewDb(sqlDB, "sqlmock")
+	mock.ExpectBegin()
+	mock.ExpectRollback()
+
+	storeDB := &DB{DB: db}
+	err = storeDB.Transact(func(_ *sqlx.Tx) error {
+		panic("panic error")
+	})
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "panic error")
+}
+
+func TestTransact_Success(t *testing.T) {
+	sqlDB, mock, err := sqlmock.New()
+	require.NoError(t, err)
+	defer func() {
+		_ = sqlDB.Close()
+	}()
+
+	db := sqlx.NewDb(sqlDB, "sqlmock")
+	mock.ExpectBegin()
+	mock.ExpectCommit()
+
+	storeDB := &DB{DB: db}
+	err = storeDB.Transact(func(_ *sqlx.Tx) error {
+		// do nothing
+		return nil
+	})
+	assert.NoError(t, err)
 }

@@ -1,6 +1,7 @@
 module github.com/hewen/mastiff-go
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/alicebob/miniredis/v2 v2.35.0
 	github.com/dolthub/go-mysql-server v0.20.0
 	github.com/dolthub/vitess v0.0.0-20250512224608-8fb9c6ea092c
