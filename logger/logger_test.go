@@ -10,7 +10,6 @@ import (
 	"log"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -372,8 +371,9 @@ func TestNewSizeLogger(t *testing.T) {
 }
 
 func TestNewPlainFileLogger_Success(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "log.log")
-	cfg := FileOutputConfig{Path: path}
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(t, err)
+	cfg := FileOutputConfig{Path: tmpFile.Name()}
 	w := newPlainFileLogger(cfg)
 	assert.NotNil(t, w)
 }
