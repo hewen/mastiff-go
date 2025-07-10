@@ -17,12 +17,12 @@ type RedisHook struct{}
 // BeforeProcess is called before Redis command is processed.
 func (*RedisHook) BeforeProcess(ctx context.Context, _ redis.Cmder) (context.Context, error) {
 	// Record the time when Redis command is about to be processed.
-	return context.WithValue(ctx, contextkeys.RedisBeginTimeKey, time.Now()), nil
+	return contextkeys.SetRedisBeginTime(ctx, time.Now()), nil
 }
 
 // AfterProcess is called after Redis command is processed.
 func (*RedisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
-	begin := ctx.Value(contextkeys.RedisBeginTimeKey).(time.Time)
+	begin, _ := contextkeys.GetRedisBeginTime(ctx)
 	l := logger.NewLoggerWithContext(ctx)
 	l.Infof("REDIS | %10s | %v", util.FormatDuration(time.Since(begin)), cmd)
 	return nil
@@ -30,12 +30,12 @@ func (*RedisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
 
 // BeforeProcessPipeline is called before a Redis pipeline is processed.
 func (*RedisHook) BeforeProcessPipeline(ctx context.Context, _ []redis.Cmder) (context.Context, error) {
-	return context.WithValue(ctx, contextkeys.RedisBeginTimeKey, time.Now()), nil
+	return contextkeys.SetRedisBeginTime(ctx, time.Now()), nil
 }
 
 // AfterProcessPipeline is called after a Redis pipeline is processed.
 func (*RedisHook) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmder) error {
-	begin := ctx.Value(contextkeys.RedisBeginTimeKey).(time.Time)
+	begin, _ := contextkeys.GetRedisBeginTime(ctx)
 	l := logger.NewLoggerWithContext(ctx)
 	l.Infof("REDIS | %10s | %v", util.FormatDuration(time.Since(begin)), cmds)
 	return nil
