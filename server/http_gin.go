@@ -14,8 +14,8 @@ import (
 func NewGinAPIHandler(conf *HTTPConf, initRoute func(r *gin.Engine)) http.Handler {
 	gin.SetMode(conf.Mode)
 	r := gin.New()
-	r.Use(recovery.GinRecoverHandler())
-	r.Use(logging.GinLoggingHandler())
+	r.Use(recovery.GinMiddleware())
+	r.Use(logging.GinMiddleware())
 
 	if conf.PprofEnabled {
 		pprof.Register(r)

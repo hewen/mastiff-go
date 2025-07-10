@@ -60,9 +60,9 @@ func NewGrpcServer(conf *GrpcConf, registerServerFunc func(*grpc.Server), interc
 	var serverInterceptors []grpc.UnaryServerInterceptor
 
 	serverInterceptors = append(serverInterceptors,
-		timeout.UnaryTimeoutInterceptor(time.Duration(conf.Timeout)*time.Second),
-		recovery.UnaryRecoveryInterceptor(),
-		logging.UnaryLoggingInterceptor(),
+		timeout.UnaryServerInterceptor(time.Duration(conf.Timeout)*time.Second),
+		recovery.UnaryServerInterceptor(),
+		logging.UnaryServerInterceptor(),
 	)
 
 	if len(interceptors) > 0 {

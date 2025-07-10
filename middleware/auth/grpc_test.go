@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestGRPCAuthInterceptor(t *testing.T) {
+func TestUnaryServerInterceptor(t *testing.T) {
 	conf := Config{
 		HeaderKey:     "authorization",
 		TokenPrefixes: []string{"Bearer"},
@@ -23,7 +23,7 @@ func TestGRPCAuthInterceptor(t *testing.T) {
 		},
 	}
 
-	interceptor := GRPCAuthInterceptor(conf)
+	interceptor := UnaryServerInterceptor(conf)
 	handler := func(_ context.Context, _ any) (any, error) {
 		return "ok", nil
 	}

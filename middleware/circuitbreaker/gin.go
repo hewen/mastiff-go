@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GinCircuitBreakerHandler is a middleware for circuit breaker in Gin framework.
-func GinCircuitBreakerHandler(mgr *Manager) gin.HandlerFunc {
+// GinMiddleware is a middleware for circuit breaker in Gin framework.
+func GinMiddleware(mgr *Manager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		key := c.FullPath()
 		breaker := mgr.Get(key)

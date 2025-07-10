@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// UnaryCircuitBreakerInterceptor creates a gRPC unary interceptor with circuit breaker.
-func UnaryCircuitBreakerInterceptor(mgr *Manager) grpc.UnaryServerInterceptor {
+// UnaryServerInterceptor creates a gRPC unary interceptor with circuit breaker.
+func UnaryServerInterceptor(mgr *Manager) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req interface{},

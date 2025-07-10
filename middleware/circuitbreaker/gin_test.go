@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGinCircuitBreakerHandler_Success(t *testing.T) {
+func TestGinMiddleware_Success(t *testing.T) {
 	cfg := &Config{
 		MaxRequests: 1,
 		Interval:    1,
@@ -23,7 +23,7 @@ func TestGinCircuitBreakerHandler_Success(t *testing.T) {
 	mgr := NewManager(cfg)
 
 	r := gin.New()
-	r.Use(GinCircuitBreakerHandler(mgr))
+	r.Use(GinMiddleware(mgr))
 	r.GET("/ok", func(c *gin.Context) {
 		c.String(200, "success")
 	})
@@ -36,7 +36,7 @@ func TestGinCircuitBreakerHandler_Success(t *testing.T) {
 	assert.Equal(t, "success", w.Body.String())
 }
 
-func TestGinCircuitBreakerHandler_Failure(t *testing.T) {
+func TestGinMiddleware_Failure(t *testing.T) {
 	cfg := &Config{
 		MaxRequests: 1,
 		Interval:    1,
@@ -48,7 +48,7 @@ func TestGinCircuitBreakerHandler_Failure(t *testing.T) {
 	mgr := NewManager(cfg)
 
 	r := gin.New()
-	r.Use(GinCircuitBreakerHandler(mgr))
+	r.Use(GinMiddleware(mgr))
 	r.GET("/fail", func(c *gin.Context) {
 		c.String(200, "should not run")
 	})

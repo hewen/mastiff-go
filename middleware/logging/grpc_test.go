@@ -8,8 +8,8 @@ import (
 	"google.golang.org/grpc"
 )
 
-func TestUnaryLoggingInterceptor(t *testing.T) {
-	handle := UnaryLoggingInterceptor()
+func TestUnaryServerInterceptor(t *testing.T) {
+	handle := UnaryServerInterceptor()
 	resp, err := handle(context.TODO(), nil, &grpc.UnaryServerInfo{
 		FullMethod: "test",
 	}, func(_ context.Context, _ any) (any, error) {

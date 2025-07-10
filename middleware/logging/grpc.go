@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc/peer"
 )
 
-// UnaryLoggingInterceptor is a gRPC interceptor that logs the request and response details, including execution time and any errors.
-func UnaryLoggingInterceptor() grpc.UnaryServerInterceptor {
+// UnaryServerInterceptor is a gRPC interceptor that logs the request and response details, including execution time and any errors.
+func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		start := time.Now()
 		ctx = logger.NewOutgoingContextWithIncomingContext(ctx)

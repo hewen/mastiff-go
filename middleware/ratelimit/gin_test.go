@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGinRateLimitHandler(t *testing.T) {
+func TestGinMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
@@ -28,7 +28,7 @@ func TestGinRateLimitHandler(t *testing.T) {
 	mgr := NewLimiterManager(cfg)
 	defer mgr.Stop()
 
-	r.Use(GinRateLimitHandler(mgr))
+	r.Use(GinMiddleware(mgr))
 	r.GET("/test", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "ok"})
 	})

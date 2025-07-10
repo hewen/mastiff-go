@@ -9,8 +9,8 @@ import (
 	"github.com/hewen/mastiff-go/logger"
 )
 
-// GinRecoverHandler is a middleware for recovering from panics in Gin framework.
-func GinRecoverHandler() gin.HandlerFunc {
+// GinMiddleware is a middleware for recovering from panics in Gin framework.
+func GinMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		defer func() {
 			if r := recover(); r != nil {

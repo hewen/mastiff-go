@@ -12,7 +12,7 @@ import (
 	"google.golang.org/protobuf/types/known/emptypb"
 )
 
-func TestUnaryRateLimitInterceptor(t *testing.T) {
+func TestUnaryServerInterceptor(t *testing.T) {
 	cfg := &Config{
 		Default: &RouteLimitConfig{
 			Rate:  1,
@@ -27,7 +27,7 @@ func TestUnaryRateLimitInterceptor(t *testing.T) {
 	mgr := NewLimiterManager(cfg)
 	defer mgr.Stop()
 
-	handle := UnaryRateLimitInterceptor(mgr)
+	handle := UnaryServerInterceptor(mgr)
 	_, err := handle(context.Background(),
 		&emptypb.Empty{},
 		&grpc.UnaryServerInfo{

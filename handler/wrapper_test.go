@@ -19,7 +19,7 @@ func TestWrapHandler(_ *testing.T) {
 	wrapHandler := WrapHandler(func(_ *gin.Context, req Test) (resp Test, err error) {
 		return req, nil
 	})
-	handlerLog := logging.GinLoggingHandler()
+	handlerLog := logging.GinMiddleware()
 
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
 	ctx.Request, _ = http.NewRequest("GET", "/test", bytes.NewReader([]byte(``)))
@@ -44,7 +44,7 @@ func TestWrapHandlerError(_ *testing.T) {
 	wrapHandler := WrapHandler(func(_ *gin.Context, req Test) (resp Test, err error) {
 		return req, fmt.Errorf("wapp error")
 	})
-	handlerLog := logging.GinLoggingHandler()
+	handlerLog := logging.GinMiddleware()
 
 	ctx, _ := gin.CreateTestContext(httptest.NewRecorder())
 	ctx.Request, _ = http.NewRequest("GET", "/test", bytes.NewReader([]byte(`{"test":1}`)))

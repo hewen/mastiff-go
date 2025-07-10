@@ -10,8 +10,8 @@ import (
 	"github.com/tomasen/realip"
 )
 
-// GinLoggingHandler is a middleware for logging HTTP requests in Gin framework.
-func GinLoggingHandler() gin.HandlerFunc {
+// GinMiddleware is a middleware for logging HTTP requests in Gin framework.
+func GinMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 

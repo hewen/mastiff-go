@@ -9,8 +9,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// UnaryRateLimitInterceptor creates a gRPC unary interceptor with rate limiter.
-func UnaryRateLimitInterceptor(mgr *LimiterManager) grpc.UnaryServerInterceptor {
+// UnaryServerInterceptor creates a gRPC unary interceptor with rate limiter.
+func UnaryServerInterceptor(mgr *LimiterManager) grpc.UnaryServerInterceptor {
 	return func(ctx context.Context, req any, info *grpc.UnaryServerInfo, handler grpc.UnaryHandler) (any, error) {
 		route := info.FullMethod
 		cfg := mgr.config.PerRoute[route]

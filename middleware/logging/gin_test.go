@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGinLoggingHandler(t *testing.T) {
+func TestGinMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	router.Use(GinLoggingHandler())
+	router.Use(GinMiddleware())
 
 	router.GET("/log", func(ctx *gin.Context) {
 		ctx.Set("req", "req")

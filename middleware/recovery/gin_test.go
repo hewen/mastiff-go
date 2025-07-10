@@ -9,11 +9,11 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGinRecoverHandler(t *testing.T) {
+func TestGinMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 
 	router := gin.New()
-	router.Use(GinRecoverHandler())
+	router.Use(GinMiddleware())
 
 	router.GET("/panic", func(_ *gin.Context) {
 		panic("simulated panic for test")

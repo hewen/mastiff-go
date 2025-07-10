@@ -9,7 +9,7 @@ import (
 )
 
 func TestMiddlewarePanic(t *testing.T) {
-	handle := UnaryRecoveryInterceptor()
+	handle := UnaryServerInterceptor()
 	_, err := handle(context.TODO(), nil, &grpc.UnaryServerInfo{
 		FullMethod: "test",
 	}, func(_ context.Context, _ any) (any, error) {

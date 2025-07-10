@@ -10,8 +10,8 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-// GRPCAuthInterceptor is a grpc interceptor for authentication and authorization.
-func GRPCAuthInterceptor(conf Config) grpc.UnaryServerInterceptor {
+// UnaryServerInterceptor is a grpc interceptor for authentication and authorization.
+func UnaryServerInterceptor(conf Config) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req any,

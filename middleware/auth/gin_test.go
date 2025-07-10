@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGinAuthMiddleware(t *testing.T) {
+func TestGinMiddleware(t *testing.T) {
 	conf := Config{
 		HeaderKey:     "Authorization",
 		TokenPrefixes: []string{"Bearer"},
@@ -42,7 +42,7 @@ func TestGinAuthMiddleware(t *testing.T) {
 
 func testWhiteList(t *testing.T, conf Config) {
 	r := gin.New()
-	r.Use(GinAuthMiddleware(conf))
+	r.Use(GinMiddleware(conf))
 	r.GET("/public", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
@@ -57,7 +57,7 @@ func testWhiteList(t *testing.T, conf Config) {
 
 func testMissingToken(t *testing.T, conf Config) {
 	r := gin.New()
-	r.Use(GinAuthMiddleware(conf))
+	r.Use(GinMiddleware(conf))
 	r.GET("/secure", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
@@ -71,7 +71,7 @@ func testMissingToken(t *testing.T, conf Config) {
 }
 func testInvalidToken(t *testing.T, conf Config) {
 	r := gin.New()
-	r.Use(GinAuthMiddleware(conf))
+	r.Use(GinMiddleware(conf))
 	r.GET("/secure", func(c *gin.Context) {
 		c.String(http.StatusOK, "ok")
 	})
@@ -87,7 +87,7 @@ func testInvalidToken(t *testing.T, conf Config) {
 
 func testValidToken(t *testing.T, conf Config) {
 	r := gin.New()
-	r.Use(GinAuthMiddleware(conf))
+	r.Use(GinMiddleware(conf))
 	r.GET("/secure", func(c *gin.Context) {
 		ai, exists := contextkeys.GetAuthInfo(c.Request.Context())
 		if !exists || ai.UserID != "123" {

@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-func TestUnaryCircuitBreakerInterceptor_Success(t *testing.T) {
+func TestUnaryServerInterceptor_Success(t *testing.T) {
 	cfg := &Config{
 		MaxRequests: 3,
 		Interval:    1,
@@ -22,7 +22,7 @@ func TestUnaryCircuitBreakerInterceptor_Success(t *testing.T) {
 	}
 	mgr := NewManager(cfg)
 
-	interceptor := UnaryCircuitBreakerInterceptor(mgr)
+	interceptor := UnaryServerInterceptor(mgr)
 
 	handler := func(_ context.Context, _ any) (any, error) {
 		return "ok", nil
@@ -33,7 +33,7 @@ func TestUnaryCircuitBreakerInterceptor_Success(t *testing.T) {
 	assert.Equal(t, "ok", resp)
 }
 
-func TestUnaryCircuitBreakerInterceptor_Failure(t *testing.T) {
+func TestUnaryServerInterceptor_Failure(t *testing.T) {
 	cfg := &Config{
 		MaxRequests: 1,
 		Interval:    1,
@@ -45,7 +45,7 @@ func TestUnaryCircuitBreakerInterceptor_Failure(t *testing.T) {
 	mgr := NewManager(cfg)
 	mgr.Break("/fail", 1)
 
-	interceptor := UnaryCircuitBreakerInterceptor(mgr)
+	interceptor := UnaryServerInterceptor(mgr)
 
 	handler := func(_ context.Context, _ any) (any, error) {
 		return "ok", nil

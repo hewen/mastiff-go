@@ -10,7 +10,7 @@ import (
 )
 
 func TestTimeoutInterceptor(t *testing.T) {
-	fn := UnaryTimeoutInterceptor(time.Second)
+	fn := UnaryServerInterceptor(time.Second)
 
 	ctx := context.TODO()
 	_, err := fn(ctx, nil, &grpc.UnaryServerInfo{

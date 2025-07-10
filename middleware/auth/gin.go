@@ -8,8 +8,8 @@ import (
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 )
 
-// GinAuthMiddleware is a gin middleware for authentication and authorization.
-func GinAuthMiddleware(conf Config) gin.HandlerFunc {
+// GinMiddleware is a gin middleware for authentication and authorization.
+func GinMiddleware(conf Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if isWhiteListed(c.Request.URL.Path, conf.WhiteList) {
 			c.Next()

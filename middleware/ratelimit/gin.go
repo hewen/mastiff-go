@@ -7,8 +7,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-// GinRateLimitHandler creates a Gin middleware with rate limiter.
-func GinRateLimitHandler(mgr *LimiterManager) gin.HandlerFunc {
+// GinMiddleware creates a Gin middleware with rate limiter.
+func GinMiddleware(mgr *LimiterManager) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		route := c.FullPath()
 		cfg := mgr.config.PerRoute[route]
