@@ -10,6 +10,7 @@ import (
 	"log"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -171,8 +172,7 @@ func TestInitLogger(t *testing.T) {
 	assert.Nil(t, err)
 
 	err = InitLogger(Config{
-		Level:   LogLevelInfo,
-		MaxSize: 100,
+		Level: LogLevelInfo,
 	})
 	assert.Nil(t, err)
 
@@ -184,8 +184,10 @@ func TestInitLogger(t *testing.T) {
 
 	err = InitLogger(Config{
 		Level:   LogLevelInfo,
-		Output:  tmpFile.Name(),
-		MaxSize: 100,
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
 	})
 	assert.Nil(t, err)
 }
@@ -291,4 +293,93 @@ func TestConcurrentLogging(t *testing.T) {
 	} else {
 		t.Logf("all logs written successfully: %d lines", linesCount)
 	}
+}
+
+func TestValidate(t *testing.T) {
+	tests := []struct {
+		name    string
+		conf    Config
+		wantErr bool
+	}{
+		{
+			name: "valid config with file",
+			conf: Config{
+				Outputs: []string{"file"},
+				FileOutput: &FileOutputConfig{
+					Path: "/tmp/test.log",
+				},
+				Backend: "zerolog",
+			},
+			wantErr: false,
+		},
+		{
+			name: "file output missing path",
+			conf: Config{
+				Outputs:    []string{"file"},
+				FileOutput: &FileOutputConfig{}, // missing Path
+				Backend:    "zap",
+			},
+			wantErr: true,
+		},
+		{
+			name: "invalid backend",
+			conf: Config{
+				Outputs: []string{"stdout"},
+				Backend: "unknown",
+			},
+			wantErr: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			err := tt.conf.Validate()
+			assert.Equal(t, err != nil, tt.wantErr)
+		})
+	}
+}
+
+func TestCreateFileWriter(t *testing.T) {
+	tests := []struct {
+		policy string
+	}{
+		{"daily"},
+		{"size"},
+		{"none"},
+		{"invalid"}, // should fallback to daily
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.policy, func(t *testing.T) {
+			cfg := FileOutputConfig{
+				Path:         "/tmp/test.log",
+				RotatePolicy: tt.policy,
+				MaxSize:      1,
+			}
+			writer := createFileWriter(cfg)
+			assert.NotNil(t, writer)
+		})
+	}
+}
+
+func TestNewSizeLogger(t *testing.T) {
+	cfg := FileOutputConfig{
+		Path:    "/tmp/test-size.log",
+		MaxSize: 5,
+	}
+	l := newSizeLogger(cfg)
+	assert.NotNil(t, l)
+}
+
+func TestNewPlainFileLogger_Success(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "log.log")
+	cfg := FileOutputConfig{Path: path}
+	w := newPlainFileLogger(cfg)
+	assert.NotNil(t, w)
+}
+
+func TestNewPlainFileLogger_Failure(t *testing.T) {
+	cfg := FileOutputConfig{Path: "/root/forbidden.log"} // or "///invalid"
+	w := newPlainFileLogger(cfg)
+	assert.NotNil(t, w)
 }

@@ -2,7 +2,7 @@ package logger
 
 import (
 	"errors"
-	"fmt"
+	"os"
 	"testing"
 	"time"
 
@@ -128,21 +128,99 @@ var resp = TestPayload{
 }
 
 func BenchmarkLogRequestWithoutMask(b *testing.B) {
-	SetLogMasking(false)
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(b, err)
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
+	err = InitLogger(Config{
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
+		EnableMasking: false,
+	})
+	assert.Nil(b, err)
+
 	l := NewLogger()
-	fmt.Println("")
 	for i := 0; i < b.N; i++ {
 		LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
 	}
 }
 
 func BenchmarkLogRequestWithMask(b *testing.B) {
-	SetLogMasking(true)
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(b, err)
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
+	err = InitLogger(Config{
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
+		EnableMasking: true,
+	})
+	assert.Nil(b, err)
+
 	l := NewLogger()
-	fmt.Println("")
 	for i := 0; i < b.N; i++ {
 		LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
 	}
+}
+
+func BenchmarkLogRequestParallelWithoutMask(b *testing.B) {
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(b, err)
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
+
+	err = InitLogger(Config{
+		Backend: "zerolog",
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
+		EnableMasking: false,
+	})
+	assert.Nil(b, err)
+
+	l := NewLogger()
+
+	b.SetParallelism(10)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
+		}
+	})
+}
+
+func BenchmarkLogRequestParallelWithMask(b *testing.B) {
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(b, err)
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
+
+	err = InitLogger(Config{
+		Backend: "zerolog",
+		Outputs: []string{"file"},
+		FileOutput: &FileOutputConfig{
+			Path: tmpFile.Name(),
+		},
+		EnableMasking: true,
+	})
+	assert.Nil(b, err)
+
+	l := NewLogger()
+
+	b.SetParallelism(10)
+	b.RunParallel(func(pb *testing.PB) {
+		for pb.Next() {
+			LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
+		}
+	})
 }
 
 func TestLogRequestWithMask(_ *testing.T) {

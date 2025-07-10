@@ -6,10 +6,13 @@ package logger
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
+	"path/filepath"
+	"slices"
 	"time"
 
 	"github.com/hewen/mastiff-go/internal/contextkeys"
@@ -116,6 +119,10 @@ func init() {
 
 // InitLogger initializes the global logger with the given configuration.
 func InitLogger(conf Config) error {
+	if err := conf.Validate(); err != nil {
+		return err
+	}
+
 	err := SetLevel(conf.Level)
 	if err != nil {
 		return err
@@ -123,11 +130,27 @@ func InitLogger(conf Config) error {
 
 	SetLogMasking(conf.EnableMasking)
 
-	var out io.Writer = os.Stdout
-	if conf.Output != "" {
-		rotator := newDailyRotatingLogger(conf)
-		out = io.MultiWriter(out, rotator)
+	var writers []io.Writer
+	for _, output := range conf.Outputs {
+		switch output {
+		case "stdout":
+			writers = append(writers, os.Stdout)
+		case "stderr":
+			writers = append(writers, os.Stderr)
+		case "file":
+			if conf.FileOutput != nil {
+				writers = append(writers, createFileWriter(*conf.FileOutput))
+			}
+		default:
+			writers = append(writers, os.Stdout)
+		}
 	}
+
+	if len(writers) == 0 {
+		writers = append(writers, os.Stdout)
+	}
+
+	out := io.MultiWriter(writers...)
 
 	traceID := NewTraceID()
 	switch conf.Backend {
@@ -149,10 +172,45 @@ func InitLogger(conf Config) error {
 	return err
 }
 
-func newDailyRotatingLogger(conf Config) *lumberjack.Logger {
+// Validate checks the configuration for errors.
+func (cfg *Config) Validate() error {
+	if slices.Contains(cfg.Outputs, "file") && (cfg.FileOutput == nil || cfg.FileOutput.Path == "") {
+		return errors.New("file output selected but FileOutput.Path is empty")
+	}
+	if cfg.Backend != "zap" && cfg.Backend != "zerolog" && cfg.Backend != "std" && cfg.Backend != "" {
+		return fmt.Errorf("unsupported backend: %s", cfg.Backend)
+	}
+	return nil
+}
+
+// createFileWriter creates a new file writer based on the configuration.
+func createFileWriter(cfg FileOutputConfig) io.Writer {
+	switch cfg.RotatePolicy {
+	case "daily":
+		return newDailyRotatingLogger(cfg)
+	case "size":
+		return newSizeLogger(cfg)
+	case "none":
+		return newPlainFileLogger(cfg)
+	default:
+		return newDailyRotatingLogger(cfg)
+	}
+}
+
+// ensureLogDirExists creates the directory for the log file if it does not exist.
+func ensureLogDirExists(path string) {
+	dir := filepath.Dir(path)
+	_ = os.MkdirAll(dir, 0750)
+}
+
+// newDailyRotatingLogger creates a new logger that rotates daily.
+func newDailyRotatingLogger(cfg FileOutputConfig) *lumberjack.Logger {
+	ensureLogDirExists(cfg.Path)
+
 	logger := &lumberjack.Logger{
-		Filename: conf.Output,
-		MaxSize:  conf.MaxSize,
+		Filename: cfg.Path,
+		MaxSize:  cfg.MaxSize,
+		Compress: cfg.Compress,
 	}
 
 	c := cron.New(cron.WithSeconds())
@@ -161,6 +219,29 @@ func newDailyRotatingLogger(conf Config) *lumberjack.Logger {
 	})
 	c.Start()
 	return logger
+}
+
+// newSizeLogger creates a new logger that rotates when the log file reaches a certain size.
+func newSizeLogger(cfg FileOutputConfig) *lumberjack.Logger {
+	ensureLogDirExists(cfg.Path)
+
+	return &lumberjack.Logger{
+		Filename: cfg.Path,
+		MaxSize:  cfg.MaxSize,
+		Compress: cfg.Compress,
+	}
+}
+
+// newPlainFileLogger creates a new logger that writes to a plain file without rotation.
+func newPlainFileLogger(cfg FileOutputConfig) io.Writer {
+	ensureLogDirExists(cfg.Path)
+
+	f, err := os.OpenFile(cfg.Path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
+	if err != nil {
+		log.Printf("failed to open log file: %v", err)
+		return os.Stdout
+	}
+	return f
 }
 
 // rotatable interface defines the Rotate method for log rotation.
