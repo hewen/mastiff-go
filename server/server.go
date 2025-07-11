@@ -1,4 +1,4 @@
-// Package server package provides a collection of server implementations
+// Package server provides a collection of server implementations.
 package server
 
 import (
@@ -21,7 +21,7 @@ var (
 	gracefulStopOnce sync.Once
 )
 
-// Server is an interface that defines methods for starting and stopping a server.
+// Server is an interface that defines methods for starting and stopping a server. It is used to provide a server implementation.
 type Server interface {
 	Name() string
 	Start()

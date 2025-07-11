@@ -1,4 +1,4 @@
-// Package server grpc server implementation
+// Package server provides a gRPC server implementation.
 package server
 
 import (

@@ -1,4 +1,4 @@
-// Package server config
+// Package server provides configuration for HTTP, gRPC, and queue servers.
 package server
 
 import (
@@ -10,26 +10,39 @@ import (
 type (
 	// HTTPConf holds the configuration for an HTTP server.
 	HTTPConf struct {
-		Middlewares  middleware.Config
-		Addr         string // HTTP server address
-		Mode         string // "debug", "release", or "test"
-		TimeoutRead  int64  // Timeout for reading requests in milliseconds
-		TimeoutWrite int64  // Timeout for writing responses in milliseconds
-		PprofEnabled bool   // Enable pprof for profiling
+		// Middlewares represents the configuration for middlewares.
+		Middlewares middleware.Config
+		// Addr represents the HTTP server address.
+		Addr string
+		// Mode represents the server mode, either "debug", "release", or "test".
+		Mode string
+		// TimeoutRead represents the timeout for reading requests in milliseconds.
+		TimeoutRead int64
+		// TimeoutWrite represents the timeout for writing responses in milliseconds.
+		TimeoutWrite int64
+		// PprofEnabled represents whether to enable pprof for profiling.
+		PprofEnabled bool
 	}
 
 	// GrpcConf holds the configuration for a gRPC server.
 	GrpcConf struct {
+		// Middlewares represents the configuration for middlewares.
 		Middlewares middleware.Config
-		Addr        string // gRPC server address
-		Timeout     int64  // Timeout for gRPC requests in milliseconds
-		Reflection  bool   // Enable gRPC reflection
+		// Addr represents the gRPC server address.
+		Addr string
+		// Timeout represents the timeout for gRPC requests in milliseconds.
+		Timeout int64
+		// Reflection represents whether to enable gRPC reflection.
+		Reflection bool
 	}
 
 	// QueueConf holds the configuration for a queue server.
 	QueueConf struct {
-		QueueName          string        // queue name
-		PoolSize           int           // Size of the goroutine pool for processing queue messages
-		EmptySleepInterval time.Duration // Duration to sleep when the queue is empty
+		// QueueName represents the queue name.
+		QueueName string
+		// PoolSize represents the size of the goroutine pool for processing queue messages.
+		PoolSize int
+		// EmptySleepInterval represents the duration to sleep when the queue is empty.
+		EmptySleepInterval time.Duration
 	}
 )

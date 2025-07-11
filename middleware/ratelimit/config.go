@@ -1,4 +1,4 @@
-// Package ratelimit provides a middleware that limits the number of concurrent in-flight requests.
+// Package ratelimit provides a rate limiter middleware.
 package ratelimit
 
 import "time"
@@ -20,16 +20,24 @@ const (
 
 // RouteLimitConfig represents the configuration for rate limiting per route.
 type RouteLimitConfig struct {
-	Mode         LimitMode `json:"mode"`
-	EnableRoute  bool      `json:"enable_route"`
-	EnableIP     bool      `json:"enable_ip"`
-	EnableUserID bool      `json:"enable_user_id"`
-	Burst        int       `json:"burst"`
-	Rate         float64   `json:"rate"`
+	// Mode represents the mode of the rate limiter.
+	Mode LimitMode
+	// EnableRoute enables rate limiting per route.
+	EnableRoute bool
+	// EnableIP enables rate limiting per IP.
+	EnableIP bool
+	// EnableUserID enables rate limiting per user ID.
+	EnableUserID bool
+	// Burst is the maximum number of events that can be sent in a single burst.
+	Burst int
+	// Rate is the maximum number of events that can be sent per second.
+	Rate float64
 }
 
 // Config represents the configuration for rate limiting.
 type Config struct {
-	Default  *RouteLimitConfig            `json:"default"`
-	PerRoute map[string]*RouteLimitConfig `json:"per_route"`
+	// Default represents the default configuration for rate limiting.
+	Default *RouteLimitConfig
+	// PerRoute represents the configuration for rate limiting per route.
+	PerRoute map[string]*RouteLimitConfig
 }

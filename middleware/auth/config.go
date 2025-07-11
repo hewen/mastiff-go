@@ -3,8 +3,12 @@ package auth
 
 // Config defines auth-related configuration.
 type Config struct {
-	JWTSecret     string   // Secret for JWT
-	WhiteList     []string // Path whitelist (exact match or prefix)
-	HeaderKey     string   // e.g., "Authorization"
-	TokenPrefixes []string // e.g., "Bearer", "Token"
+	// Secret for JWT
+	JWTSecret string
+	// Path whitelist (exact match or prefix)
+	WhiteList []string
+	// HeaderKey  e.g., "Authorization"
+	HeaderKey string
+	// TokenPrefixes e.g., "Bearer", "Token"
+	TokenPrefixes []string
 }

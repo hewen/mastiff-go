@@ -1,4 +1,4 @@
-// Package server provides a simple queue server implementation
+// Package server provides a queue server implementation.
 package server
 
 import (
@@ -24,7 +24,7 @@ var ErrEmptyQueueName = errors.New("queue name is empty")
 // QueueMessage is an interface for queue messages.
 type QueueMessage any
 
-// QueueServer is a simple queue server that processes messages from a queue using a goroutine pool.
+// QueueServer is a queue server that processes messages from a queue using a goroutine pool. It is used to provide a queue server implementation.
 type QueueServer[T any] struct {
 	handler            QueueHandler[T]
 	logger             logger.Logger
@@ -35,19 +35,19 @@ type QueueServer[T any] struct {
 	poolSize           int
 }
 
-// Codec interface: encode/decode message.
+// Codec interface: encode/decode message. It is used to provide a codec for queue messages.
 type Codec[T any] interface {
 	Encode(msg T) ([]byte, error)
 	Decode(data []byte) (T, error)
 }
 
-// Queue interface: push/pop raw []byte data.
+// Queue interface: push/pop raw []byte data. It is used to provide a queue for queue messages.
 type Queue interface {
 	Push(ctx context.Context, data []byte) error
 	Pop(ctx context.Context) ([]byte, error)
 }
 
-// Handler interface: handle decoded message.
+// Handler interface: handle decoded message. It is used to provide a handler for queue messages.
 type Handler[T any] interface {
 	Handle(ctx context.Context, msg T) error
 }
@@ -59,7 +59,7 @@ type QueueHandler[T any] interface {
 	Handler[T]
 }
 
-// JSONCodec implements Codec interface with JSON.
+// JSONCodec implements Codec interface with JSON. It is used to provide a codec for queue messages.
 type JSONCodec[T any] struct{}
 
 // Encode implements Codec interface.
@@ -74,7 +74,7 @@ func (c JSONCodec[T]) Decode(data []byte) (T, error) {
 	return msg, err
 }
 
-// ProtoCodec implements Codec interface with protobuf.
+// ProtoCodec implements Codec interface with protobuf. It is used to provide a codec for queue messages.
 type ProtoCodec[T proto.Message] struct {
 	newMsg func() T
 }

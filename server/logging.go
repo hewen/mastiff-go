@@ -1,13 +1,15 @@
-// Package server provides a simple queue server implementation.
+// Package server provides a logging server implementation.
 package server
 
 import (
 	"github.com/hewen/mastiff-go/logger"
 )
 
-// LoggingServer wraps a Server and logs start and stop events.
+// LoggingServer wraps a Server and logs start and stop events. It is used to provide logging for server implementations.
 type LoggingServer struct {
-	Inner  Server
+	// Inner represents the inner server.
+	Inner Server
+	// Logger represents the logger for logging start and stop events.
 	Logger logger.Logger
 }
 
