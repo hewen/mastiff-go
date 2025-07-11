@@ -33,9 +33,13 @@ func TestGrpcServer(t *testing.T) {
 	assert.NotNil(t, s)
 	assert.Nil(t, err)
 
+	s.WithLogger(logger.NewLogger())
+
+	var server Servers
+	server.Add(s)
 	go func() {
-		defer s.Stop()
-		s.Start()
+		defer server.Stop()
+		server.Start()
 	}()
 }
 
@@ -53,10 +57,10 @@ func (b *brokenListener) Addr() net.Addr {
 
 func TestGrpcServer_StartError(_ *testing.T) {
 	grpcServer := &GrpcServer{
-		s:    grpc.NewServer(),
-		l:    logger.NewLogger(),
-		ln:   &brokenListener{},
-		addr: "mock",
+		s:      grpc.NewServer(),
+		logger: logger.NewLogger(),
+		ln:     &brokenListener{},
+		addr:   "mock",
 	}
 
 	grpcServer.Start()

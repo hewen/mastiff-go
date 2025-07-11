@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -23,8 +24,13 @@ func TestHTTPServer(t *testing.T) {
 	s, err := NewHTTPServer(c, handler)
 	assert.Nil(t, err)
 
+	s.WithLogger(logger.NewLogger())
+
+	var server Servers
+	server.Add(s)
 	go func() {
-		s.Start()
+		defer server.Stop()
+		server.Start()
 	}()
 }
 

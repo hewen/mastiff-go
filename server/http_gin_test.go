@@ -41,13 +41,15 @@ func TestNewGinAPIHandler(t *testing.T) {
 		},
 	}
 
-	server, err := NewHTTPServer(conf, handler, recovery.GinMiddleware())
+	s, err := NewHTTPServer(conf, handler, recovery.GinMiddleware())
 	assert.Nil(t, err)
 
+	var server Servers
+	server.Add(s)
 	go func() {
+		defer server.Stop()
 		server.Start()
 	}()
-	defer server.Stop()
 
 	time.Sleep(100 * time.Millisecond)
 

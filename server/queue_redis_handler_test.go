@@ -89,6 +89,7 @@ func TestQueueServerWithJsonHandler(t *testing.T) {
 	handler := NewQueueJSONRedisHandler(redisClient, queueName, handleFn)
 
 	qs, err := NewQueueServer(QueueConf{
+		QueueName:          queueName,
 		PoolSize:           10,
 		EmptySleepInterval: 5 * time.Millisecond,
 	}, handler)
@@ -139,6 +140,7 @@ func TestQueueServerWithProtoHandler(t *testing.T) {
 	})
 
 	qs, err := NewQueueServer(QueueConf{
+		QueueName:          queueName,
 		PoolSize:           10,
 		EmptySleepInterval: 5 * time.Millisecond,
 	}, handler)

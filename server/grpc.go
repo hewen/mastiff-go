@@ -3,6 +3,7 @@ package server
 
 import (
 	"errors"
+	"fmt"
 	"net"
 	"sync"
 
@@ -20,11 +21,11 @@ var (
 
 // GrpcServer represents a gRPC server.
 type GrpcServer struct {
-	s    *grpc.Server
-	l    logger.Logger
-	ln   net.Listener
-	addr string
-	mu   sync.Mutex
+	s      *grpc.Server
+	logger logger.Logger
+	ln     net.Listener
+	addr   string
+	mu     sync.Mutex
 }
 
 // NewGrpcServer creates and initializes a new gRPC server with configured middlewares.
@@ -37,19 +38,19 @@ func NewGrpcServer(
 		return nil, ErrEmptyGrpcConf
 	}
 
+	// Initialize GrpcServer struct
+	srv := &GrpcServer{
+		addr:   conf.Addr,
+		logger: logger.NewLogger(),
+	}
+
 	// Start listening on configured address
 	ln, err := net.Listen("tcp", conf.Addr)
 	if err != nil {
-		logger.NewLogger().Errorf("failed to listen on %s: %v", conf.Addr, err)
+		srv.logger.Errorf("failed to listen on %s: %v", conf.Addr, err)
 		return nil, err
 	}
-
-	// Initialize GrpcServer struct
-	srv := &GrpcServer{
-		addr: conf.Addr,
-		ln:   ln,
-		l:    logger.NewLogger(),
-	}
+	srv.ln = ln
 
 	// Load built-in middleware based on configuration
 	interceptors := middleware.LoadGRPCMiddlewares(conf.Middlewares)
@@ -77,10 +78,8 @@ func NewGrpcServer(
 
 // Start starts the gRPC server and listens for incoming connections.
 func (s *GrpcServer) Start() {
-	s.l.Infof("Start grpc service %s", s.addr)
-	err := s.s.Serve(s.ln)
-	if err != nil {
-		s.l.Errorf("grpc service failed: %v", err)
+	if err := s.s.Serve(s.ln); err != nil {
+		s.logger.Errorf("grpc service failed: %v", err)
 	}
 }
 
@@ -89,7 +88,6 @@ func (s *GrpcServer) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.l.Infof("Shutdown grpc service %s", s.addr)
 	if s.s != nil {
 		s.s.GracefulStop()
 		s.s = nil
@@ -98,8 +96,20 @@ func (s *GrpcServer) Stop() {
 	if s.ln != nil {
 		err := s.ln.Close()
 		if err != nil {
-			s.l.Errorf("%v", err)
+			s.logger.Errorf("%v", err)
 		}
 		s.ln = nil
+	}
+}
+
+// Name returns the name of the gRPC server.
+func (s *GrpcServer) Name() string {
+	return fmt.Sprintf("gRPC server(%s)", s.addr)
+}
+
+// WithLogger sets the logger for the gRPC server.
+func (s *GrpcServer) WithLogger(l logger.Logger) {
+	if l != nil {
+		s.logger = l
 	}
 }

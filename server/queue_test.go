@@ -67,11 +67,13 @@ func TestQueueServer_Messages(t *testing.T) {
 	handler := &mockQueueHandler{}
 
 	conf := QueueConf{
+		QueueName:          "test",
 		PoolSize:           5,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
-	server, err := NewQueueServer(conf, handler)
+	s, err := NewQueueServer(conf, handler)
 	require.NoError(t, err)
+	s.WithLogger(logger.NewLogger())
 
 	ctx := context.Background()
 	msgs := []MyTestMsg{
@@ -85,8 +87,12 @@ func TestQueueServer_Messages(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	go server.Start()
-	defer server.Stop()
+	var server Servers
+	server.Add(s)
+	go func() {
+		defer server.Stop()
+		server.Start()
+	}()
 
 	time.Sleep(100 * time.Millisecond)
 
@@ -105,6 +111,7 @@ func TestQueueServer_BulkMessages(t *testing.T) {
 	handler := &mockQueueHandler{}
 
 	conf := QueueConf{
+		QueueName:          "test",
 		PoolSize:           10,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
@@ -142,7 +149,11 @@ func (h *popErrorHandler) Handle(_ context.Context, _ MyTestMsg) error {
 
 func TestQueueServer_PopError(t *testing.T) {
 	handler := &popErrorHandler{}
-	conf := QueueConf{PoolSize: 1, EmptySleepInterval: 10 * time.Millisecond}
+	conf := QueueConf{
+		PoolSize:           1,
+		EmptySleepInterval: 10 * time.Millisecond,
+		QueueName:          "test",
+	}
 	server, err := NewQueueServer(conf, handler)
 	assert.Nil(t, err)
 
@@ -180,7 +191,11 @@ func TestQueueServer_DecodeError(t *testing.T) {
 	handler := &decodeErrorHandler{}
 	_ = handler.Push(context.Background(), []byte("invalid json"))
 
-	conf := QueueConf{PoolSize: 1, EmptySleepInterval: 10 * time.Millisecond}
+	conf := QueueConf{
+		PoolSize:           1,
+		EmptySleepInterval: 10 * time.Millisecond,
+		QueueName:          "test",
+	}
 	server, err := NewQueueServer(conf, handler)
 	assert.Nil(t, err)
 
@@ -216,7 +231,11 @@ func TestQueueServer_HandleError(t *testing.T) {
 	err := handler.Push(context.Background(), data)
 	assert.Nil(t, err)
 
-	conf := QueueConf{PoolSize: 1, EmptySleepInterval: 10 * time.Millisecond}
+	conf := QueueConf{
+		PoolSize:           1,
+		EmptySleepInterval: 10 * time.Millisecond,
+		QueueName:          "test",
+	}
 	server, err := NewQueueServer(conf, handler)
 	assert.Nil(t, err)
 
@@ -228,6 +247,7 @@ func TestQueueServer_HandleError(t *testing.T) {
 func TestQueueServer_StartStopExit(t *testing.T) {
 	handler := &mockQueueHandler{}
 	conf := QueueConf{
+		QueueName:          "test",
 		PoolSize:           2,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}
@@ -252,9 +272,30 @@ func TestQueueServer_StartStopExit(t *testing.T) {
 
 func TestQueueServer_StopIdempotent(t *testing.T) {
 	handler := &mockQueueHandler{}
-	server, err := NewQueueServer(QueueConf{}, handler)
+	server, err := NewQueueServer(QueueConf{
+		QueueName:          "test",
+		PoolSize:           5,
+		EmptySleepInterval: 1 * time.Millisecond,
+	}, handler)
 	require.NoError(t, err)
 
 	server.Stop()
 	server.Stop() // safe second call
+}
+
+func TestQueueServer_QueueNameEmpty(t *testing.T) {
+	handler := &mockQueueHandler{}
+	_, err := NewQueueServer(QueueConf{
+		PoolSize:           5,
+		EmptySleepInterval: 1 * time.Millisecond,
+	}, handler)
+	require.Equal(t, ErrEmptyQueueName, err)
+}
+
+func TestQueueServer_DefaultConfig(t *testing.T) {
+	handler := &mockQueueHandler{}
+	_, err := NewQueueServer(QueueConf{
+		QueueName: "test",
+	}, handler)
+	require.Nil(t, err)
 }

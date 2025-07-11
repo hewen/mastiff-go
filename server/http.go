@@ -4,6 +4,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/http"
 	"sync"
 	"time"
@@ -14,7 +15,7 @@ import (
 
 var (
 	// ErrEmptyHTTPConf is returned when the HTTP config is empty.
-	ErrEmptyHTTPConf = errors.New("empty http config")
+	ErrEmptyHTTPConf = errors.New("not set queue name empty")
 )
 
 const (
@@ -26,10 +27,10 @@ const (
 
 // HTTPService defines the configuration for an HTTP server.
 type HTTPService struct {
-	s    *http.Server
-	l    logger.Logger
-	addr string
-	mu   sync.Mutex
+	s      *http.Server
+	logger logger.Logger
+	addr   string
+	mu     sync.Mutex
 }
 
 // NewHTTPServer creates a new HTTP server.
@@ -54,9 +55,9 @@ func NewHTTPServer(conf *HTTPConf, initRoute func(r *gin.Engine), extraMiddlewar
 	}
 
 	service := &HTTPService{
-		addr: conf.Addr,
-		s:    srv,
-		l:    logger.NewLogger(),
+		addr:   conf.Addr,
+		s:      srv,
+		logger: logger.NewLogger(),
 	}
 
 	return service, nil
@@ -64,9 +65,8 @@ func NewHTTPServer(conf *HTTPConf, initRoute func(r *gin.Engine), extraMiddlewar
 
 // Start starts the HTTP server.
 func (s *HTTPService) Start() {
-	s.l.Infof("Start http service %s", s.addr)
 	if err := s.s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
-		s.l.Errorf("http service failed: %v", err)
+		s.logger.Errorf("http service failed: %v", err)
 	}
 }
 
@@ -75,8 +75,8 @@ func (s *HTTPService) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	s.l.Infof("Shutdown service %s", s.addr)
 	if s.s == nil {
+		s.logger = nil
 		return
 	}
 
@@ -86,7 +86,19 @@ func (s *HTTPService) Stop() {
 
 	err := s.s.Shutdown(ctx)
 	if err != nil {
-		s.l.Errorf("Error during server shutdown: %v", err)
+		s.logger.Errorf("http server(%s) shutdown error: %v", s.addr, err)
 	}
 	s.s = nil
+}
+
+// Name returns the name of the HTTP server.
+func (s *HTTPService) Name() string {
+	return fmt.Sprintf("http server(%s)", s.addr)
+}
+
+// WithLogger sets the logger for the HTTP server.
+func (s *HTTPService) WithLogger(l logger.Logger) {
+	if l != nil {
+		s.logger = l
+	}
 }

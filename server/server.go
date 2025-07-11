@@ -6,6 +6,9 @@ import (
 	"os"
 	"os/signal"
 	"sync"
+	"syscall"
+
+	"github.com/hewen/mastiff-go/logger"
 
 	// automatically sets GOMAXPROCS to match the Linux container CPU quota.
 	_ "go.uber.org/automaxprocs"
@@ -20,18 +23,43 @@ var (
 
 // Server is an interface that defines methods for starting and stopping a server.
 type Server interface {
+	Name() string
 	Start()
 	Stop()
+	WithLogger(l logger.Logger)
 }
 
 // Servers is a collection of Server instances.
 type Servers struct {
-	s []Server
+	logger logger.Logger
+	s      []Server
+}
+
+// NewServers creates a new Servers instance.
+func NewServers(l logger.Logger) *Servers {
+	if l == nil {
+		l = logger.NewLogger()
+	}
+	return &Servers{
+		logger: l,
+	}
 }
 
 // Add adds a server to the list of servers.
 func (s *Servers) Add(server Server) {
-	s.s = append(s.s, server)
+	if s.logger == nil {
+		s.logger = logger.NewLogger()
+	}
+
+	if _, ok := server.(*LoggingServer); ok {
+		s.s = append(s.s, server)
+		return
+	}
+
+	s.s = append(s.s, &LoggingServer{
+		Inner:  server,
+		Logger: s.logger,
+	})
 }
 
 // Start starts all registered servers.
@@ -71,13 +99,14 @@ func gracefulStop() {
 	gracefulStopOnce.Do(func() {
 		go func() {
 			sigint := make(chan os.Signal, 1)
-			signal.Notify(sigint, os.Interrupt)
+			signal.Notify(sigint, os.Interrupt, syscall.SIGTERM)
 			<-sigint
 			shutdown()
 		}()
 	})
 }
 
+// shutdown calls all registered stop functions.
 func shutdown() {
 	log.Println("shutdown service.")
 
