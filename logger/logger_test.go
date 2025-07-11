@@ -28,6 +28,24 @@ func TestSetLevelError(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestInitLogger_ValidateFileError(t *testing.T) {
+	err := InitLogger(Config{
+		Level:   "info",
+		Outputs: []string{"file"},
+	})
+
+	assert.Equal(t, "file output selected but FileOutput.Path is empty", err.Error())
+}
+
+func TestInitLogger_ValidateBackendError(t *testing.T) {
+	err := InitLogger(Config{
+		Level:   "info",
+		Backend: "error",
+	})
+
+	assert.Equal(t, "unsupported backend: error", err.Error())
+}
+
 func TestLogger(t *testing.T) {
 	defer func() {
 		_ = recover()
@@ -41,6 +59,7 @@ func TestLogger(t *testing.T) {
 		err := InitLogger(Config{
 			Backend: backends[i],
 			Level:   LogLevelDebug,
+			Outputs: []string{"stdout", "stderr", "errorout"},
 		})
 		assert.Nil(t, err)
 		trace := NewTraceID()
