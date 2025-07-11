@@ -13,19 +13,19 @@ import (
 )
 
 type MyTestMsg struct {
-	ID   int    `json:"id"`
 	Body string `json:"body"`
+	ID   int    `json:"id"`
 }
 
 type mockQueueHandler struct {
 	JSONCodec[MyTestMsg]
 
+	handleFn    func(context.Context, MyTestMsg) error
 	messages    [][]byte
 	handled     []MyTestMsg
-	mu          sync.Mutex
-	popIndex    int
 	handleDelay time.Duration
-	handleFn    func(ctx context.Context, msg MyTestMsg) error
+	popIndex    int
+	mu          sync.Mutex
 }
 
 func (h *mockQueueHandler) Push(ctx context.Context, data []byte) error {

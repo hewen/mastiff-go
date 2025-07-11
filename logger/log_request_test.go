@@ -10,10 +10,10 @@ import (
 )
 
 type mockLogger struct {
+	fields    map[string]any
 	traceID   string
 	lastLevel string
 	lastMsg   string
-	fields    map[string]any
 }
 
 func (m *mockLogger) GetTraceID() string {

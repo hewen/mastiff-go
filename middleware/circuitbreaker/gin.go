@@ -13,7 +13,7 @@ func GinMiddleware(mgr *Manager) gin.HandlerFunc {
 		key := c.FullPath()
 		breaker := mgr.Get(key)
 
-		_, err := breaker.Execute(func() (interface{}, error) {
+		_, err := breaker.Execute(func() (any, error) {
 			c.Next()
 			if len(c.Errors) > 0 {
 				return nil, c.Errors.Last()
@@ -22,9 +22,8 @@ func GinMiddleware(mgr *Manager) gin.HandlerFunc {
 		})
 
 		if err != nil {
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{
-				"error": "circuit breaker triggered: " + err.Error(),
-			})
+			c.Errors = append(c.Errors, &gin.Error{Err: err})
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, nil)
 			return
 		}
 	}

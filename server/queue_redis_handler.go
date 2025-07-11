@@ -27,12 +27,10 @@ func (r RedisQueue) Push(_ context.Context, data []byte) error {
 // Pop retrieves a message from the queue.
 func (r RedisQueue) Pop(_ context.Context) ([]byte, error) {
 	res, err := r.client.BLPop(1*time.Second, r.queueName).Result()
-	if err != nil {
-		if err == redis.Nil {
-			return nil, nil
-		}
+	if err != nil && err != redis.Nil {
 		return nil, err
 	}
+
 	if len(res) != 2 {
 		return nil, nil
 	}
@@ -41,9 +39,9 @@ func (r RedisQueue) Pop(_ context.Context) ([]byte, error) {
 
 // QueueJSONRedisHandler handles JSON messages in a Redis queue.
 type QueueJSONRedisHandler[T any] struct {
+	handlerFn func(ctx context.Context, msg T) error
 	JSONCodec[T]
 	RedisQueue
-	handlerFn func(ctx context.Context, msg T) error
 }
 
 // NewQueueJSONRedisHandler creates a new QueueJSONRedisHandler instance.
@@ -69,9 +67,9 @@ func (h *QueueJSONRedisHandler[T]) Handle(ctx context.Context, msg T) error {
 
 // QueueProtoRedisHandler handles protobuf messages in a Redis queue.
 type QueueProtoRedisHandler[T proto.Message] struct {
+	handlerFn func(ctx context.Context, msg T) error
 	ProtoCodec[T]
 	RedisQueue
-	handlerFn func(ctx context.Context, msg T) error
 }
 
 // NewQueueProtoRedisHandler creates a new QueueProtoRedisHandler instance.

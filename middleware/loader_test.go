@@ -24,7 +24,6 @@ func TestLoadGRPCMiddlewares(t *testing.T) {
 				TokenPrefixes: []string{"Bearer"},
 			},
 			CircuitBreaker: &circuitbreaker.Config{
-				Name:        "default",
 				MaxRequests: 5,
 				Interval:    60,
 				Timeout:     10,
@@ -70,7 +69,6 @@ func TestLoadGinMiddlewares(t *testing.T) {
 				TokenPrefixes: []string{"Bearer"},
 			},
 			CircuitBreaker: &circuitbreaker.Config{
-				Name:        "default",
 				MaxRequests: 5,
 				Interval:    60,
 				Timeout:     10,

@@ -10,8 +10,8 @@ import (
 
 // Manager is a circuit breaker manager.
 type Manager struct {
+	config   *Config  // Circuit breaker configuration
 	breakers sync.Map // map[string]*gobreaker.CircuitBreaker
-	config   *Config
 }
 
 // NewManager creates a new circuit breaker manager.
@@ -30,7 +30,7 @@ func (m *Manager) Get(name string) *gobreaker.CircuitBreaker {
 		MaxRequests: m.config.MaxRequests,
 		Interval:    time.Duration(m.config.Interval) * time.Second,
 		Timeout:     time.Duration(m.config.Timeout) * time.Second,
-		ReadyToTrip: m.config.ReadyToTrip,
+		ReadyToTrip: NewPolicyFromConfig(m.config.Policy).ShouldTrip,
 	}
 	cb := gobreaker.NewCircuitBreaker(st)
 	m.breakers.Store(name, cb)
@@ -41,7 +41,7 @@ func (m *Manager) Get(name string) *gobreaker.CircuitBreaker {
 func (m *Manager) Break(name string, times int) {
 	cb := m.Get(name)
 	for i := 0; i < times; i++ {
-		_, _ = cb.Execute(func() (interface{}, error) {
+		_, _ = cb.Execute(func() (any, error) {
 			return nil, errors.New("test fail")
 		})
 	}

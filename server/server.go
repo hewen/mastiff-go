@@ -39,6 +39,7 @@ func (s *Servers) Start() {
 	var group sync.WaitGroup
 	group.Add(len(s.s))
 	AddGracefulStop(s.Stop)
+	gracefulStop()
 
 	for i := range s.s {
 		go func(i int) {

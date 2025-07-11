@@ -9,14 +9,14 @@ import (
 
 func TestFormatDuration(t *testing.T) {
 	testCase := []struct {
-		in  time.Duration
 		out string
+		in  time.Duration
 	}{
-		{time.Hour, "1h0m0s"},
-		{2 * time.Minute, "2m0s"},
-		{time.Minute, "1m0s"},
-		{time.Second, "1s"},
-		{time.Millisecond, "1ms"},
+		{in: time.Hour, out: "1h0m0s"},
+		{in: 2 * time.Minute, out: "2m0s"},
+		{in: time.Minute, out: "1m0s"},
+		{in: time.Second, out: "1s"},
+		{in: time.Millisecond, out: "1ms"},
 	}
 
 	for i := range testCase {

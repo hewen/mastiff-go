@@ -5,12 +5,12 @@ package logger
 type Config struct {
 	// Level defines the logging level, e.g. "INFO", "DEBUG".
 	Level LogLevel
-	// Outputs defines the output targets, e.g. []string{"stdout", "file"}
-	Outputs []string
 	// FileOutput defines file output configuration (used when "file" is in Outputs).
 	FileOutput *FileOutputConfig
 	// Backend specifies the logging backend: "std", "zap", or "zerolog".
 	Backend string
+	// Outputs defines the output targets, e.g. []string{"stdout", "file"}
+	Outputs []string
 	// EnableMasking enables masking of sensitive fields in log entries.
 	EnableMasking bool
 }

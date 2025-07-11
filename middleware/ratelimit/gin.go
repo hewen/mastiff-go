@@ -19,6 +19,7 @@ func GinMiddleware(mgr *LimiterManager) gin.HandlerFunc {
 			c.Next()
 			return
 		}
+
 		key := mgr.getKeyFromGin(c, cfg)
 		limiter := mgr.getOrCreateLimiter(key, cfg)
 		if err := limiter.AllowOrWait(c.Request.Context()); err != nil {

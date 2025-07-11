@@ -11,11 +11,7 @@ import (
 )
 
 // NewGinAPIHandler initializes a new Gin API handler with the provided route initialization function.
-func NewGinAPIHandler(conf *HTTPConf, initRoute func(r *gin.Engine), extraMiddlewares ...gin.HandlerFunc) (http.Handler, error) {
-	if conf == nil {
-		return nil, ErrEmptyHTTPConf
-	}
-
+func NewGinAPIHandler(conf HTTPConf, initRoute func(r *gin.Engine), extraMiddlewares ...gin.HandlerFunc) http.Handler {
 	gin.SetMode(conf.Mode)
 	r := gin.New()
 
@@ -42,5 +38,5 @@ func NewGinAPIHandler(conf *HTTPConf, initRoute func(r *gin.Engine), extraMiddle
 
 	// Route setup
 	initRoute(r)
-	return r, nil
+	return r
 }

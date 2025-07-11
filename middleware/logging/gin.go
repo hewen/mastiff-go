@@ -23,6 +23,11 @@ func GinMiddleware() gin.HandlerFunc {
 		req, _ := c.Get("req")
 		resp, _ := c.Get("resp")
 
+		var err error
+		if c.Errors != nil {
+			err = c.Errors.Last()
+		}
+
 		l := logger.NewLoggerWithContext(ctx)
 		logger.LogRequest(
 			l,
@@ -33,7 +38,7 @@ func GinMiddleware() gin.HandlerFunc {
 			c.Request.UserAgent(),
 			req,
 			resp,
-			nil,
+			err,
 		)
 	}
 }

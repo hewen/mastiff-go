@@ -16,14 +16,12 @@ import (
 func TestLimiterManager_CleanerOnce(t *testing.T) {
 	cfg := &Config{
 		Default: &RouteLimitConfig{
-			Rate:  1,
-			Burst: 1,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
-				EnableRoute:  true,
-				EnableIP:     true,
-				EnableUserID: true,
-			},
+			Rate:         1,
+			Burst:        1,
+			Mode:         ModeAllow,
+			EnableRoute:  true,
+			EnableIP:     true,
+			EnableUserID: true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)
@@ -50,23 +48,21 @@ func TestLimiterManager_CleanerOnce(t *testing.T) {
 func TestLimiterManager_GetKeyFromGin(t *testing.T) {
 	cfg := &Config{
 		Default: &RouteLimitConfig{
-			Rate:  1,
-			Burst: 1,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
-				EnableRoute:  true,
-				EnableIP:     true,
-				EnableUserID: true,
-			},
+			Rate:         1,
+			Burst:        1,
+			Mode:         ModeAllow,
+			EnableRoute:  true,
+			EnableIP:     true,
+			EnableUserID: true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)
 	defer mgr.Stop()
 
 	cfgs := []*RouteLimitConfig{
-		{Strategy: Strategy{EnableRoute: true}},
-		{Strategy: Strategy{EnableIP: true}},
-		{Strategy: Strategy{EnableUserID: true}},
+		{EnableRoute: true},
+		{EnableIP: true},
+		{EnableUserID: true},
 	}
 
 	for i, cfg := range cfgs {
@@ -98,14 +94,12 @@ func TestLimiterManager_GetKeyFromGin(t *testing.T) {
 func TestLimiterManager_Allow(t *testing.T) {
 	cfg := &Config{
 		Default: &RouteLimitConfig{
-			Rate:  2,
-			Burst: 1,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
-				EnableRoute:  true,
-				EnableIP:     true,
-				EnableUserID: true,
-			},
+			Rate:         2,
+			Burst:        1,
+			Mode:         ModeAllow,
+			EnableRoute:  true,
+			EnableIP:     true,
+			EnableUserID: true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)
@@ -135,14 +129,12 @@ func TestLimiterManager_Allow(t *testing.T) {
 func TestLimiterManager_Wait(t *testing.T) {
 	cfg := &Config{
 		Default: &RouteLimitConfig{
-			Rate:  1,
-			Burst: 1,
-			Mode:  ModeWait,
-			Strategy: Strategy{
-				EnableRoute:  true,
-				EnableIP:     true,
-				EnableUserID: true,
-			},
+			Rate:         1,
+			Burst:        1,
+			Mode:         ModeWait,
+			EnableRoute:  true,
+			EnableIP:     true,
+			EnableUserID: true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)
@@ -168,14 +160,12 @@ func TestLimiterManager_Wait(t *testing.T) {
 func TestLimiterManager_Cleanup(t *testing.T) {
 	cfg := &Config{
 		Default: &RouteLimitConfig{
-			Rate:  10,
-			Burst: 2,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
-				EnableRoute:  true,
-				EnableIP:     true,
-				EnableUserID: true,
-			},
+			Rate:         10,
+			Burst:        2,
+			Mode:         ModeAllow,
+			EnableRoute:  true,
+			EnableIP:     true,
+			EnableUserID: true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)

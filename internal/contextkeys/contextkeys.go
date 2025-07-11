@@ -31,8 +31,8 @@ var (
 
 // Info represents authentication information.
 type Info struct {
-	UserID string
 	Claims jwt.MapClaims
+	UserID string
 }
 
 // SetValue sets a typed value into the context using a custom key.

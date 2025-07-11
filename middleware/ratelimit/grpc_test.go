@@ -15,11 +15,11 @@ import (
 
 func TestUnaryServerInterceptor(t *testing.T) {
 	cfg := &Config{
-		Default: &RouteLimitConfig{
-			Rate:  1,
-			Burst: 1,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
+		PerRoute: map[string]*RouteLimitConfig{
+			"/ratelimit.TestService/Ping": &RouteLimitConfig{
+				Rate:        1,
+				Burst:       1,
+				Mode:        ModeAllow,
 				EnableRoute: true,
 				EnableIP:    true,
 			},
@@ -30,6 +30,17 @@ func TestUnaryServerInterceptor(t *testing.T) {
 
 	handle := UnaryServerInterceptor(mgr)
 	_, err := handle(context.Background(),
+		&emptypb.Empty{},
+		&grpc.UnaryServerInfo{
+			FullMethod: "/ratelimit.TestService/Test",
+		},
+		func(_ context.Context, _ any) (any, error) {
+			return &emptypb.Empty{}, nil
+		},
+	)
+	assert.Nil(t, err)
+
+	_, err = handle(context.Background(),
 		&emptypb.Empty{},
 		&grpc.UnaryServerInfo{
 			FullMethod: "/ratelimit.TestService/Ping",
@@ -55,13 +66,11 @@ func TestUnaryServerInterceptor(t *testing.T) {
 func TestStreamServerInterceptor(t *testing.T) {
 	cfg := &Config{
 		Default: &RouteLimitConfig{
-			Rate:  1,
-			Burst: 1,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
-				EnableRoute: true,
-				EnableIP:    true,
-			},
+			Rate:        1,
+			Burst:       1,
+			Mode:        ModeAllow,
+			EnableRoute: true,
+			EnableIP:    true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)

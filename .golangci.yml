@@ -1,4 +1,4 @@
-version: "2"
+version: '2'
 
 linters:
   enable:
@@ -19,7 +19,10 @@ linters:
     - gomodguard
     - revive
     - gosec
-
+    - forbidigo
+  settings:
+    govet:
+      enable-all: true
 formatters:
   # Enable specific formatter.
   # Default: [] (uses standard Go formatting)

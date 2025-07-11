@@ -9,6 +9,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/logger"
+	"github.com/hewen/mastiff-go/middleware"
+	"github.com/hewen/mastiff-go/middleware/recovery"
 	"github.com/hewen/mastiff-go/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -29,13 +31,17 @@ func TestNewGinAPIHandler(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
+	enableMetrics := true
 	conf := &HTTPConf{
 		Addr:         fmt.Sprintf("localhost:%d", port),
 		PprofEnabled: true,
 		Mode:         "debug",
+		Middlewares: middleware.Config{
+			EnableMetrics: &enableMetrics,
+		},
 	}
 
-	server, err := NewHTTPServer(conf, handler)
+	server, err := NewHTTPServer(conf, handler, recovery.GinMiddleware())
 	assert.Nil(t, err)
 
 	go func() {

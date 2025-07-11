@@ -20,11 +20,11 @@ type DB struct {
 
 // DatabaseOption defines options for initializing a database connection.
 type DatabaseOption struct {
-	RegisterHookDriver bool
 	Hook               sqlhooks.Hooks
+	ConnMaxLifetime    time.Duration
 	MaxIdleConns       int
 	MaxOpenConns       int
-	ConnMaxLifetime    time.Duration
+	RegisterHookDriver bool
 }
 
 // InitDB initializes a database connection.

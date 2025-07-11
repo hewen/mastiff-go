@@ -34,7 +34,19 @@ const (
 // LoadGRPCMiddlewares loads gRPC middlewares based on the provided configuration.
 func LoadGRPCMiddlewares(conf Config) []grpc.UnaryServerInterceptor {
 	var result []grpc.UnaryServerInterceptor
-
+	if conf.EnableLogging == nil || *conf.EnableLogging {
+		result = append(result, logging.UnaryServerInterceptor())
+	}
+	if conf.EnableRecovery == nil || *conf.EnableRecovery {
+		result = append(result, recovery.UnaryServerInterceptor())
+	}
+	if conf.TimeoutSeconds == nil || *conf.TimeoutSeconds > 0 {
+		var timeoutSeconds = defaultTimeout
+		if conf.TimeoutSeconds != nil {
+			timeoutSeconds = *conf.TimeoutSeconds
+		}
+		result = append(result, timeout.UnaryServerInterceptor(time.Duration(timeoutSeconds)*time.Second))
+	}
 	if conf.Auth != nil {
 		result = append(result, auth.UnaryServerInterceptor(*conf.Auth))
 	}
@@ -49,20 +61,6 @@ func LoadGRPCMiddlewares(conf Config) []grpc.UnaryServerInterceptor {
 	if conf.EnableMetrics != nil {
 		result = append(result, metrics.UnaryServerInterceptor())
 	}
-	if conf.EnableLogging == nil || *conf.EnableLogging {
-		result = append(result, logging.UnaryServerInterceptor())
-	}
-	if conf.EnableRecovery == nil || *conf.EnableRecovery {
-		result = append(result, recovery.UnaryServerInterceptor())
-	}
-	if conf.TimeoutSeconds == nil || *conf.TimeoutSeconds > 0 {
-		var timeoutSeconds = defaultTimeout
-		if conf.TimeoutSeconds != nil {
-			timeoutSeconds = *conf.TimeoutSeconds
-		}
-		result = append(result, timeout.UnaryServerInterceptor(time.Duration(timeoutSeconds)*time.Second))
-	}
-
 	return result
 }
 
@@ -70,6 +68,12 @@ func LoadGRPCMiddlewares(conf Config) []grpc.UnaryServerInterceptor {
 func LoadGinMiddlewares(conf Config) []gin.HandlerFunc {
 	var result []gin.HandlerFunc
 
+	if conf.EnableRecovery == nil || *conf.EnableRecovery {
+		result = append(result, recovery.GinMiddleware())
+	}
+	if conf.EnableLogging == nil || *conf.EnableLogging {
+		result = append(result, logging.GinMiddleware())
+	}
 	if conf.Auth != nil {
 		result = append(result, auth.GinMiddleware(conf.Auth))
 	}
@@ -83,13 +87,6 @@ func LoadGinMiddlewares(conf Config) []gin.HandlerFunc {
 	}
 	if conf.EnableMetrics != nil {
 		result = append(result, metrics.GinMiddleware())
-	}
-
-	if conf.EnableRecovery == nil || *conf.EnableRecovery {
-		result = append(result, recovery.GinMiddleware())
-	}
-	if conf.EnableLogging == nil || *conf.EnableLogging {
-		result = append(result, logging.GinMiddleware())
 	}
 
 	return result

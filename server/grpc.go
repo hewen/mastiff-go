@@ -20,10 +20,10 @@ var (
 
 // GrpcServer represents a gRPC server.
 type GrpcServer struct {
-	addr string
 	s    *grpc.Server
 	l    logger.Logger
 	ln   net.Listener
+	addr string
 	mu   sync.Mutex
 }
 
@@ -77,11 +77,9 @@ func NewGrpcServer(
 
 // Start starts the gRPC server and listens for incoming connections.
 func (s *GrpcServer) Start() {
-	AddGracefulStop(s.Stop)
-	gracefulStop()
-
 	s.l.Infof("Start grpc service %s", s.addr)
-	if err := s.s.Serve(s.ln); err != nil {
+	err := s.s.Serve(s.ln)
+	if err != nil {
 		s.l.Errorf("grpc service failed: %v", err)
 	}
 }

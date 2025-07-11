@@ -16,13 +16,11 @@ func TestGinMiddleware(t *testing.T) {
 
 	cfg := &Config{
 		Default: &RouteLimitConfig{
-			Rate:  1,
-			Burst: 1,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
-				EnableRoute: true,
-				EnableIP:    true,
-			},
+			Rate:        1,
+			Burst:       1,
+			Mode:        ModeAllow,
+			EnableRoute: true,
+			EnableIP:    true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)
@@ -42,4 +40,24 @@ func TestGinMiddleware(t *testing.T) {
 	w = httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusTooManyRequests, w.Code)
+}
+
+func TestGinMiddleware_NoConfig(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	r := gin.New()
+
+	cfg := &Config{}
+	mgr := NewLimiterManager(cfg)
+	defer mgr.Stop()
+
+	r.Use(GinMiddleware(mgr))
+	r.GET("/test", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"message": "ok"})
+	})
+
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.RemoteAddr = "127.0.0.1:1234"
+	w := httptest.NewRecorder()
+	r.ServeHTTP(w, req)
+	assert.Equal(t, http.StatusOK, w.Code)
 }

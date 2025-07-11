@@ -235,7 +235,7 @@ func processTemplateFile(path string, templateRoot string, outputRoot string, da
 
 	targetPath := filepath.Join(outputRoot, strings.TrimSuffix(relPath, ".tmpl"))
 
-	if err := os.MkdirAll(filepath.Dir(targetPath), 0750); err != nil {
+	if err = os.MkdirAll(filepath.Dir(targetPath), 0750); err != nil {
 		return err
 	}
 
@@ -273,7 +273,6 @@ func processTemplateFile(path string, templateRoot string, outputRoot string, da
 		return err
 	}
 
-	fmt.Printf("Generated %s\n", targetPath)
 	return nil
 }
 

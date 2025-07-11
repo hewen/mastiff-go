@@ -72,8 +72,8 @@ func TestQueueServerWithJsonHandler(t *testing.T) {
 	queueName := "json_test_queue"
 
 	type MyMsg struct {
-		ID   int    `json:"id"`
 		Name string `json:"name"`
+		ID   int    `json:"id"`
 	}
 
 	var mu sync.Mutex

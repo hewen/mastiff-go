@@ -18,19 +18,14 @@ const (
 	limiterTTL = 10 * time.Minute
 )
 
-// Strategy represents the strategy for rate limiting.
-type Strategy struct {
-	EnableRoute  bool `json:"enable_route"`
-	EnableIP     bool `json:"enable_ip"`
-	EnableUserID bool `json:"enable_user_id"`
-}
-
 // RouteLimitConfig represents the configuration for rate limiting per route.
 type RouteLimitConfig struct {
-	Rate     float64   `json:"rate"`
-	Burst    int       `json:"burst"`
-	Mode     LimitMode `json:"mode"`
-	Strategy Strategy  `json:"strategy"`
+	Mode         LimitMode `json:"mode"`
+	EnableRoute  bool      `json:"enable_route"`
+	EnableIP     bool      `json:"enable_ip"`
+	EnableUserID bool      `json:"enable_user_id"`
+	Burst        int       `json:"burst"`
+	Rate         float64   `json:"rate"`
 }
 
 // Config represents the configuration for rate limiting.

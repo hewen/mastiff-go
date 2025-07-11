@@ -26,14 +26,14 @@ const (
 
 // HTTPService defines the configuration for an HTTP server.
 type HTTPService struct {
-	addr string
 	s    *http.Server
 	l    logger.Logger
+	addr string
 	mu   sync.Mutex
 }
 
 // NewHTTPServer creates a new HTTP server.
-func NewHTTPServer(conf *HTTPConf, initRoute func(r *gin.Engine)) (*HTTPService, error) {
+func NewHTTPServer(conf *HTTPConf, initRoute func(r *gin.Engine), extraMiddlewares ...gin.HandlerFunc) (*HTTPService, error) {
 	if conf == nil {
 		return nil, ErrEmptyHTTPConf
 	}
@@ -45,11 +45,7 @@ func NewHTTPServer(conf *HTTPConf, initRoute func(r *gin.Engine)) (*HTTPService,
 		conf.TimeoutWrite = HTTPTimeoutWriteDefault
 	}
 
-	handler, err := NewGinAPIHandler(conf, initRoute)
-	if err != nil {
-		return nil, err
-	}
-
+	handler := NewGinAPIHandler(*conf, initRoute, extraMiddlewares...)
 	srv := &http.Server{
 		Addr:         conf.Addr,
 		Handler:      handler,
@@ -68,11 +64,8 @@ func NewHTTPServer(conf *HTTPConf, initRoute func(r *gin.Engine)) (*HTTPService,
 
 // Start starts the HTTP server.
 func (s *HTTPService) Start() {
-	AddGracefulStop(s.Stop)
-	gracefulStop()
-
 	s.l.Infof("Start http service %s", s.addr)
-	if err := s.s.ListenAndServe(); err != http.ErrServerClosed {
+	if err := s.s.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		s.l.Errorf("http service failed: %v", err)
 	}
 }
@@ -87,9 +80,13 @@ func (s *HTTPService) Stop() {
 		return
 	}
 
-	err := s.s.Shutdown(context.Background())
+	// Create a context with timeout for graceful shutdown
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	err := s.s.Shutdown(ctx)
 	if err != nil {
-		s.l.Errorf("%v", err)
+		s.l.Errorf("Error during server shutdown: %v", err)
 	}
 	s.s = nil
 }

@@ -17,16 +17,16 @@ import (
 // routeLimiter represents a limiter for a route.
 type routeLimiter struct {
 	limiter  *rate.Limiter
-	mode     LimitMode
 	lastUsed time.Time
+	mode     LimitMode
 }
 
 // LimiterManager manages the rate limiters.
 type LimiterManager struct {
-	mu       sync.RWMutex
-	limiters map[string]*routeLimiter
 	config   *Config
+	limiters map[string]*routeLimiter
 	stopCh   chan struct{}
+	mu       sync.RWMutex
 }
 
 // NewLimiterManager creates a new LimiterManager.
@@ -74,17 +74,17 @@ func (mgr *LimiterManager) cleanerOnce() {
 // getKeyFromGin returns the key for the limiter from the gin context.
 func (mgr *LimiterManager) getKeyFromGin(ctx *gin.Context, cfg *RouteLimitConfig) string {
 	parts := []string{}
-	if cfg.Strategy.EnableRoute {
+	if cfg.EnableRoute {
 		route := ctx.FullPath()
 		if route == "" {
 			route = ctx.Request.URL.Path
 		}
 		parts = append(parts, route)
 	}
-	if cfg.Strategy.EnableIP {
+	if cfg.EnableIP {
 		parts = append(parts, ctx.ClientIP())
 	}
-	if cfg.Strategy.EnableUserID {
+	if cfg.EnableUserID {
 		if uid, ok := contextkeys.GetUserID(ctx.Request.Context()); ok {
 			parts = append(parts, fmt.Sprint(uid))
 		}
@@ -95,15 +95,15 @@ func (mgr *LimiterManager) getKeyFromGin(ctx *gin.Context, cfg *RouteLimitConfig
 // getKeyFromContext returns the key for the limiter from the context.
 func (mgr *LimiterManager) getKeyFromContext(ctx context.Context, route string, cfg *RouteLimitConfig) string {
 	parts := []string{}
-	if cfg.Strategy.EnableRoute {
+	if cfg.EnableRoute {
 		parts = append(parts, route)
 	}
-	if cfg.Strategy.EnableIP {
+	if cfg.EnableIP {
 		if pr, _ := peer.FromContext(ctx); pr != nil {
 			parts = append(parts, pr.Addr.String())
 		}
 	}
-	if cfg.Strategy.EnableUserID {
+	if cfg.EnableUserID {
 		if uid, ok := contextkeys.GetUserID(ctx); ok {
 			parts = append(parts, uid)
 		}

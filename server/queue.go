@@ -163,8 +163,8 @@ func (qs *QueueServer[T]) runOnce(ctx context.Context) error {
 	}
 
 	err = qs.pool.Submit(func() {
-		if err := qs.handler.Handle(ctx, msg); err != nil {
-			qs.logger.Errorf("failed to handle message: %v", err)
+		if handleErr := qs.handler.Handle(ctx, msg); handleErr != nil {
+			qs.logger.Errorf("failed to handle message: %v", handleErr)
 		}
 		qs.logger.Infof("push success! => goroutine pool: [cap: %d, running: %d, free: %d]", qs.pool.Cap(), qs.pool.Running(), qs.pool.Free())
 	})

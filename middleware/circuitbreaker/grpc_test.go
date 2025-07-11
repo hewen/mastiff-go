@@ -5,7 +5,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/sony/gobreaker"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
@@ -16,9 +15,6 @@ func TestUnaryServerInterceptor_Success(t *testing.T) {
 		MaxRequests: 3,
 		Interval:    1,
 		Timeout:     1,
-		ReadyToTrip: func(_ gobreaker.Counts) bool {
-			return false
-		},
 	}
 	mgr := NewManager(cfg)
 
@@ -38,8 +34,9 @@ func TestUnaryServerInterceptor_Failure(t *testing.T) {
 		MaxRequests: 1,
 		Interval:    1,
 		Timeout:     1,
-		ReadyToTrip: func(_ gobreaker.Counts) bool {
-			return true
+		Policy: &PolicyConfig{
+			Type:                "consecutive_failures",
+			ConsecutiveFailures: 1,
 		},
 	}
 	mgr := NewManager(cfg)
@@ -62,8 +59,9 @@ func TestStreamServerInterceptor_Success(t *testing.T) {
 		MaxRequests: 3,
 		Interval:    1,
 		Timeout:     1,
-		ReadyToTrip: func(_ gobreaker.Counts) bool {
-			return false
+		Policy: &PolicyConfig{
+			Type:                "consecutive_failures",
+			ConsecutiveFailures: 1,
 		},
 	}
 	mgr := NewManager(cfg)
@@ -81,8 +79,9 @@ func TestStreamServerInterceptor_Failure(t *testing.T) {
 		MaxRequests: 1,
 		Interval:    1,
 		Timeout:     1,
-		ReadyToTrip: func(_ gobreaker.Counts) bool {
-			return true
+		Policy: &PolicyConfig{
+			Type:                "consecutive_failures",
+			ConsecutiveFailures: 1,
 		},
 	}
 	mgr := NewManager(cfg)

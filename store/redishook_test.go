@@ -30,7 +30,7 @@ func TestRedisHook(t *testing.T) {
 	_, err = RedisConn.Pipelined(func(pipe redis.Pipeliner) error {
 		_, err = pipe.Get("test").Result()
 
-		_, err := pipe.ExecContext(ctx)
+		_, err = pipe.ExecContext(ctx)
 		if err != nil {
 			return err
 		}

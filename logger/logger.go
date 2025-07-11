@@ -355,8 +355,8 @@ func NewOutgoingContextWithIncomingContext(ctx context.Context) context.Context 
 // stdLogger is a Logger implementation using the standard log package.
 type stdLogger struct {
 	logger        *log.Logger
-	traceID       string
 	fields        map[string]any
+	traceID       string
 	EnableMasking bool
 }
 
