@@ -15,6 +15,9 @@ func TestNewRedisStore(t *testing.T) {
 	err := store.Ping()
 	assert.NoError(t, err)
 
+	db := store.GetDb()
+	assert.NotNil(t, db)
+
 	err = store.Close()
 	assert.NoError(t, err)
 }
