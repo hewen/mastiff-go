@@ -1,8 +1,10 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -473,4 +475,31 @@ func TestRunModuleCmd_EmptyDir(t *testing.T) {
 	err := runModuleCmd(cmd, []string{"Test"})
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "target directory is empty")
+}
+
+func TestExpandPath_WithTilde(t *testing.T) {
+	home, _ := os.UserHomeDir()
+	input := "~/myproject"
+	expected := filepath.Join(home, "myproject")
+
+	result := expandPath(input)
+	assert.Equal(t, expected, result)
+}
+
+func TestExpandPath_Relative(t *testing.T) {
+	input := "./subdir"
+	result := expandPath(input)
+	assert.True(t, strings.HasSuffix(result, "subdir"))
+}
+
+func TestExpandPath_UserCurrentError(t *testing.T) {
+	orig := getCurrentUser
+	defer func() { getCurrentUser = orig }() // 恢复原始实现
+
+	getCurrentUser = func() (*user.User, error) {
+		return nil, errors.New("mocked user.Current error")
+	}
+
+	result := expandPath("~/project")
+	assert.True(t, strings.HasSuffix(result, "project"))
 }

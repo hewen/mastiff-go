@@ -2,6 +2,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"testing"
 
@@ -29,6 +30,8 @@ mysql:
   dsn: "user:pass@tcp(127.0.0.1:3306)/dbname"
 redis:
   addr: "localhost:6379"
+custom:
+  custom_key: "custom_value"
 `)
 	err := os.WriteFile(name, content, 0600)
 	assert.Nil(t, err)
@@ -56,4 +59,9 @@ func TestInitConfig_InvalidContent(t *testing.T) {
 
 	_, err = InitConfig(name)
 	assert.Error(t, err)
+}
+
+func TestOnChange(_ *testing.T) {
+	onChange(nil, nil)
+	onChange(nil, fmt.Errorf("test error"))
 }

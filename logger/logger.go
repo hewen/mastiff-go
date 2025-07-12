@@ -11,6 +11,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"sync/atomic"
 	"time"
 
 	"github.com/hewen/mastiff-go/config/loggerconf"
@@ -25,7 +26,7 @@ import (
 )
 
 // LogLevelFlag represents the log level as an integer flag.
-type LogLevelFlag int
+type LogLevelFlag int32
 
 const (
 	// LogLevelFlagFatal is the log level flag for fatal errors.
@@ -66,7 +67,7 @@ const (
 
 var (
 	// logLevel is the current log level.
-	logLevel = LogLevelFlagInfo
+	logLevel atomic.Int32
 
 	// logLevelMap is a map of log level strings to their corresponding LogLevelFlag values.
 	logLevelMap = map[loggerconf.LogLevel]LogLevelFlag{
@@ -271,15 +272,19 @@ func newStdLogger(out io.Writer) *log.Logger {
 // SetLevel sets the global logging level.
 func SetLevel(level loggerconf.LogLevel) error {
 	if level == "" {
-		logLevel = LogLevelFlagInfo
+		logLevel.Store(int32(LogLevelFlagInfo))
 		return nil
 	}
 	lv, ok := logLevelMap[level]
 	if !ok {
 		return fmt.Errorf("invalid log level: %s", level)
 	}
-	logLevel = lv
+	logLevel.Store(int32(lv))
 	return nil
+}
+
+func getLogLevel() LogLevelFlag {
+	return LogLevelFlag(logLevel.Load())
 }
 
 // NewTraceID generates a new trace ID using the nanoid package.
@@ -348,7 +353,7 @@ type stdLogger struct {
 func (l *stdLogger) GetTraceID() string { return l.traceID }
 
 func (l *stdLogger) logOutput(level LogLevelFlag, format string, v ...any) {
-	if level > logLevel {
+	if level > getLogLevel() {
 		return
 	}
 	fields := make(map[string]any, len(l.fields)+2)
@@ -395,7 +400,7 @@ type zapLogger struct {
 func (l *zapLogger) GetTraceID() string { return l.traceID }
 
 func (l *zapLogger) logOutput(level LogLevelFlag, format string, v ...any) {
-	if level > logLevel {
+	if level > getLogLevel() {
 		return
 	}
 
@@ -444,7 +449,7 @@ type zerologLogger struct {
 func (l *zerologLogger) GetTraceID() string { return l.traceID }
 
 func (l *zerologLogger) logOutput(level LogLevelFlag, format string, v ...any) {
-	if level > logLevel {
+	if level > getLogLevel() {
 		return
 	}
 	var e *zerolog.Event

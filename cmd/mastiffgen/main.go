@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"os/user"
 	"path/filepath"
 	"strings"
 	"text/template"
@@ -15,8 +16,10 @@ import (
 	"golang.org/x/text/language"
 )
 
-//go:embed templates/*
+//go:embed templates/**/*
 var templatesFS embed.FS
+
+var getCurrentUser = user.Current
 
 // TemplateData holds the data used for rendering templates.
 type TemplateData struct {
@@ -72,6 +75,7 @@ func runInitCmd(cmd *cobra.Command, _ []string) error {
 	packageName, _ := cmd.Flags().GetString("package")
 	projectName, _ := cmd.Flags().GetString("project")
 	targetDir, _ := cmd.Flags().GetString("dir")
+	targetDir = expandPath(targetDir)
 
 	if err := os.MkdirAll(targetDir, 0750); err != nil {
 		return fmt.Errorf("failed to create target directory: %v", err)
@@ -94,6 +98,7 @@ func runModuleCmd(cmd *cobra.Command, args []string) error {
 	moduleName := args[0]
 	packageName, _ := cmd.Flags().GetString("package")
 	targetDir, _ := cmd.Flags().GetString("dir")
+	targetDir = expandPath(targetDir)
 
 	if empty, err := isEmptyDir(targetDir); err != nil {
 		return fmt.Errorf("failed to check directory: %v", err)
@@ -135,6 +140,23 @@ func runModuleCmd(cmd *cobra.Command, args []string) error {
 	}
 
 	return nil
+}
+
+func expandPath(path string) string {
+	if !strings.HasPrefix(path, "~/") {
+		return path
+	}
+
+	usr, err := getCurrentUser()
+	if err == nil && usr.HomeDir != "" {
+		return filepath.Join(usr.HomeDir, path[2:])
+	}
+
+	if home := os.Getenv("HOME"); home != "" {
+		return filepath.Join(home, path[2:])
+	}
+
+	return filepath.Join(".", path[2:])
 }
 
 func appendToCoreGo(coreGoPath string, fieldLine, initLine string) error {

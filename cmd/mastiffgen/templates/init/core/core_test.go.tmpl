@@ -4,14 +4,14 @@ package core
 import (
 	"testing"
 
-	"{{.PackageName}}/config"
 	"{{.PackageName}}/pkg/model"
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/gin-gonic/gin"
-	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/server"
-	"github.com/hewen/mastiff-go/store"
+	"github.com/hewen/mastiff-go/config"
+	"github.com/hewen/mastiff-go/config/loggerconf"
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/hewen/mastiff-go/config/storeconf"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -20,18 +20,29 @@ func TestCoreEmptyConfig(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
+func TestCoreEmptyLoggerConfig(t *testing.T) {
+	_, err := NewCore(&config.Config{})
+	assert.EqualValues(t, "empty logger config", err.Error())
+}
+
 func TestCore_InitConnectorError(t *testing.T) {
 	_, err := NewCore(&config.Config{
-		Mysql: &store.MysqlConf{
+		Logger: &loggerconf.Config{
+			Level: "info",
+		},
+		Mysql: &storeconf.MysqlConfig{
 			DataSourceName: "error",
-        },
+		},
 	})
 	assert.EqualValues(t, "invalid DSN: missing the slash separating the database name", err.Error())
 }
 
 func TestCore_Http(t *testing.T) {
 	c, err := NewCore(&config.Config{
-		HTTP: &server.HTTPConf{
+		Logger: &loggerconf.Config{
+			Level: "info",
+		},
+		HTTP: &serverconf.HTTPConfig{
 			Addr: "error",
 		},
 	})
@@ -43,7 +54,10 @@ func TestCore_Http(t *testing.T) {
 
 func TestCore_Grpc(t *testing.T) {
 	c, err := NewCore(&config.Config{
-		HTTP: &server.HTTPConf{
+		Logger: &loggerconf.Config{
+			Level: "info",
+		},
+		HTTP: &serverconf.HTTPConfig{
 			Addr: "0.0.0.0:8080",
 		},
 	})
@@ -56,10 +70,13 @@ func TestCore_Grpc(t *testing.T) {
 func TestCore_Queue(t *testing.T) {
 	s, _ := miniredis.Run()
 	c, err := NewCore(&config.Config{
-		Queue: &server.QueueConf{
+		Logger: &loggerconf.Config{
+			Level: "info",
+		},
+		Queue: &serverconf.QueueConfig{
 			QueueName: "test",
 		},
-		Redis: &store.RedisConf{
+		Redis: &storeconf.RedisConfig{
 			Addr:     s.Addr(),
 			Password: "",
 			DB:       0,
@@ -76,22 +93,22 @@ func TestNewCore(t *testing.T) {
 
 	s, _ := miniredis.Run()
 	c, err := NewCore(&config.Config{
-		Grpc: &server.GrpcConf{
+		Grpc: &serverconf.GrpcConfig{
 			Addr: "0.0.0.0:9090",
 		},
-		HTTP: &server.HTTPConf{
+		HTTP: &serverconf.HTTPConfig{
 			Addr: "0.0.0.0:8080",
 		},
-		Mysql: &store.MysqlConf{
+		Mysql: &storeconf.MysqlConfig{
 			DataSourceName: model.DStore.DataSourceName(),
 		},
-		Redis: &store.RedisConf{
+		Redis: &storeconf.RedisConfig{
 			Addr:     s.Addr(),
 			Password: "",
 			DB:       0,
 		},
-		Logger: logger.Config{
-			Level: "INFO",
+		Logger: &loggerconf.Config{
+			Level: "info",
 		},
 	})
 	assert.Nil(t, err)

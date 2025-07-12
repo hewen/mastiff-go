@@ -53,7 +53,6 @@ func LoadConfig(configPath string, custom any, onChange func(newConfig *Config, 
 
 	setConfig(&c)
 
-	v.WatchConfig()
 	v.OnConfigChange(func(_ fsnotify.Event) {
 		var newC Config
 		newC.Custom = custom
@@ -71,6 +70,8 @@ func LoadConfig(configPath string, custom any, onChange func(newConfig *Config, 
 			onChange(&newC, nil)
 		}
 	})
+
+	v.WatchConfig()
 
 	return &c, nil
 }

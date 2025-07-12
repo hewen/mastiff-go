@@ -9,10 +9,7 @@ MAKEFLAGS += --no-print-directory
 test:
 	@echo "==> Running Tests"
 	@set -e; \
-	for pkg in $(PKGS); do \
-		name=$$(basename $$pkg); \
-		go test -tags test -covermode=count -coverprofile=$$name.coverprofile -coverpkg=$(COVER_PKG) $$pkg; \
-	done
+	go test -race -tags=gc_opt -coverprofile="codecov.coverprofile" -covermode=atomic -timeout 15m -failfast ./...
 	@$(MAKE) merge-cover
 	@$(MAKE) check-cover
 

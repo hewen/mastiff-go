@@ -3,26 +3,26 @@ package config
 
 import (
 	"github.com/hewen/mastiff-go/config"
-	"github.com/spf13/viper"
+	"github.com/hewen/mastiff-go/logger"
 )
 
+// CustomConfig custom config.
 type CustomConfig struct {
 }
 
 // InitConfig initializes the configuration by reading the specified config file.
-func InitConfig(confFile string) (*Config, error) {
-	conf := new(Config)
-	viper.SetConfigFile(confFile)
+func InitConfig(confFile string) (*config.Config, error) {
+	customCfg := &CustomConfig{}
+	return config.LoadConfig(confFile, customCfg, onChange)
+}
 
-	err := viper.ReadInConfig()
+func onChange(newCfg *config.Config, err error) {
+	l := logger.NewLogger()
 	if err != nil {
-		return nil, err
+		l.Errorf("config reload error: %v", err)
+		return
 	}
+	l.Infof("config reloaded: %v", newCfg)
 
-	err = viper.Unmarshal(conf)
-	if err != nil {
-		return nil, err
-	}
-
-	return conf, nil
+	// TODO add onChange logic here.
 }

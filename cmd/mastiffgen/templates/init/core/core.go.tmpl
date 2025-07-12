@@ -5,12 +5,14 @@ import (
 	"context"
 	"fmt"
 
-	"{{.PackageName}}/config"
 	"{{.PackageName}}/pkg/model"
-    // MODULE_PACKAGE_START
-    // MODULE_PACKAGE_END
+
+	// nolint
+	// MODULE_PACKAGE_START
+	// MODULE_PACKAGE_END
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/server"
 	"github.com/hewen/mastiff-go/server/test"
@@ -32,6 +34,9 @@ func NewCore(conf *config.Config) (*Core, error) {
 	if conf == nil {
 		return nil, fmt.Errorf("empty config")
 	}
+	if conf.Logger == nil {
+		return nil, fmt.Errorf("empty logger config")
+	}
 
 	c := new(Core)
 	c.conf = conf
@@ -40,7 +45,7 @@ func NewCore(conf *config.Config) (*Core, error) {
 		return nil, err
 	}
 
-	if err := logger.InitLogger(conf.Logger); err != nil {
+	if err := logger.InitLogger(*conf.Logger); err != nil {
 		return nil, err
 	}
 
