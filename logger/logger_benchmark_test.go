@@ -4,6 +4,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/hewen/mastiff-go/config/loggerconf"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,10 +15,10 @@ func BenchmarkLoggerStd(b *testing.B) {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Backend: "std",
 		Outputs: []string{"file"},
-		FileOutput: &FileOutputConfig{
+		FileOutput: &loggerconf.FileOutputConfig{
 			Path: tmpFile.Name(),
 		},
 	})
@@ -38,10 +39,10 @@ func BenchmarkLoggerZap(b *testing.B) {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Backend: "zap",
 		Outputs: []string{"file"},
-		FileOutput: &FileOutputConfig{
+		FileOutput: &loggerconf.FileOutputConfig{
 			Path: tmpFile.Name(),
 		},
 	})
@@ -62,10 +63,10 @@ func BenchmarkLoggerZerolog(b *testing.B) {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Backend: "zerolog",
 		Outputs: []string{"file"},
-		FileOutput: &FileOutputConfig{
+		FileOutput: &loggerconf.FileOutputConfig{
 			Path: tmpFile.Name(),
 		},
 	})
@@ -86,10 +87,10 @@ func BenchmarkLoggerParallelStd(b *testing.B) {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Backend: "std",
 		Outputs: []string{"file"},
-		FileOutput: &FileOutputConfig{
+		FileOutput: &loggerconf.FileOutputConfig{
 			Path: tmpFile.Name(),
 		},
 	})
@@ -112,10 +113,10 @@ func BenchmarkLoggerParallelZap(b *testing.B) {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Backend: "zap",
 		Outputs: []string{"file"},
-		FileOutput: &FileOutputConfig{
+		FileOutput: &loggerconf.FileOutputConfig{
 			Path: tmpFile.Name(),
 		},
 	})
@@ -138,10 +139,10 @@ func BenchmarkLoggerParallelZerolog(b *testing.B) {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Backend: "zerolog",
 		Outputs: []string{"file"},
-		FileOutput: &FileOutputConfig{
+		FileOutput: &loggerconf.FileOutputConfig{
 			Path: tmpFile.Name(),
 		},
 	})

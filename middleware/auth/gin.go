@@ -5,11 +5,12 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/middleware/authconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 )
 
 // GinMiddleware is a gin middleware for authentication and authorization.
-func GinMiddleware(conf *Config) gin.HandlerFunc {
+func GinMiddleware(conf *authconf.Config) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if isWhiteListed(c.Request.URL.Path, conf.WhiteList) {
 			c.Next()

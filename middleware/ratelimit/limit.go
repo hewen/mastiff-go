@@ -9,28 +9,36 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/middleware/ratelimitconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc/peer"
+)
+
+const (
+	// cleanerInterval is the interval at which the cleaner runs.
+	cleanerInterval = 5 * time.Minute
+	// limiterTTL is the time after which a limiter is removed from the cache.
+	limiterTTL = 10 * time.Minute
 )
 
 // routeLimiter represents a limiter for a route.
 type routeLimiter struct {
 	limiter  *rate.Limiter
 	lastUsed time.Time
-	mode     LimitMode
+	mode     ratelimitconf.LimitMode
 }
 
 // LimiterManager manages the rate limiters.
 type LimiterManager struct {
-	config   *Config
+	config   *ratelimitconf.Config
 	limiters map[string]*routeLimiter
 	stopCh   chan struct{}
 	mu       sync.RWMutex
 }
 
 // NewLimiterManager creates a new LimiterManager.
-func NewLimiterManager(cfg *Config) *LimiterManager {
+func NewLimiterManager(cfg *ratelimitconf.Config) *LimiterManager {
 	mgr := &LimiterManager{
 		limiters: make(map[string]*routeLimiter),
 		config:   cfg,
@@ -72,7 +80,7 @@ func (mgr *LimiterManager) cleanerOnce() {
 }
 
 // getKeyFromGin returns the key for the limiter from the gin context.
-func (mgr *LimiterManager) getKeyFromGin(ctx *gin.Context, cfg *RouteLimitConfig) string {
+func (mgr *LimiterManager) getKeyFromGin(ctx *gin.Context, cfg *ratelimitconf.RouteLimitConfig) string {
 	parts := []string{}
 	if cfg.EnableRoute {
 		route := ctx.FullPath()
@@ -93,7 +101,7 @@ func (mgr *LimiterManager) getKeyFromGin(ctx *gin.Context, cfg *RouteLimitConfig
 }
 
 // getKeyFromContext returns the key for the limiter from the context.
-func (mgr *LimiterManager) getKeyFromContext(ctx context.Context, route string, cfg *RouteLimitConfig) string {
+func (mgr *LimiterManager) getKeyFromContext(ctx context.Context, route string, cfg *ratelimitconf.RouteLimitConfig) string {
 	parts := []string{}
 	if cfg.EnableRoute {
 		parts = append(parts, route)
@@ -112,7 +120,7 @@ func (mgr *LimiterManager) getKeyFromContext(ctx context.Context, route string, 
 }
 
 // getOrCreateLimiter returns the limiter for the key. If it doesn't exist, it creates it.
-func (mgr *LimiterManager) getOrCreateLimiter(key string, cfg *RouteLimitConfig) *routeLimiter {
+func (mgr *LimiterManager) getOrCreateLimiter(key string, cfg *ratelimitconf.RouteLimitConfig) *routeLimiter {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 	if l, ok := mgr.limiters[key]; ok {
@@ -131,12 +139,12 @@ func (mgr *LimiterManager) getOrCreateLimiter(key string, cfg *RouteLimitConfig)
 // AllowOrWait allows the request if the limiter allows it. If the limiter doesn't allow it, it waits for the limiter to allow it.
 func (l *routeLimiter) AllowOrWait(ctx context.Context) error {
 	switch l.mode {
-	case ModeAllow:
+	case ratelimitconf.ModeAllow:
 		if l.limiter.Allow() {
 			return nil
 		}
 		return context.DeadlineExceeded
-	case ModeWait:
+	case ratelimitconf.ModeWait:
 		return l.limiter.Wait(ctx)
 	default:
 		return context.DeadlineExceeded

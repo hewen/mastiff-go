@@ -6,9 +6,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/assert"
 
-	"github.com/hewen/mastiff-go/middleware/auth"
-	"github.com/hewen/mastiff-go/middleware/circuitbreaker"
-	"github.com/hewen/mastiff-go/middleware/ratelimit"
+	"github.com/hewen/mastiff-go/config/middleware/authconf"
+	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
+	"github.com/hewen/mastiff-go/config/middleware/ratelimitconf"
 )
 
 func TestLoadGRPCMiddlewares(t *testing.T) {
@@ -17,19 +17,19 @@ func TestLoadGRPCMiddlewares(t *testing.T) {
 		enable := true
 
 		conf := Config{
-			Auth: &auth.Config{
+			Auth: &authconf.Config{
 				JWTSecret:     "secret",
 				WhiteList:     []string{"/health"},
 				HeaderKey:     "Authorization",
 				TokenPrefixes: []string{"Bearer"},
 			},
-			CircuitBreaker: &circuitbreaker.Config{
+			CircuitBreaker: &circuitbreakerconf.Config{
 				MaxRequests: 5,
 				Interval:    60,
 				Timeout:     10,
 			},
-			RateLimit: &ratelimit.Config{
-				Default: &ratelimit.RouteLimitConfig{
+			RateLimit: &ratelimitconf.Config{
+				Default: &ratelimitconf.RouteLimitConfig{
 					Rate:  5,
 					Burst: 10,
 				},
@@ -62,19 +62,19 @@ func TestLoadGinMiddlewares(t *testing.T) {
 		enable := true
 
 		conf := Config{
-			Auth: &auth.Config{
+			Auth: &authconf.Config{
 				JWTSecret:     "secret",
 				WhiteList:     []string{"/health"},
 				HeaderKey:     "Authorization",
 				TokenPrefixes: []string{"Bearer"},
 			},
-			CircuitBreaker: &circuitbreaker.Config{
+			CircuitBreaker: &circuitbreakerconf.Config{
 				MaxRequests: 5,
 				Interval:    60,
 				Timeout:     10,
 			},
-			RateLimit: &ratelimit.Config{
-				Default: &ratelimit.RouteLimitConfig{
+			RateLimit: &ratelimitconf.Config{
+				Default: &ratelimitconf.RouteLimitConfig{
 					Rate:  5,
 					Burst: 10,
 				},

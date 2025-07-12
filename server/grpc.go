@@ -8,6 +8,7 @@ import (
 	"sync"
 
 	grpc_middleware "github.com/grpc-ecosystem/go-grpc-middleware"
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/middleware"
 	"google.golang.org/grpc"
@@ -30,7 +31,7 @@ type GrpcServer struct {
 
 // NewGrpcServer creates and initializes a new gRPC server with configured middlewares.
 func NewGrpcServer(
-	conf *GrpcConf,
+	conf *serverconf.GrpcConfig,
 	registerServerFunc func(*grpc.Server),
 	extraInterceptors ...grpc.UnaryServerInterceptor,
 ) (*GrpcServer, error) {

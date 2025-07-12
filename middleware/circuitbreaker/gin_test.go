@@ -7,11 +7,12 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestGinMiddleware_Success(t *testing.T) {
-	cfg := &Config{
+	cfg := &circuitbreakerconf.Config{
 		MaxRequests: 1,
 		Interval:    1,
 		Timeout:     1,
@@ -33,11 +34,11 @@ func TestGinMiddleware_Success(t *testing.T) {
 }
 
 func TestGinMiddleware_ConsecutiveFailures(t *testing.T) {
-	cfg := &Config{
+	cfg := &circuitbreakerconf.Config{
 		MaxRequests: 1,
 		Interval:    1,
 		Timeout:     1,
-		Policy: &PolicyConfig{
+		Policy: &circuitbreakerconf.PolicyConfig{
 			Type:                "consecutive_failures",
 			ConsecutiveFailures: 1,
 		},
@@ -64,11 +65,11 @@ func TestGinMiddleware_ConsecutiveFailures(t *testing.T) {
 }
 
 func TestGinMiddleware_FailureRate(t *testing.T) {
-	cfg := &Config{
+	cfg := &circuitbreakerconf.Config{
 		MaxRequests: 1,
 		Interval:    1,
 		Timeout:     1,
-		Policy: &PolicyConfig{
+		Policy: &circuitbreakerconf.PolicyConfig{
 			Type:                 "failure_rate",
 			MinRequests:          1,
 			FailureRateThreshold: 0.5,

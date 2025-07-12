@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/panjf2000/ants/v2"
 	"google.golang.org/protobuf/proto"
@@ -92,7 +93,7 @@ func (c ProtoCodec[T]) Decode(data []byte) (T, error) {
 }
 
 // NewQueueServer creates a new QueueServer with the specified handler and pool size.
-func NewQueueServer[T any](conf QueueConf, handler QueueHandler[T]) (*QueueServer[T], error) {
+func NewQueueServer[T any](conf serverconf.QueueConfig, handler QueueHandler[T]) (*QueueServer[T], error) {
 	if conf.QueueName == "" {
 		return nil, ErrEmptyQueueName
 	}

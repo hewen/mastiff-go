@@ -5,13 +5,14 @@ import (
 	"context"
 	"testing"
 
+	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
 )
 
 func TestUnaryServerInterceptor_Success(t *testing.T) {
-	cfg := &Config{
+	cfg := &circuitbreakerconf.Config{
 		MaxRequests: 3,
 		Interval:    1,
 		Timeout:     1,
@@ -30,11 +31,11 @@ func TestUnaryServerInterceptor_Success(t *testing.T) {
 }
 
 func TestUnaryServerInterceptor_Failure(t *testing.T) {
-	cfg := &Config{
+	cfg := &circuitbreakerconf.Config{
 		MaxRequests: 1,
 		Interval:    1,
 		Timeout:     1,
-		Policy: &PolicyConfig{
+		Policy: &circuitbreakerconf.PolicyConfig{
 			Type:                "consecutive_failures",
 			ConsecutiveFailures: 1,
 		},
@@ -55,11 +56,11 @@ func TestUnaryServerInterceptor_Failure(t *testing.T) {
 }
 
 func TestStreamServerInterceptor_Success(t *testing.T) {
-	cfg := &Config{
+	cfg := &circuitbreakerconf.Config{
 		MaxRequests: 3,
 		Interval:    1,
 		Timeout:     1,
-		Policy: &PolicyConfig{
+		Policy: &circuitbreakerconf.PolicyConfig{
 			Type:                "consecutive_failures",
 			ConsecutiveFailures: 1,
 		},
@@ -75,11 +76,11 @@ func TestStreamServerInterceptor_Success(t *testing.T) {
 }
 
 func TestStreamServerInterceptor_Failure(t *testing.T) {
-	cfg := &Config{
+	cfg := &circuitbreakerconf.Config{
 		MaxRequests: 1,
 		Interval:    1,
 		Timeout:     1,
-		Policy: &PolicyConfig{
+		Policy: &circuitbreakerconf.PolicyConfig{
 			Type:                "consecutive_failures",
 			ConsecutiveFailures: 1,
 		},

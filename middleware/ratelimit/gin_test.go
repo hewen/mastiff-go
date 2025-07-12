@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/middleware/ratelimitconf"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -14,11 +15,11 @@ func TestGinMiddleware(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	cfg := &Config{
-		Default: &RouteLimitConfig{
+	cfg := &ratelimitconf.Config{
+		Default: &ratelimitconf.RouteLimitConfig{
 			Rate:        1,
 			Burst:       1,
-			Mode:        ModeAllow,
+			Mode:        ratelimitconf.ModeAllow,
 			EnableRoute: true,
 			EnableIP:    true,
 		},
@@ -46,7 +47,7 @@ func TestGinMiddleware_NoConfig(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	r := gin.New()
 
-	cfg := &Config{}
+	cfg := &ratelimitconf.Config{}
 	mgr := NewLimiterManager(cfg)
 	defer mgr.Stop()
 

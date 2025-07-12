@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hewen/mastiff-go/config/loggerconf"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -133,9 +134,9 @@ func BenchmarkLogRequestWithoutMask(b *testing.B) {
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Outputs: []string{"file"},
-		FileOutput: &FileOutputConfig{
+		FileOutput: &loggerconf.FileOutputConfig{
 			Path: tmpFile.Name(),
 		},
 		EnableMasking: false,
@@ -154,9 +155,9 @@ func BenchmarkLogRequestWithMask(b *testing.B) {
 	defer func() {
 		_ = os.Remove(tmpFile.Name())
 	}()
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Outputs: []string{"file"},
-		FileOutput: &FileOutputConfig{
+		FileOutput: &loggerconf.FileOutputConfig{
 			Path: tmpFile.Name(),
 		},
 		EnableMasking: true,
@@ -176,10 +177,10 @@ func BenchmarkLogRequestParallelWithoutMask(b *testing.B) {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Backend: "zerolog",
 		Outputs: []string{"file"},
-		FileOutput: &FileOutputConfig{
+		FileOutput: &loggerconf.FileOutputConfig{
 			Path: tmpFile.Name(),
 		},
 		EnableMasking: false,
@@ -203,10 +204,10 @@ func BenchmarkLogRequestParallelWithMask(b *testing.B) {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Backend: "zerolog",
 		Outputs: []string{"file"},
-		FileOutput: &FileOutputConfig{
+		FileOutput: &loggerconf.FileOutputConfig{
 			Path: tmpFile.Name(),
 		},
 		EnableMasking: true,

@@ -1,17 +1,17 @@
-// Package store provides configuration for database connections.
-package store
+// Package storeconf provides configuration for database connections.
+package storeconf
 
 type (
-	// MysqlConf holds the configuration for MySQL connection.
-	MysqlConf struct {
+	// MysqlConfig holds the configuration for MySQL connection.
+	MysqlConfig struct {
 		// DataSourceName represents the data source name for the MySQL database.
 		DataSourceName string
 		// RegisterHookDriver represents whether to register the driver hook.
 		RegisterHookDriver bool
 	}
 
-	// RedisConf holds the configuration for Redis connection.
-	RedisConf struct {
+	// RedisConfig holds the configuration for Redis connection.
+	RedisConfig struct {
 		// Addr represents the address of the Redis server.
 		Addr string
 		// Password represents the password for the Redis server.

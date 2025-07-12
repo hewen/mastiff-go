@@ -14,6 +14,7 @@ import (
 	"sync"
 	"testing"
 
+	"github.com/hewen/mastiff-go/config/loggerconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
@@ -21,29 +22,11 @@ import (
 )
 
 func TestSetLevelError(t *testing.T) {
-	err := InitLogger(Config{
+	err := InitLogger(loggerconf.Config{
 		Level: "error level",
 	})
 
 	assert.NotNil(t, err)
-}
-
-func TestInitLogger_ValidateFileError(t *testing.T) {
-	err := InitLogger(Config{
-		Level:   "info",
-		Outputs: []string{"file"},
-	})
-
-	assert.Equal(t, "file output selected but FileOutput.Path is empty", err.Error())
-}
-
-func TestInitLogger_ValidateBackendError(t *testing.T) {
-	err := InitLogger(Config{
-		Level:   "info",
-		Backend: "error",
-	})
-
-	assert.Equal(t, "unsupported backend: error", err.Error())
 }
 
 func TestLogger(t *testing.T) {
@@ -56,7 +39,7 @@ func TestLogger(t *testing.T) {
 	}
 
 	for i := range backends {
-		err := InitLogger(Config{
+		err := InitLogger(loggerconf.Config{
 			Backend: backends[i],
 			Level:   LogLevelDebug,
 			Outputs: []string{"stdout", "stderr", "errorout"},
@@ -104,7 +87,7 @@ func TestLogger(t *testing.T) {
 }
 
 func TestStdLoggerPanicAndFatalf(_ *testing.T) {
-	_ = InitLogger(Config{
+	_ = InitLogger(loggerconf.Config{
 		Backend: "std",
 	})
 	NewLogger().Panicf("tmp")
@@ -115,7 +98,7 @@ func TestZapLoggerPanic(_ *testing.T) {
 	defer func() {
 		_ = recover()
 	}()
-	_ = InitLogger(Config{
+	_ = InitLogger(loggerconf.Config{
 		Backend: "zap",
 	})
 	NewLogger().Panicf("test")
@@ -125,7 +108,7 @@ func TestZerologLoggerPanic(_ *testing.T) {
 	defer func() {
 		_ = recover()
 	}()
-	_ = InitLogger(Config{
+	_ = InitLogger(loggerconf.Config{
 		Backend: "zerolog",
 	})
 	NewLogger().Panicf("test")
@@ -134,7 +117,7 @@ func TestZerologLoggerPanic(_ *testing.T) {
 func TestZapLoggerFatalf(t *testing.T) {
 	const fatalEnv = "TEST_FATAL"
 	if os.Getenv(fatalEnv) == "1" {
-		_ = InitLogger(Config{
+		_ = InitLogger(loggerconf.Config{
 			Backend: "zap",
 			Level:   LogLevelDebug,
 		})
@@ -161,7 +144,7 @@ func TestZapLoggerFatalf(t *testing.T) {
 func TestZerologLoggerFatalf(t *testing.T) {
 	const fatalEnv = "TEST_FATAL"
 	if os.Getenv(fatalEnv) == "1" {
-		_ = InitLogger(Config{
+		_ = InitLogger(loggerconf.Config{
 			Backend: "zerolog",
 			Level:   LogLevelDebug,
 		})
@@ -186,10 +169,10 @@ func TestZerologLoggerFatalf(t *testing.T) {
 }
 
 func TestInitLogger(t *testing.T) {
-	err := InitLogger(Config{})
+	err := InitLogger(loggerconf.Config{})
 	assert.Nil(t, err)
 
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Level: LogLevelInfo,
 	})
 	assert.Nil(t, err)
@@ -200,10 +183,10 @@ func TestInitLogger(t *testing.T) {
 		_ = os.Remove(tmpFile.Name())
 	}()
 
-	err = InitLogger(Config{
+	err = InitLogger(loggerconf.Config{
 		Level:   LogLevelInfo,
 		Outputs: []string{"file"},
-		FileOutput: &FileOutputConfig{
+		FileOutput: &loggerconf.FileOutputConfig{
 			Path: tmpFile.Name(),
 		},
 	})
@@ -316,14 +299,14 @@ func TestConcurrentLogging(t *testing.T) {
 func TestValidate(t *testing.T) {
 	tests := []struct {
 		name    string
-		conf    Config
+		conf    loggerconf.Config
 		wantErr bool
 	}{
 		{
 			name: "valid config with file",
-			conf: Config{
+			conf: loggerconf.Config{
 				Outputs: []string{"file"},
-				FileOutput: &FileOutputConfig{
+				FileOutput: &loggerconf.FileOutputConfig{
 					Path: "/tmp/test.log",
 				},
 				Backend: "zerolog",
@@ -332,16 +315,16 @@ func TestValidate(t *testing.T) {
 		},
 		{
 			name: "file output missing path",
-			conf: Config{
+			conf: loggerconf.Config{
 				Outputs:    []string{"file"},
-				FileOutput: &FileOutputConfig{}, // missing Path
+				FileOutput: &loggerconf.FileOutputConfig{}, // missing Path
 				Backend:    "zap",
 			},
 			wantErr: true,
 		},
 		{
 			name: "invalid backend",
-			conf: Config{
+			conf: loggerconf.Config{
 				Outputs: []string{"stdout"},
 				Backend: "unknown",
 			},
@@ -369,7 +352,7 @@ func TestCreateFileWriter(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.policy, func(t *testing.T) {
-			cfg := FileOutputConfig{
+			cfg := loggerconf.FileOutputConfig{
 				Path:         "/tmp/test.log",
 				RotatePolicy: tt.policy,
 				MaxSize:      1,
@@ -381,7 +364,7 @@ func TestCreateFileWriter(t *testing.T) {
 }
 
 func TestNewSizeLogger(t *testing.T) {
-	cfg := FileOutputConfig{
+	cfg := loggerconf.FileOutputConfig{
 		Path:    "/tmp/test-size.log",
 		MaxSize: 5,
 	}
@@ -392,13 +375,13 @@ func TestNewSizeLogger(t *testing.T) {
 func TestNewPlainFileLogger_Success(t *testing.T) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(t, err)
-	cfg := FileOutputConfig{Path: tmpFile.Name()}
+	cfg := loggerconf.FileOutputConfig{Path: tmpFile.Name()}
 	w := newPlainFileLogger(cfg)
 	assert.NotNil(t, w)
 }
 
 func TestNewPlainFileLogger_Failure(t *testing.T) {
-	cfg := FileOutputConfig{Path: "/root/forbidden.log"} // or "///invalid"
+	cfg := loggerconf.FileOutputConfig{Path: "/root/forbidden.log"} // or "///invalid"
 	w := newPlainFileLogger(cfg)
 	assert.NotNil(t, w)
 }

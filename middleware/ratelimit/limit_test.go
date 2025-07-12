@@ -9,16 +9,17 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/middleware/ratelimitconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLimiterManager_CleanerOnce(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
+	cfg := &ratelimitconf.Config{
+		Default: &ratelimitconf.RouteLimitConfig{
 			Rate:         1,
 			Burst:        1,
-			Mode:         ModeAllow,
+			Mode:         ratelimitconf.ModeAllow,
 			EnableRoute:  true,
 			EnableIP:     true,
 			EnableUserID: true,
@@ -46,11 +47,11 @@ func TestLimiterManager_CleanerOnce(t *testing.T) {
 }
 
 func TestLimiterManager_GetKeyFromGin(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
+	cfg := &ratelimitconf.Config{
+		Default: &ratelimitconf.RouteLimitConfig{
 			Rate:         1,
 			Burst:        1,
-			Mode:         ModeAllow,
+			Mode:         ratelimitconf.ModeAllow,
 			EnableRoute:  true,
 			EnableIP:     true,
 			EnableUserID: true,
@@ -59,7 +60,7 @@ func TestLimiterManager_GetKeyFromGin(t *testing.T) {
 	mgr := NewLimiterManager(cfg)
 	defer mgr.Stop()
 
-	cfgs := []*RouteLimitConfig{
+	cfgs := []*ratelimitconf.RouteLimitConfig{
 		{EnableRoute: true},
 		{EnableIP: true},
 		{EnableUserID: true},
@@ -92,11 +93,11 @@ func TestLimiterManager_GetKeyFromGin(t *testing.T) {
 }
 
 func TestLimiterManager_Allow(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
+	cfg := &ratelimitconf.Config{
+		Default: &ratelimitconf.RouteLimitConfig{
 			Rate:         2,
 			Burst:        1,
-			Mode:         ModeAllow,
+			Mode:         ratelimitconf.ModeAllow,
 			EnableRoute:  true,
 			EnableIP:     true,
 			EnableUserID: true,
@@ -127,11 +128,11 @@ func TestLimiterManager_Allow(t *testing.T) {
 }
 
 func TestLimiterManager_Wait(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
+	cfg := &ratelimitconf.Config{
+		Default: &ratelimitconf.RouteLimitConfig{
 			Rate:         1,
 			Burst:        1,
-			Mode:         ModeWait,
+			Mode:         ratelimitconf.ModeWait,
 			EnableRoute:  true,
 			EnableIP:     true,
 			EnableUserID: true,
@@ -158,11 +159,11 @@ func TestLimiterManager_Wait(t *testing.T) {
 }
 
 func TestLimiterManager_Cleanup(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
+	cfg := &ratelimitconf.Config{
+		Default: &ratelimitconf.RouteLimitConfig{
 			Rate:         10,
 			Burst:        2,
-			Mode:         ModeAllow,
+			Mode:         ratelimitconf.ModeAllow,
 			EnableRoute:  true,
 			EnableIP:     true,
 			EnableUserID: true,

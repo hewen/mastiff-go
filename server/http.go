@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
 )
 
@@ -34,7 +35,7 @@ type HTTPService struct {
 }
 
 // NewHTTPServer creates a new HTTP server.
-func NewHTTPServer(conf *HTTPConf, initRoute func(r *gin.Engine), extraMiddlewares ...gin.HandlerFunc) (*HTTPService, error) {
+func NewHTTPServer(conf *serverconf.HTTPConfig, initRoute func(r *gin.Engine), extraMiddlewares ...gin.HandlerFunc) (*HTTPService, error) {
 	if conf == nil {
 		return nil, ErrEmptyHTTPConf
 	}

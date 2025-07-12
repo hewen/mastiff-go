@@ -2,20 +2,11 @@
 package config
 
 import (
-	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/server"
-	"github.com/hewen/mastiff-go/store"
+	"github.com/hewen/mastiff-go/config"
 	"github.com/spf13/viper"
 )
 
-// Config holds the configuration for the application, including logger, HTTP, gRPC, MySQL, and Redis configurations.
-type Config struct {
-	Logger logger.Config
-	HTTP   *server.HTTPConf
-	Grpc   *server.GrpcConf
-	Queue  *server.QueueConf
-	Mysql  *store.MysqlConf
-	Redis  *store.RedisConf
+type CustomConfig struct {
 }
 
 // InitConfig initializes the configuration by reading the specified config file.

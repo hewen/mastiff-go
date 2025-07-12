@@ -1,13 +1,8 @@
 package circuitbreaker
 
 import (
+	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
 	"github.com/sony/gobreaker"
-)
-
-const (
-	defaultConsecutiveFailures  = 5   // Default number of consecutive failures to trip the circuit
-	defaultMinRequests          = 10  // Default minimum number of requests before tripping the circuit
-	defaultFailureRateThreshold = 0.5 // Default failure rate threshold
 )
 
 // Policy defines a circuit breaker policy interface.
@@ -39,28 +34,12 @@ func (p *FailureRatePolicy) ShouldTrip(counts gobreaker.Counts) bool {
 	return float64(counts.TotalFailures)/float64(counts.Requests) >= p.FailureRateThreshold
 }
 
-// applyDefaults sets default values if missing.
-func (cfg *PolicyConfig) applyDefaults() {
-	if cfg.Type == "" {
-		cfg.Type = "failure_rate"
-	}
-	if cfg.ConsecutiveFailures == 0 {
-		cfg.ConsecutiveFailures = defaultConsecutiveFailures
-	}
-	if cfg.MinRequests == 0 {
-		cfg.MinRequests = defaultMinRequests
-	}
-	if cfg.FailureRateThreshold <= 0 {
-		cfg.FailureRateThreshold = defaultFailureRateThreshold
-	}
-}
-
 // NewPolicyFromConfig creates a Policy from config with defaults.
-func NewPolicyFromConfig(cfg *PolicyConfig) Policy {
+func NewPolicyFromConfig(cfg *circuitbreakerconf.PolicyConfig) Policy {
 	if cfg == nil {
-		cfg = &PolicyConfig{}
+		cfg = &circuitbreakerconf.PolicyConfig{}
 	}
-	cfg.applyDefaults()
+	cfg.ApplyDefaults()
 
 	switch cfg.Type {
 	case "consecutive_failures":

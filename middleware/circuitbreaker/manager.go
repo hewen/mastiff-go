@@ -5,17 +5,18 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
 	"github.com/sony/gobreaker"
 )
 
 // Manager is a circuit breaker manager.
 type Manager struct {
-	config   *Config  // Circuit breaker configuration
-	breakers sync.Map // map[string]*gobreaker.CircuitBreaker
+	config   *circuitbreakerconf.Config // Circuit breaker configuration
+	breakers sync.Map                   // map[string]*gobreaker.CircuitBreaker
 }
 
 // NewManager creates a new circuit breaker manager.
-func NewManager(cfg *Config) *Manager {
+func NewManager(cfg *circuitbreakerconf.Config) *Manager {
 	return &Manager{config: cfg}
 }
 

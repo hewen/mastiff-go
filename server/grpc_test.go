@@ -7,6 +7,7 @@ import (
 	"net"
 	"testing"
 
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/middleware"
 	"github.com/hewen/mastiff-go/middleware/recovery"
@@ -19,7 +20,7 @@ func TestGrpcServer(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 	enableMetrics := true
-	c := &GrpcConf{
+	c := &serverconf.GrpcConfig{
 		Addr: fmt.Sprintf("localhost:%d", port),
 		Middlewares: middleware.Config{
 			EnableMetrics: &enableMetrics,
@@ -73,7 +74,7 @@ func testInterceptor() grpc.UnaryServerInterceptor {
 }
 
 func TestGrpcServerStop(t *testing.T) {
-	c := &GrpcConf{}
+	c := &serverconf.GrpcConfig{}
 
 	s, err := NewGrpcServer(c, func(_ *grpc.Server) {
 		// not doing
@@ -91,7 +92,7 @@ func TestGrpcServerEmptyConfig(t *testing.T) {
 }
 
 func TestNewGrpcServerError(t *testing.T) {
-	c := &GrpcConf{
+	c := &serverconf.GrpcConfig{
 		Addr: "error",
 	}
 	_, err := NewGrpcServer(c, func(_ *grpc.Server) {

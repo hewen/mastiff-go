@@ -3,6 +3,7 @@ package circuitbreaker
 import (
 	"testing"
 
+	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
 	"github.com/sony/gobreaker"
 	"github.com/stretchr/testify/assert"
 )
@@ -45,23 +46,13 @@ func TestFailureRatePolicy_ShouldTrip(t *testing.T) {
 	}
 }
 
-func TestPolicyConfig_applyDefaults(t *testing.T) {
-	cfg := &PolicyConfig{}
-	cfg.applyDefaults()
-
-	assert.Equal(t, "failure_rate", cfg.Type)
-	assert.EqualValues(t, defaultConsecutiveFailures, cfg.ConsecutiveFailures)
-	assert.EqualValues(t, defaultMinRequests, cfg.MinRequests)
-	assert.EqualValues(t, defaultFailureRateThreshold, cfg.FailureRateThreshold)
-}
-
 func TestNewPolicyFromConfig(t *testing.T) {
 	// nil config should apply defaults
 	p := NewPolicyFromConfig(nil)
 	assert.IsType(t, &FailureRatePolicy{}, p)
 
 	// test consecutive_failures
-	cfg1 := &PolicyConfig{
+	cfg1 := &circuitbreakerconf.PolicyConfig{
 		Type:                "consecutive_failures",
 		ConsecutiveFailures: 10,
 	}
@@ -71,7 +62,7 @@ func TestNewPolicyFromConfig(t *testing.T) {
 	assert.Equal(t, uint32(10), cfp.ConsecutiveFailures)
 
 	// test failure_rate
-	cfg2 := &PolicyConfig{
+	cfg2 := &circuitbreakerconf.PolicyConfig{
 		Type:                 "failure_rate",
 		MinRequests:          20,
 		FailureRateThreshold: 0.6,
@@ -83,7 +74,7 @@ func TestNewPolicyFromConfig(t *testing.T) {
 	assert.Equal(t, 0.6, frp.FailureRateThreshold)
 
 	// test fallback to default on unknown type
-	cfg3 := &PolicyConfig{
+	cfg3 := &circuitbreakerconf.PolicyConfig{
 		Type:                 "unknown_type",
 		MinRequests:          15,
 		FailureRateThreshold: 0.75,

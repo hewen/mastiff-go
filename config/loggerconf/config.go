@@ -1,5 +1,14 @@
-// Package logger provides a configurable logger.
-package logger
+// Package loggerconf provides a configurable logger.
+package loggerconf
+
+import (
+	"errors"
+	"fmt"
+	"slices"
+)
+
+// LogLevel represents the log level as a string.
+type LogLevel string
 
 // Config defines logger configuration.
 type Config struct {
@@ -25,4 +34,15 @@ type FileOutputConfig struct {
 	MaxSize int
 	// Compress defines whether to compress rotated log files.
 	Compress bool
+}
+
+// Validate checks the configuration for errors.
+func (cfg *Config) Validate() error {
+	if slices.Contains(cfg.Outputs, "file") && (cfg.FileOutput == nil || cfg.FileOutput.Path == "") {
+		return errors.New("file output selected but FileOutput.Path is empty")
+	}
+	if cfg.Backend != "zap" && cfg.Backend != "zerolog" && cfg.Backend != "std" && cfg.Backend != "" {
+		return fmt.Errorf("unsupported backend: %s", cfg.Backend)
+	}
+	return nil
 }

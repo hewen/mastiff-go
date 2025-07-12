@@ -1,5 +1,5 @@
-// Package server provides configuration for HTTP, gRPC, and queue servers.
-package server
+// Package serverconf provides configuration for HTTP, gRPC, and queue servers.
+package serverconf
 
 import (
 	"time"
@@ -8,8 +8,8 @@ import (
 )
 
 type (
-	// HTTPConf holds the configuration for an HTTP server.
-	HTTPConf struct {
+	// HTTPConfig holds the configuration for an HTTP server.
+	HTTPConfig struct {
 		// Middlewares represents the configuration for middlewares.
 		Middlewares middleware.Config
 		// Addr represents the HTTP server address.
@@ -24,8 +24,8 @@ type (
 		PprofEnabled bool
 	}
 
-	// GrpcConf holds the configuration for a gRPC server.
-	GrpcConf struct {
+	// GrpcConfig holds the configuration for a gRPC server.
+	GrpcConfig struct {
 		// Middlewares represents the configuration for middlewares.
 		Middlewares middleware.Config
 		// Addr represents the gRPC server address.
@@ -36,8 +36,8 @@ type (
 		Reflection bool
 	}
 
-	// QueueConf holds the configuration for a queue server.
-	QueueConf struct {
+	// QueueConfig holds the configuration for a queue server.
+	QueueConfig struct {
 		// QueueName represents the queue name.
 		QueueName string
 		// PoolSize represents the size of the goroutine pool for processing queue messages.

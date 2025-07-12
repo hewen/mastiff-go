@@ -9,6 +9,7 @@ import (
 
 	"github.com/alicebob/miniredis/v2"
 	"github.com/go-redis/redis/v7"
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/server/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -88,7 +89,7 @@ func TestQueueServerWithJsonHandler(t *testing.T) {
 
 	handler := NewQueueJSONRedisHandler(redisClient, queueName, handleFn)
 
-	qs, err := NewQueueServer(QueueConf{
+	qs, err := NewQueueServer(serverconf.QueueConfig{
 		QueueName:          queueName,
 		PoolSize:           10,
 		EmptySleepInterval: 5 * time.Millisecond,
@@ -139,7 +140,7 @@ func TestQueueServerWithProtoHandler(t *testing.T) {
 		return &test.TestMsg{}
 	})
 
-	qs, err := NewQueueServer(QueueConf{
+	qs, err := NewQueueServer(serverconf.QueueConfig{
 		QueueName:          queueName,
 		PoolSize:           10,
 		EmptySleepInterval: 5 * time.Millisecond,

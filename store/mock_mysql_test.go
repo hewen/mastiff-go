@@ -12,6 +12,7 @@ import (
 	"github.com/dolthub/go-mysql-server/memory"
 	"github.com/dolthub/go-mysql-server/server"
 	"github.com/dolthub/go-mysql-server/sql"
+	"github.com/hewen/mastiff-go/config/storeconf"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -61,7 +62,7 @@ func TestInitMockMysql_StartServerFail(t *testing.T) {
 
 func TestInitMockMysql_InitMysqlFail(t *testing.T) {
 	original := initMysqlFunc
-	initMysqlFunc = func(_ MysqlConf, _ ...DatabaseOption) (*DB, error) {
+	initMysqlFunc = func(_ storeconf.MysqlConfig, _ ...DatabaseOption) (*DB, error) {
 		return nil, errors.New("mock init mysql error")
 	}
 	defer func() { initMysqlFunc = original }()
@@ -109,7 +110,7 @@ func TestInitMockMysql_StartServerError(t *testing.T) {
 
 func TestInitMockMysql_InitMysqlError(t *testing.T) {
 	orig := initMysqlFunc
-	initMysqlFunc = func(_ MysqlConf, _ ...DatabaseOption) (*DB, error) {
+	initMysqlFunc = func(_ storeconf.MysqlConfig, _ ...DatabaseOption) (*DB, error) {
 		return nil, fmt.Errorf("init mysql failed")
 	}
 	defer func() { initMysqlFunc = orig }()

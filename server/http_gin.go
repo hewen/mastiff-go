@@ -6,12 +6,13 @@ import (
 
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/middleware"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
 )
 
 // NewGinAPIHandler initializes a new Gin API handler with the provided route initialization function.
-func NewGinAPIHandler(conf HTTPConf, initRoute func(r *gin.Engine), extraMiddlewares ...gin.HandlerFunc) http.Handler {
+func NewGinAPIHandler(conf serverconf.HTTPConfig, initRoute func(r *gin.Engine), extraMiddlewares ...gin.HandlerFunc) http.Handler {
 	gin.SetMode(conf.Mode)
 	r := gin.New()
 

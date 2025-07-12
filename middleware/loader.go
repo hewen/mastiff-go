@@ -5,6 +5,9 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/middleware/authconf"
+	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
+	"github.com/hewen/mastiff-go/config/middleware/ratelimitconf"
 	"github.com/hewen/mastiff-go/middleware/auth"
 	"github.com/hewen/mastiff-go/middleware/circuitbreaker"
 	"github.com/hewen/mastiff-go/middleware/logging"
@@ -17,13 +20,13 @@ import (
 
 // Config is the configuration for middleware.
 type Config struct {
-	Auth           *auth.Config           // Auth middleware configuration
-	RateLimit      *ratelimit.Config      // Rate limit middleware configuration
-	CircuitBreaker *circuitbreaker.Config // Circuit breaker middleware configuration
-	TimeoutSeconds *int                   // Timeout seconds for requests
-	EnableMetrics  *bool                  // Enable metrics middleware
-	EnableRecovery *bool                  // Enable recovery middleware, default enabled
-	EnableLogging  *bool                  // Enable logging middleware, default enabled
+	Auth           *authconf.Config           // Auth middleware configuration
+	RateLimit      *ratelimitconf.Config      // Rate limit middleware configuration
+	CircuitBreaker *circuitbreakerconf.Config // Circuit breaker middleware configuration
+	TimeoutSeconds *int                       // Timeout seconds for requests
+	EnableMetrics  *bool                      // Enable metrics middleware
+	EnableRecovery *bool                      // Enable recovery middleware, default enabled
+	EnableLogging  *bool                      // Enable logging middleware, default enabled
 }
 
 const (

@@ -3,11 +3,12 @@ package circuitbreaker
 import (
 	"testing"
 
+	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewManagerAndGet(t *testing.T) {
-	cfg := &Config{
+	cfg := &circuitbreakerconf.Config{
 		MaxRequests: 3,
 		Interval:    1,
 		Timeout:     1,
@@ -21,7 +22,7 @@ func TestNewManagerAndGet(t *testing.T) {
 }
 
 func TestGetReuseBreaker(t *testing.T) {
-	cfg := &Config{
+	cfg := &circuitbreakerconf.Config{
 		MaxRequests: 3,
 		Interval:    1,
 		Timeout:     1,

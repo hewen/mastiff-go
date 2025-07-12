@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/util"
 	"github.com/stretchr/testify/assert"
@@ -14,7 +15,7 @@ func TestHTTPServer(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
-	c := &HTTPConf{
+	c := &serverconf.HTTPConfig{
 		Addr:         fmt.Sprintf("localhost:%d", port),
 		PprofEnabled: true,
 	}
@@ -38,7 +39,7 @@ func TestHTTPServerStop(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
-	c := &HTTPConf{
+	c := &serverconf.HTTPConfig{
 		Addr: fmt.Sprintf("localhost:%d", port),
 	}
 
@@ -53,7 +54,7 @@ func TestHTTPServerStop(t *testing.T) {
 }
 
 func TestHTTPServerStartError(t *testing.T) {
-	c := &HTTPConf{
+	c := &serverconf.HTTPConfig{
 		Addr: "error addr",
 	}
 

@@ -1,7 +1,5 @@
-// Package ratelimit provides a rate limiter middleware.
-package ratelimit
-
-import "time"
+// Package ratelimitconf provides a rate limiter middleware.
+package ratelimitconf
 
 // LimitMode represents the mode of the rate limiter.
 type LimitMode string
@@ -11,11 +9,6 @@ const (
 	ModeAllow LimitMode = "allow"
 	// ModeWait is the mode that waits for requests.
 	ModeWait LimitMode = "wait"
-
-	// cleanerInterval is the interval at which the cleaner runs.
-	cleanerInterval = 5 * time.Minute
-	// limiterTTL is the time after which a limiter is removed from the cache.
-	limiterTTL = 10 * time.Minute
 )
 
 // RouteLimitConfig represents the configuration for rate limiting per route.

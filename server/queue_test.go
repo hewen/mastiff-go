@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -66,7 +67,7 @@ func (h *mockQueueHandler) Handle(ctx context.Context, msg MyTestMsg) error {
 func TestQueueServer_Messages(t *testing.T) {
 	handler := &mockQueueHandler{}
 
-	conf := QueueConf{
+	conf := serverconf.QueueConfig{
 		QueueName:          "test",
 		PoolSize:           5,
 		EmptySleepInterval: 1 * time.Millisecond,
@@ -110,7 +111,7 @@ func TestQueueServer_BulkMessages(t *testing.T) {
 	const total = 100
 	handler := &mockQueueHandler{}
 
-	conf := QueueConf{
+	conf := serverconf.QueueConfig{
 		QueueName:          "test",
 		PoolSize:           10,
 		EmptySleepInterval: 1 * time.Millisecond,
@@ -149,7 +150,7 @@ func (h *popErrorHandler) Handle(_ context.Context, _ MyTestMsg) error {
 
 func TestQueueServer_PopError(t *testing.T) {
 	handler := &popErrorHandler{}
-	conf := QueueConf{
+	conf := serverconf.QueueConfig{
 		PoolSize:           1,
 		EmptySleepInterval: 10 * time.Millisecond,
 		QueueName:          "test",
@@ -191,7 +192,7 @@ func TestQueueServer_DecodeError(t *testing.T) {
 	handler := &decodeErrorHandler{}
 	_ = handler.Push(context.Background(), []byte("invalid json"))
 
-	conf := QueueConf{
+	conf := serverconf.QueueConfig{
 		PoolSize:           1,
 		EmptySleepInterval: 10 * time.Millisecond,
 		QueueName:          "test",
@@ -231,7 +232,7 @@ func TestQueueServer_HandleError(t *testing.T) {
 	err := handler.Push(context.Background(), data)
 	assert.Nil(t, err)
 
-	conf := QueueConf{
+	conf := serverconf.QueueConfig{
 		PoolSize:           1,
 		EmptySleepInterval: 10 * time.Millisecond,
 		QueueName:          "test",
@@ -246,7 +247,7 @@ func TestQueueServer_HandleError(t *testing.T) {
 
 func TestQueueServer_StartStopExit(t *testing.T) {
 	handler := &mockQueueHandler{}
-	conf := QueueConf{
+	conf := serverconf.QueueConfig{
 		QueueName:          "test",
 		PoolSize:           2,
 		EmptySleepInterval: 1 * time.Millisecond,
@@ -272,7 +273,7 @@ func TestQueueServer_StartStopExit(t *testing.T) {
 
 func TestQueueServer_StopIdempotent(t *testing.T) {
 	handler := &mockQueueHandler{}
-	server, err := NewQueueServer(QueueConf{
+	server, err := NewQueueServer(serverconf.QueueConfig{
 		QueueName:          "test",
 		PoolSize:           5,
 		EmptySleepInterval: 1 * time.Millisecond,
@@ -285,7 +286,7 @@ func TestQueueServer_StopIdempotent(t *testing.T) {
 
 func TestQueueServer_QueueNameEmpty(t *testing.T) {
 	handler := &mockQueueHandler{}
-	_, err := NewQueueServer(QueueConf{
+	_, err := NewQueueServer(serverconf.QueueConfig{
 		PoolSize:           5,
 		EmptySleepInterval: 1 * time.Millisecond,
 	}, handler)
@@ -294,7 +295,7 @@ func TestQueueServer_QueueNameEmpty(t *testing.T) {
 
 func TestQueueServer_DefaultConfig(t *testing.T) {
 	handler := &mockQueueHandler{}
-	_, err := NewQueueServer(QueueConf{
+	_, err := NewQueueServer(serverconf.QueueConfig{
 		QueueName: "test",
 	}, handler)
 	require.Nil(t, err)

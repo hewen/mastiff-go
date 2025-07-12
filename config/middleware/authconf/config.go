@@ -1,5 +1,5 @@
-// Package auth provides authentication and authorization middleware.
-package auth
+// Package authconf provides authentication and authorization middleware.
+package authconf
 
 // Config defines auth-related configuration.
 type Config struct {

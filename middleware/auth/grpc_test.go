@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hewen/mastiff-go/config/middleware/authconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/middleware/internal/shared"
 
@@ -15,7 +16,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-var testConf = Config{
+var testConf = authconf.Config{
 	JWTSecret:     "test-secret",
 	HeaderKey:     "authorization",
 	TokenPrefixes: []string{"Bearer"},

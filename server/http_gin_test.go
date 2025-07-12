@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/middleware"
 	"github.com/hewen/mastiff-go/middleware/recovery"
@@ -32,7 +33,7 @@ func TestNewGinAPIHandler(t *testing.T) {
 	assert.Nil(t, err)
 
 	enableMetrics := true
-	conf := &HTTPConf{
+	conf := &serverconf.HTTPConfig{
 		Addr:         fmt.Sprintf("localhost:%d", port),
 		PprofEnabled: true,
 		Mode:         "debug",
