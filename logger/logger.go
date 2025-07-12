@@ -112,6 +112,7 @@ var (
 
 func init() {
 	zerolog.TimeFieldFormat = time.RFC3339Nano
+	logLevel.Store(int32(LogLevelFlagInfo))
 }
 
 // InitLogger initializes the global logger with the given configuration.
