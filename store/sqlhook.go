@@ -7,7 +7,7 @@ import (
 
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/util"
+	"github.com/hewen/mastiff-go/pkg/util"
 )
 
 // SQLHooks is a hook collection.

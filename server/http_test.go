@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/util"
+	"github.com/hewen/mastiff-go/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 

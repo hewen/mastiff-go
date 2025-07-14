@@ -11,7 +11,7 @@ import (
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/middleware"
 	"github.com/hewen/mastiff-go/middleware/recovery"
-	"github.com/hewen/mastiff-go/util"
+	"github.com/hewen/mastiff-go/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )

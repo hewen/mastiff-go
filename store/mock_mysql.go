@@ -15,7 +15,7 @@ import (
 	gsql "github.com/dolthub/go-mysql-server/sql"
 	vsql "github.com/dolthub/vitess/go/mysql"
 	"github.com/hewen/mastiff-go/config/storeconf"
-	"github.com/hewen/mastiff-go/util"
+	"github.com/hewen/mastiff-go/pkg/util"
 )
 
 var (
