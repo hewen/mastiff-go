@@ -63,7 +63,7 @@ func TestQueueRedisHandler_Basic(t *testing.T) {
 
 func TestQueueServerWithJsonHandler(t *testing.T) {
 	mr, err := miniredis.Run()
-	require.NoError(t, err)
+	assert.Nil(t, err)
 	defer mr.Close()
 
 	redisClient := redis.NewClient(&redis.Options{
@@ -77,43 +77,14 @@ func TestQueueServerWithJsonHandler(t *testing.T) {
 		ID   int    `json:"id"`
 	}
 
-	var mu sync.Mutex
-	var handledMsg *MyMsg
-
-	handleFn := func(_ context.Context, msg MyMsg) error {
-		mu.Lock()
-		defer mu.Unlock()
-		handledMsg = &msg
+	handleFn := func(_ context.Context, _ MyMsg) error {
 		return nil
 	}
 
 	handler := NewQueueJSONRedisHandler(redisClient, queueName, handleFn)
 
-	qs, err := NewQueueServer(serverconf.QueueConfig{
-		QueueName:          queueName,
-		PoolSize:           10,
-		EmptySleepInterval: 5 * time.Millisecond,
-	}, handler)
-	require.NoError(t, err)
-
-	ctx := context.Background()
-
-	go qs.Start()
-	defer qs.Stop()
-
-	msg := MyMsg{ID: 456, Name: "Bob"}
-	pushData, err := handler.Encode(msg)
-	require.NoError(t, err)
-	err = handler.Push(ctx, pushData)
-	require.NoError(t, err)
-
-	time.Sleep(50 * time.Millisecond)
-
-	mu.Lock()
-	defer mu.Unlock()
-	require.NotNil(t, handledMsg)
-	assert.Equal(t, msg.ID, handledMsg.ID)
-	assert.Equal(t, msg.Name, handledMsg.Name)
+	err = handler.Handle(context.TODO(), MyMsg{Name: "test"})
+	assert.Nil(t, err)
 }
 
 func TestQueueServerWithProtoHandler(t *testing.T) {

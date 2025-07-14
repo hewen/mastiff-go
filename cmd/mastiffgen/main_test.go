@@ -494,7 +494,7 @@ func TestExpandPath_Relative(t *testing.T) {
 
 func TestExpandPath_UserCurrentError(t *testing.T) {
 	orig := getCurrentUser
-	defer func() { getCurrentUser = orig }() // 恢复原始实现
+	defer func() { getCurrentUser = orig }()
 
 	getCurrentUser = func() (*user.User, error) {
 		return nil, errors.New("mocked user.Current error")

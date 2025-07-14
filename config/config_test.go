@@ -87,7 +87,6 @@ custom:
 
 	verifyConfig(t, cfg, &customCfg)
 
-	// 模拟调用 onChange
 	onChange(cfg, nil)
 	assert.True(t, onChangeCalled)
 }
