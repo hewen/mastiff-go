@@ -17,6 +17,7 @@ require (
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1
 	github.com/jmoiron/sqlx v1.4.0
 	github.com/matoous/go-nanoid/v2 v2.1.0
+	github.com/miekg/dns v1.0.14
 	github.com/panjf2000/ants/v2 v2.11.3
 	github.com/prometheus/client_golang v1.22.0
 	github.com/robfig/cron/v3 v3.0.1
