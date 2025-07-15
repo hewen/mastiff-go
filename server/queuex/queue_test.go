@@ -1,4 +1,4 @@
-package server
+package queuex
 
 import (
 	"context"
@@ -75,6 +75,7 @@ func TestQueueServer_Messages(t *testing.T) {
 	s, err := NewQueueServer(conf, handler)
 	require.NoError(t, err)
 	s.WithLogger(logger.NewLogger())
+	_ = s.Name()
 
 	ctx := context.Background()
 	msgs := []MyTestMsg{
@@ -88,11 +89,9 @@ func TestQueueServer_Messages(t *testing.T) {
 		require.NoError(t, err)
 	}
 
-	var server Servers
-	server.Add(s)
 	go func() {
-		defer server.Stop()
-		server.Start()
+		defer s.Stop()
+		s.Start()
 	}()
 
 	time.Sleep(100 * time.Millisecond)

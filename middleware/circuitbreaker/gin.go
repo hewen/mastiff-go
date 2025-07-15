@@ -23,7 +23,7 @@ func GinMiddleware(mgr *Manager) gin.HandlerFunc {
 
 		if err != nil {
 			c.Errors = append(c.Errors, &gin.Error{Err: err})
-			c.AbortWithStatusJSON(http.StatusServiceUnavailable, nil)
+			c.AbortWithStatusJSON(http.StatusInternalServerError, nil)
 			return
 		}
 	}

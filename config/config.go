@@ -17,7 +17,7 @@ import (
 type Config struct {
 	Logger *loggerconf.Config
 	HTTP   *serverconf.HTTPConfig
-	Grpc   *serverconf.GrpcConfig
+	RPC    *serverconf.RPCConfig
 	Queue  *serverconf.QueueConfig
 	Mysql  *storeconf.MysqlConfig
 	Redis  *storeconf.RedisConfig

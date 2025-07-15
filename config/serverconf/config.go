@@ -24,8 +24,8 @@ type (
 		PprofEnabled bool
 	}
 
-	// GrpcConfig holds the configuration for a gRPC server.
-	GrpcConfig struct {
+	// RPCConfig holds the configuration for a gRPC server.
+	RPCConfig struct {
 		// Middlewares represents the configuration for middlewares.
 		Middlewares middleware.Config
 		// Addr represents the gRPC server address.

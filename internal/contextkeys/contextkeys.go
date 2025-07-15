@@ -5,7 +5,14 @@ import (
 	"context"
 	"time"
 
+	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+)
+
+const (
+	// ContextKey is the key for context in fiber.
+	ContextKey = "context"
 )
 
 // ctxKey is a custom type to avoid key collisions in context.
@@ -100,4 +107,37 @@ func SetRedisBeginTime(ctx context.Context, t time.Time) context.Context {
 func GetRedisBeginTime(ctx context.Context) (time.Time, bool) {
 	t, ok := ctx.Value(RedisBeginTimeKey).(time.Time)
 	return t, ok
+}
+
+// ContextFrom extracts context.Context from gin.Context, fiber.Ctx or context.Context itself.
+// If none matched, returns context.Background.
+func ContextFrom(v any) context.Context {
+	// NOTE: Order matters in type switch — match *gin.Context and *fiber.Ctx
+	// before context.Context to avoid premature capture.
+	switch c := v.(type) {
+	case *gin.Context:
+		if req := c.Request; req != nil {
+			return req.Context()
+		}
+	case *fiber.Ctx:
+		if val := c.Locals(ContextKey); val != nil {
+			if ctx, ok := val.(context.Context); ok {
+				return ctx
+			}
+		}
+	case context.Context:
+		return c
+	}
+
+	return context.Background()
+}
+
+// InjectContext sets the updated context.Context back into the carrier (gin/fiber).
+func InjectContext(ctx context.Context, carrier any) {
+	switch c := carrier.(type) {
+	case *gin.Context:
+		c.Request = c.Request.WithContext(ctx)
+	case *fiber.Ctx:
+		c.Locals(ContextKey, ctx)
+	}
 }

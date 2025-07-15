@@ -1,4 +1,4 @@
-package server
+package httpx
 
 import (
 	"fmt"
@@ -15,23 +15,25 @@ func TestHTTPServer(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
-	c := &serverconf.HTTPConfig{
+	conf := serverconf.HTTPConfig{
 		Addr:         fmt.Sprintf("localhost:%d", port),
 		PprofEnabled: true,
 	}
 
-	handler := func(_ *gin.Engine) {}
-
-	s, err := NewHTTPServer(c, handler)
+	initRoute := func(_ *gin.Engine) {}
+	builder := &GinHandlerBuilder{
+		Conf:      conf,
+		InitRoute: initRoute,
+	}
+	s, err := NewHTTPServer(&conf, builder)
 	assert.Nil(t, err)
 
 	s.WithLogger(logger.NewLogger())
+	assert.Equal(t, fmt.Sprintf(`http server(%s)`, conf.Addr), s.Name())
 
-	var server Servers
-	server.Add(s)
 	go func() {
-		defer server.Stop()
-		server.Start()
+		defer s.Stop()
+		s.Start()
 	}()
 }
 
@@ -39,12 +41,17 @@ func TestHTTPServerStop(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
-	c := &serverconf.HTTPConfig{
+	conf := serverconf.HTTPConfig{
 		Addr: fmt.Sprintf("localhost:%d", port),
 	}
 
-	handler := func(_ *gin.Engine) {}
-	s, err := NewHTTPServer(c, handler)
+	initRoute := func(_ *gin.Engine) {}
+	builder := &GinHandlerBuilder{
+		Conf:      conf,
+		InitRoute: initRoute,
+	}
+
+	s, err := NewHTTPServer(&conf, builder)
 	assert.Nil(t, err)
 
 	s.Stop()
@@ -54,19 +61,28 @@ func TestHTTPServerStop(t *testing.T) {
 }
 
 func TestHTTPServerStartError(t *testing.T) {
-	c := &serverconf.HTTPConfig{
+	conf := serverconf.HTTPConfig{
 		Addr: "error addr",
 	}
 
-	handler := func(_ *gin.Engine) {}
-	s, err := NewHTTPServer(c, handler)
+	initRoute := func(_ *gin.Engine) {}
+	builder := &GinHandlerBuilder{
+		Conf:      conf,
+		InitRoute: initRoute,
+	}
+
+	s, err := NewHTTPServer(&conf, builder)
 	assert.Nil(t, err)
 
 	s.Start()
 }
 
 func TestHTTPServerEmptyConfig(t *testing.T) {
-	handler := func(_ *gin.Engine) {}
-	_, err := NewHTTPServer(nil, handler)
+	initRoute := func(_ *gin.Engine) {}
+	builder := &GinHandlerBuilder{
+		Conf:      serverconf.HTTPConfig{},
+		InitRoute: initRoute,
+	}
+	_, err := NewHTTPServer(nil, builder)
 	assert.EqualValues(t, err, ErrEmptyHTTPConf)
 }

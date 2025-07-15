@@ -1,5 +1,5 @@
-// Package server provides a queue server.
-package server
+// Package queuex provides a queue server.
+package queuex
 
 import (
 	"context"
@@ -16,7 +16,7 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
-func TestQueueRedisHandler_Basic(t *testing.T) {
+func TestRedisHandler_Basic(t *testing.T) {
 	mr, err := miniredis.Run()
 	require.NoError(t, err)
 	defer mr.Close()
@@ -35,7 +35,7 @@ func TestQueueRedisHandler_Basic(t *testing.T) {
 		return &test.TestMsg{}
 	}
 
-	qh := NewQueueProtoRedisHandler(client, "myqueue", handlerFn, newMsgFn)
+	qh := NewProtoRedisHandler(client, "myqueue", handlerFn, newMsgFn)
 
 	ctx := context.Background()
 
@@ -61,7 +61,7 @@ func TestQueueRedisHandler_Basic(t *testing.T) {
 	require.Equal(t, msg.Name, handledMsg.Name)
 }
 
-func TestQueueServerWithJsonHandler(t *testing.T) {
+func TestRedisHandlerWithJSON(t *testing.T) {
 	mr, err := miniredis.Run()
 	assert.Nil(t, err)
 	defer mr.Close()
@@ -81,13 +81,13 @@ func TestQueueServerWithJsonHandler(t *testing.T) {
 		return nil
 	}
 
-	handler := NewQueueJSONRedisHandler(redisClient, queueName, handleFn)
+	handler := NewJSONRedisHandler(redisClient, queueName, handleFn)
 
 	err = handler.Handle(context.TODO(), MyMsg{Name: "test"})
 	assert.Nil(t, err)
 }
 
-func TestQueueServerWithProtoHandler(t *testing.T) {
+func TestRedisHandlerWithProto(t *testing.T) {
 	mr, err := miniredis.Run()
 	require.NoError(t, err)
 	defer mr.Close()
@@ -107,7 +107,7 @@ func TestQueueServerWithProtoHandler(t *testing.T) {
 		return nil
 	}
 
-	handler := NewQueueProtoRedisHandler(redisClient, queueName, handleFn, func() *test.TestMsg {
+	handler := NewProtoRedisHandler(redisClient, queueName, handleFn, func() *test.TestMsg {
 		return &test.TestMsg{}
 	})
 
@@ -155,15 +155,15 @@ func TestRedisQueue_Pop_LengthMismatch(t *testing.T) {
 	assert.Nil(t, data)
 }
 
-func TestQueueJSONRedisHandler_Handle_NilHandler(t *testing.T) {
-	handler := &QueueJSONRedisHandler[MyTestMsg]{}
+func TestJSONRedisHandler_Handle_NilHandler(t *testing.T) {
+	handler := &JSONRedisHandler[MyTestMsg]{}
 
 	err := handler.Handle(context.Background(), MyTestMsg{ID: 1, Body: "test"})
 	assert.NoError(t, err)
 }
 
-func TestQueueProtoRedisHandler_Handle_NilHandler(t *testing.T) {
-	dummy := NewQueueProtoRedisHandler(nil, "test", nil, func() *test.TestMsg {
+func TestProtoRedisHandler_Handle_NilHandler(t *testing.T) {
+	dummy := NewProtoRedisHandler(nil, "test", nil, func() *test.TestMsg {
 		return &test.TestMsg{}
 	})
 

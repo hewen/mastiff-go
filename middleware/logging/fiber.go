@@ -5,42 +5,39 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/tomasen/realip"
 )
 
-// GinMiddleware is a middleware for logging HTTP requests in Gin framework.
-func GinMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
+// FiberMiddleware is a middleware for logging HTTP requests in Fiber framework.
+func FiberMiddleware() func(*fiber.Ctx) error {
+	return func(c *fiber.Ctx) error {
 		start := time.Now()
 
 		ctx := contextkeys.ContextFrom(c)
 		ctx = logger.NewOutgoingContextWithIncomingContext(ctx)
 		contextkeys.InjectContext(ctx, c)
 
-		c.Next()
+		err := c.Next()
 
-		req, _ := c.Get("req")
-		resp, _ := c.Get("resp")
-
-		var err error
-		if c.Errors != nil {
-			err = c.Errors.Last()
-		}
+		req := c.Locals("req")
+		resp := c.Locals("resp")
 
 		l := logger.NewLoggerWithContext(ctx)
+
 		logger.LogRequest(
 			l,
-			c.Writer.Status(),
+			c.Response().StatusCode(),
 			time.Since(start),
-			realip.FromRequest(c.Request),
-			fmt.Sprintf("%s %s", c.Request.Method, c.Request.URL.Path),
-			c.Request.UserAgent(),
+			c.Context().RemoteIP().String(),
+			fmt.Sprintf("%s %s", c.Method(), c.Path()),
+			string(c.Request().Header.UserAgent()),
 			req,
 			resp,
 			err,
 		)
+
+		return err
 	}
 }

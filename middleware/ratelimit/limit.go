@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/hewen/mastiff-go/config/middleware/ratelimitconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"golang.org/x/time/rate"
@@ -114,6 +115,23 @@ func (mgr *LimiterManager) getKeyFromContext(ctx context.Context, route string, 
 	if cfg.EnableUserID {
 		if uid, ok := contextkeys.GetUserID(ctx); ok {
 			parts = append(parts, uid)
+		}
+	}
+	return strings.Join(parts, "|")
+}
+
+func (mgr *LimiterManager) getKeyFromFiber(ctx *fiber.Ctx, cfg *ratelimitconf.RouteLimitConfig) string {
+	parts := []string{}
+	if cfg.EnableRoute {
+		route := ctx.Path()
+		parts = append(parts, route)
+	}
+	if cfg.EnableIP {
+		parts = append(parts, ctx.Context().RemoteIP().String())
+	}
+	if cfg.EnableUserID {
+		if uid, ok := contextkeys.GetUserID(contextkeys.ContextFrom(ctx)); ok {
+			parts = append(parts, fmt.Sprint(uid))
 		}
 	}
 	return strings.Join(parts, "|")

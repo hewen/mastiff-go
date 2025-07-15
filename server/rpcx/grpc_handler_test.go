@@ -1,4 +1,4 @@
-package server
+package rpcx
 
 import (
 	"context"
@@ -10,7 +10,6 @@ import (
 	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/middleware"
-	"github.com/hewen/mastiff-go/middleware/recovery"
 	"github.com/hewen/mastiff-go/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -20,7 +19,7 @@ func TestGrpcServer(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 	enableMetrics := true
-	c := &serverconf.GrpcConfig{
+	c := &serverconf.RPCConfig{
 		Addr: fmt.Sprintf("localhost:%d", port),
 		Middlewares: middleware.Config{
 			EnableMetrics: &enableMetrics,
@@ -28,19 +27,24 @@ func TestGrpcServer(t *testing.T) {
 		Reflection: true,
 	}
 
-	s, err := NewGrpcServer(c, func(_ *grpc.Server) {
-		// not doing
-	}, recovery.UnaryServerInterceptor())
+	builder := &GrpcHandlerBuilder{
+		Conf: c,
+		RegisterFunc: func(_ *grpc.Server) {
+			// not doing
+		},
+		ExtraInterceptors: []grpc.UnaryServerInterceptor{testInterceptor()},
+	}
+
+	s, err := NewRPCServer(builder)
 	assert.NotNil(t, s)
 	assert.Nil(t, err)
 
 	s.WithLogger(logger.NewLogger())
+	_ = s.Name()
 
-	var server Servers
-	server.Add(s)
 	go func() {
-		defer server.Stop()
-		server.Start()
+		defer s.Stop()
+		s.Start()
 	}()
 }
 
@@ -56,15 +60,15 @@ func (b *brokenListener) Addr() net.Addr {
 	return &net.TCPAddr{}
 }
 
-func TestGrpcServer_StartError(_ *testing.T) {
-	grpcServer := &GrpcServer{
-		s:      grpc.NewServer(),
-		logger: logger.NewLogger(),
-		ln:     &brokenListener{},
-		addr:   "mock",
+func TestGrpcHandler_StartError(t *testing.T) {
+	grpcServer := &GrpcHandler{
+		s:    grpc.NewServer(),
+		ln:   &brokenListener{},
+		addr: "mock",
 	}
 
-	grpcServer.Start()
+	err := grpcServer.Start()
+	assert.NotNil(t, err)
 }
 
 func testInterceptor() grpc.UnaryServerInterceptor {
@@ -74,29 +78,48 @@ func testInterceptor() grpc.UnaryServerInterceptor {
 }
 
 func TestGrpcServerStop(t *testing.T) {
-	c := &serverconf.GrpcConfig{}
+	c := &serverconf.RPCConfig{}
 
-	s, err := NewGrpcServer(c, func(_ *grpc.Server) {
-		// not doing
-	}, testInterceptor())
+	builder := &GrpcHandlerBuilder{
+		Conf: c,
+		RegisterFunc: func(_ *grpc.Server) {
+			// not doing
+		},
+		ExtraInterceptors: []grpc.UnaryServerInterceptor{testInterceptor()},
+	}
+
+	s, err := NewRPCServer(builder)
 	assert.NotNil(t, s)
 	assert.Nil(t, err)
 	s.Stop()
 }
 
 func TestGrpcServerEmptyConfig(t *testing.T) {
-	_, err := NewGrpcServer(nil, func(_ *grpc.Server) {
-		// not doing
-	})
-	assert.EqualValues(t, err, ErrEmptyGrpcConf)
+	builder := &GrpcHandlerBuilder{
+		Conf: nil,
+		RegisterFunc: func(_ *grpc.Server) {
+			// not doing
+		},
+		ExtraInterceptors: []grpc.UnaryServerInterceptor{testInterceptor()},
+	}
+
+	_, err := NewRPCServer(builder)
+	assert.EqualValues(t, err, ErrEmptyRPCConf)
 }
 
 func TestNewGrpcServerError(t *testing.T) {
-	c := &serverconf.GrpcConfig{
+	c := &serverconf.RPCConfig{
 		Addr: "error",
 	}
-	_, err := NewGrpcServer(c, func(_ *grpc.Server) {
-		// not doing
-	})
+
+	builder := &GrpcHandlerBuilder{
+		Conf: c,
+		RegisterFunc: func(_ *grpc.Server) {
+			// not doing
+		},
+		ExtraInterceptors: []grpc.UnaryServerInterceptor{testInterceptor()},
+	}
+
+	_, err := NewRPCServer(builder)
 	assert.EqualValues(t, "listen tcp: address error: missing port in address", err.Error())
 }

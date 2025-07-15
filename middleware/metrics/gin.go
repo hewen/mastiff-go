@@ -14,9 +14,6 @@ func GinMiddleware() gin.HandlerFunc {
 
 		c.Next()
 
-		duration := time.Since(start).Seconds()
-		status := c.Writer.Status()
-
 		path := c.FullPath()
 		if path == "" {
 			path = c.Request.URL.Path
@@ -25,8 +22,8 @@ func GinMiddleware() gin.HandlerFunc {
 		HTTPDuration.WithLabelValues(
 			c.Request.Method,
 			path,
-			httpStatusCodeGroup(status),
-		).Observe(duration)
+			httpStatusCodeGroup(c.Writer.Status()),
+		).Observe(time.Since(start).Seconds())
 	}
 }
 

@@ -1,5 +1,5 @@
-// Package server provides a queue server implementation.
-package server
+// Package queuex provides a queue server implementation.
+package queuex
 
 import (
 	"context"
@@ -27,7 +27,7 @@ type QueueMessage any
 
 // QueueServer is a queue server that processes messages from a queue using a goroutine pool. It is used to provide a queue server implementation.
 type QueueServer[T any] struct {
-	handler            QueueHandler[T]
+	handler            ServerHandler[T]
 	logger             logger.Logger
 	pool               *ants.Pool
 	done               chan struct{}
@@ -53,8 +53,8 @@ type Handler[T any] interface {
 	Handle(ctx context.Context, msg T) error
 }
 
-// QueueHandler defines the interface for handling queue messages.
-type QueueHandler[T any] interface {
+// ServerHandler defines the interface for handling queue messages.
+type ServerHandler[T any] interface {
 	Codec[T]
 	Queue
 	Handler[T]
@@ -93,7 +93,7 @@ func (c ProtoCodec[T]) Decode(data []byte) (T, error) {
 }
 
 // NewQueueServer creates a new QueueServer with the specified handler and pool size.
-func NewQueueServer[T any](conf serverconf.QueueConfig, handler QueueHandler[T]) (*QueueServer[T], error) {
+func NewQueueServer[T any](conf serverconf.QueueConfig, handler ServerHandler[T]) (*QueueServer[T], error) {
 	if conf.QueueName == "" {
 		return nil, ErrEmptyQueueName
 	}

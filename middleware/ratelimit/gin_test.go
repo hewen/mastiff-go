@@ -33,7 +33,6 @@ func TestGinMiddleware(t *testing.T) {
 	})
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.RemoteAddr = "127.0.0.1:1234"
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)
@@ -57,7 +56,6 @@ func TestGinMiddleware_NoConfig(t *testing.T) {
 	})
 
 	req := httptest.NewRequest(http.MethodGet, "/test", nil)
-	req.RemoteAddr = "127.0.0.1:1234"
 	w := httptest.NewRecorder()
 	r.ServeHTTP(w, req)
 	assert.Equal(t, http.StatusOK, w.Code)

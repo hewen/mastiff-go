@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/hewen/mastiff-go/config/middleware/authconf"
 	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
 	"github.com/hewen/mastiff-go/config/middleware/ratelimitconf"
@@ -26,7 +27,6 @@ type Config struct {
 	TimeoutSeconds *int                       // Timeout seconds for requests
 	EnableMetrics  *bool                      // Enable metrics middleware
 	EnableRecovery *bool                      // Enable recovery middleware, default enabled
-	EnableLogging  *bool                      // Enable logging middleware, default enabled
 }
 
 const (
@@ -37,9 +37,8 @@ const (
 // LoadGRPCMiddlewares loads gRPC middlewares based on the provided configuration.
 func LoadGRPCMiddlewares(conf Config) []grpc.UnaryServerInterceptor {
 	var result []grpc.UnaryServerInterceptor
-	if conf.EnableLogging == nil || *conf.EnableLogging {
-		result = append(result, logging.UnaryServerInterceptor())
-	}
+	result = append(result, logging.UnaryServerInterceptor())
+
 	if conf.EnableRecovery == nil || *conf.EnableRecovery {
 		result = append(result, recovery.UnaryServerInterceptor())
 	}
@@ -70,12 +69,10 @@ func LoadGRPCMiddlewares(conf Config) []grpc.UnaryServerInterceptor {
 // LoadGinMiddlewares loads Gin middlewares based on the provided configuration.
 func LoadGinMiddlewares(conf Config) []gin.HandlerFunc {
 	var result []gin.HandlerFunc
+	result = append(result, logging.GinMiddleware())
 
 	if conf.EnableRecovery == nil || *conf.EnableRecovery {
 		result = append(result, recovery.GinMiddleware())
-	}
-	if conf.EnableLogging == nil || *conf.EnableLogging {
-		result = append(result, logging.GinMiddleware())
 	}
 	if conf.Auth != nil {
 		result = append(result, auth.GinMiddleware(conf.Auth))
@@ -90,6 +87,32 @@ func LoadGinMiddlewares(conf Config) []gin.HandlerFunc {
 	}
 	if conf.EnableMetrics != nil {
 		result = append(result, metrics.GinMiddleware())
+	}
+
+	return result
+}
+
+// LoadFiberMiddlewares loads Fiber middlewares based on the provided configuration.
+func LoadFiberMiddlewares(conf Config) []func(*fiber.Ctx) error {
+	var result []func(*fiber.Ctx) error
+	result = append(result, logging.FiberMiddleware())
+
+	if conf.EnableRecovery == nil || *conf.EnableRecovery {
+		result = append(result, recovery.FiberMiddleware())
+	}
+	if conf.Auth != nil {
+		result = append(result, auth.FiberMiddleware(conf.Auth))
+	}
+	if conf.CircuitBreaker != nil {
+		mgr := circuitbreaker.NewManager(conf.CircuitBreaker)
+		result = append(result, circuitbreaker.FiberMiddleware(mgr))
+	}
+	if conf.RateLimit != nil {
+		mgr := ratelimit.NewLimiterManager(conf.RateLimit)
+		result = append(result, ratelimit.FiberMiddleware(mgr))
+	}
+	if conf.EnableMetrics != nil {
+		result = append(result, metrics.FiberMiddleware())
 	}
 
 	return result

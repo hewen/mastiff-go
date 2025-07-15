@@ -1,4 +1,4 @@
-package server
+package httpx
 
 import (
 	"fmt"
@@ -7,27 +7,29 @@ import (
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/middleware"
-	"github.com/hewen/mastiff-go/middleware/recovery"
+	"github.com/hewen/mastiff-go/middleware/logging"
 	"github.com/hewen/mastiff-go/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
 
-func TestNewGinAPIHandler(t *testing.T) {
-	handler := func(r *gin.Engine) {
-		r.GET("/test", func(c *gin.Context) {
-			l := logger.NewLoggerWithContext(c.Request.Context())
+func TestFiberHandlerBuilder(t *testing.T) {
+	initRoute := func(app *fiber.App) {
+		app.Get("/test", func(c *fiber.Ctx) error {
+			ctx := contextkeys.ContextFrom(c)
+			l := logger.NewLoggerWithContext(ctx)
 			l.Infof("test")
-
-			c.JSON(http.StatusOK, gin.H{
+			return c.JSON(map[string]string{
 				"message": "ok",
 			})
 		})
+
 	}
-	assert.NotNil(t, handler)
+	assert.NotNil(t, initRoute)
 
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
@@ -42,14 +44,18 @@ func TestNewGinAPIHandler(t *testing.T) {
 		},
 	}
 
-	s, err := NewHTTPServer(conf, handler, recovery.GinMiddleware())
+	builder := &FiberHandlerBuilder{
+		Conf:             *conf,
+		InitRoute:        initRoute,
+		ExtraMiddlewares: []func(*fiber.Ctx) error{logging.FiberMiddleware()},
+	}
+
+	s, err := NewHTTPServer(conf, builder)
 	assert.Nil(t, err)
 
-	var server Servers
-	server.Add(s)
 	go func() {
-		defer server.Stop()
-		server.Start()
+		defer s.Stop()
+		s.Start()
 	}()
 
 	time.Sleep(100 * time.Millisecond)

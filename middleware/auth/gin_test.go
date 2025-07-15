@@ -12,7 +12,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestGinMiddleware(t *testing.T) {
+func TestGinWhiteList(t *testing.T) {
 	conf := &authconf.Config{
 		HeaderKey:     "Authorization",
 		TokenPrefixes: []string{"Bearer"},
@@ -20,28 +20,6 @@ func TestGinMiddleware(t *testing.T) {
 		WhiteList:     []string{"/public"},
 	}
 
-	t.Run("white list should pass", func(t *testing.T) {
-		testWhiteList(t, conf)
-	})
-
-	t.Run("white list with prefix", func(t *testing.T) {
-		testWhiteList(t, conf)
-	})
-
-	t.Run("missing token", func(t *testing.T) {
-		testMissingToken(t, conf)
-	})
-
-	t.Run("invalid token", func(t *testing.T) {
-		testInvalidToken(t, conf)
-	})
-
-	t.Run("valid token ok", func(t *testing.T) {
-		testValidToken(t, conf)
-	})
-}
-
-func testWhiteList(t *testing.T, conf *authconf.Config) {
 	r := gin.New()
 	r.Use(GinMiddleware(conf))
 	r.GET("/public", func(c *gin.Context) {
@@ -56,7 +34,14 @@ func testWhiteList(t *testing.T, conf *authconf.Config) {
 	assert.Equal(t, "ok", w.Body.String())
 }
 
-func testMissingToken(t *testing.T, conf *authconf.Config) {
+func TestGinMissingToken(t *testing.T) {
+	conf := &authconf.Config{
+		HeaderKey:     "Authorization",
+		TokenPrefixes: []string{"Bearer"},
+		JWTSecret:     "secret",
+		WhiteList:     []string{"/public"},
+	}
+
 	r := gin.New()
 	r.Use(GinMiddleware(conf))
 	r.GET("/secure", func(c *gin.Context) {
@@ -70,7 +55,15 @@ func testMissingToken(t *testing.T, conf *authconf.Config) {
 	assert.Equal(t, http.StatusUnauthorized, w.Code)
 	assert.Contains(t, w.Body.String(), "missing token")
 }
-func testInvalidToken(t *testing.T, conf *authconf.Config) {
+
+func TestGinInvalidToken(t *testing.T) {
+	conf := &authconf.Config{
+		HeaderKey:     "Authorization",
+		TokenPrefixes: []string{"Bearer"},
+		JWTSecret:     "secret",
+		WhiteList:     []string{"/public"},
+	}
+
 	r := gin.New()
 	r.Use(GinMiddleware(conf))
 	r.GET("/secure", func(c *gin.Context) {
@@ -86,7 +79,14 @@ func testInvalidToken(t *testing.T, conf *authconf.Config) {
 	assert.Contains(t, w.Body.String(), "invalid token")
 }
 
-func testValidToken(t *testing.T, conf *authconf.Config) {
+func TestGinValidToken(t *testing.T) {
+	conf := &authconf.Config{
+		HeaderKey:     "Authorization",
+		TokenPrefixes: []string{"Bearer"},
+		JWTSecret:     "secret",
+		WhiteList:     []string{"/public"},
+	}
+
 	r := gin.New()
 	r.Use(GinMiddleware(conf))
 	r.GET("/secure", func(c *gin.Context) {

@@ -1,4 +1,4 @@
-package server
+package queuex
 
 import (
 	"context"
@@ -37,20 +37,20 @@ func (r RedisQueue) Pop(_ context.Context) ([]byte, error) {
 	return []byte(res[1]), nil
 }
 
-// QueueJSONRedisHandler handles JSON messages in a Redis queue.
-type QueueJSONRedisHandler[T any] struct {
+// JSONRedisHandler handles JSON messages in a Redis queue.
+type JSONRedisHandler[T any] struct {
 	handlerFn func(ctx context.Context, msg T) error
 	JSONCodec[T]
 	RedisQueue
 }
 
-// NewQueueJSONRedisHandler creates a new QueueJSONRedisHandler instance.
-func NewQueueJSONRedisHandler[T any](
+// NewJSONRedisHandler creates a new JSONRedisHandler instance.
+func NewJSONRedisHandler[T any](
 	client *redis.Client,
 	queueName string,
 	handlerFn func(ctx context.Context, msg T) error,
-) *QueueJSONRedisHandler[T] {
-	return &QueueJSONRedisHandler[T]{
+) *JSONRedisHandler[T] {
+	return &JSONRedisHandler[T]{
 		JSONCodec:  JSONCodec[T]{},
 		RedisQueue: NewRedisQueue(client, queueName),
 		handlerFn:  handlerFn,
@@ -58,28 +58,28 @@ func NewQueueJSONRedisHandler[T any](
 }
 
 // Handle processes a message from the queue.
-func (h *QueueJSONRedisHandler[T]) Handle(ctx context.Context, msg T) error {
+func (h *JSONRedisHandler[T]) Handle(ctx context.Context, msg T) error {
 	if h.handlerFn == nil {
 		return nil
 	}
 	return h.handlerFn(ctx, msg)
 }
 
-// QueueProtoRedisHandler handles protobuf messages in a Redis queue.
-type QueueProtoRedisHandler[T proto.Message] struct {
+// ProtoRedisHandler handles protobuf messages in a Redis queue.
+type ProtoRedisHandler[T proto.Message] struct {
 	handlerFn func(ctx context.Context, msg T) error
 	ProtoCodec[T]
 	RedisQueue
 }
 
-// NewQueueProtoRedisHandler creates a new QueueProtoRedisHandler instance.
-func NewQueueProtoRedisHandler[T proto.Message](
+// NewProtoRedisHandler creates a new ProtoRedisHandler instance.
+func NewProtoRedisHandler[T proto.Message](
 	client *redis.Client,
 	queueName string,
 	handlerFn func(ctx context.Context, msg T) error,
 	newMsgFn func() T,
-) *QueueProtoRedisHandler[T] {
-	return &QueueProtoRedisHandler[T]{
+) *ProtoRedisHandler[T] {
+	return &ProtoRedisHandler[T]{
 		ProtoCodec: ProtoCodec[T]{newMsg: newMsgFn},
 		RedisQueue: NewRedisQueue(client, queueName),
 		handlerFn:  handlerFn,
@@ -87,7 +87,7 @@ func NewQueueProtoRedisHandler[T proto.Message](
 }
 
 // Handle processes a message from the queue.
-func (h *QueueProtoRedisHandler[T]) Handle(ctx context.Context, msg T) error {
+func (h *ProtoRedisHandler[T]) Handle(ctx context.Context, msg T) error {
 	if h.handlerFn == nil {
 		return nil
 	}
