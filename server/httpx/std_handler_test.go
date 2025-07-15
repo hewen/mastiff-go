@@ -27,9 +27,10 @@ func TestStdHandlerBuilder(t *testing.T) {
 
 	builder := &StdHTTPHandlerBuilder{
 		Handler: mux,
+		Conf:    conf,
 	}
 
-	s, err := NewHTTPServer(conf, builder)
+	s, err := NewHTTPServer(builder)
 	assert.Nil(t, err)
 
 	go func() {
@@ -50,4 +51,19 @@ func TestStdHandlerBuilder(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Contains(t, string(body), `"message":"ok"`)
+}
+
+func TestStdHandlerBuilder_EmptyConfig(t *testing.T) {
+	mux := http.NewServeMux()
+	mux.HandleFunc("/test", func(w http.ResponseWriter, _ *http.Request) {
+		_, _ = w.Write([]byte(`{"message":"ok"}`))
+	})
+
+	builder := &StdHTTPHandlerBuilder{
+		Handler: mux,
+		Conf:    nil,
+	}
+
+	_, err := NewHTTPServer(builder)
+	assert.NotNil(t, err)
 }

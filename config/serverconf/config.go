@@ -17,9 +17,9 @@ type (
 		// Mode represents the server mode, either "debug", "release", or "test".
 		Mode string
 		// TimeoutRead represents the timeout for reading requests in milliseconds.
-		TimeoutRead int64
+		ReadTimeout int64
 		// TimeoutWrite represents the timeout for writing responses in milliseconds.
-		TimeoutWrite int64
+		WriteTimeout int64
 		// PprofEnabled represents whether to enable pprof for profiling.
 		PprofEnabled bool
 	}

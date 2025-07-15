@@ -45,16 +45,17 @@ func TestFiberHandlerBuilder(t *testing.T) {
 	}
 
 	builder := &FiberHandlerBuilder{
-		Conf:             *conf,
+		Conf:             conf,
 		InitRoute:        initRoute,
 		ExtraMiddlewares: []func(*fiber.Ctx) error{logging.FiberMiddleware()},
 	}
 
-	s, err := NewHTTPServer(conf, builder)
+	s, err := NewHTTPServer(builder)
 	assert.Nil(t, err)
+	assert.NotNil(t, s)
+	_ = s.Name()
 
 	go func() {
-		defer s.Stop()
 		s.Start()
 	}()
 
@@ -71,4 +72,6 @@ func TestFiberHandlerBuilder(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 	assert.Contains(t, string(body), `"message":"ok"`)
+
+	s.Stop()
 }

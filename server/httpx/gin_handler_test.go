@@ -45,12 +45,12 @@ func TestGinHandlerBuilder(t *testing.T) {
 	}
 
 	builder := &GinHandlerBuilder{
-		Conf:             *conf,
+		Conf:             conf,
 		InitRoute:        initRoute,
 		ExtraMiddlewares: []gin.HandlerFunc{recovery.GinMiddleware()},
 	}
 
-	s, err := NewHTTPServer(conf, builder)
+	s, err := NewHTTPServer(builder)
 	assert.Nil(t, err)
 
 	go func() {

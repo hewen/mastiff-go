@@ -15,7 +15,7 @@ func TestHTTPServer(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
-	conf := serverconf.HTTPConfig{
+	conf := &serverconf.HTTPConfig{
 		Addr:         fmt.Sprintf("localhost:%d", port),
 		PprofEnabled: true,
 	}
@@ -25,11 +25,11 @@ func TestHTTPServer(t *testing.T) {
 		Conf:      conf,
 		InitRoute: initRoute,
 	}
-	s, err := NewHTTPServer(&conf, builder)
+	s, err := NewHTTPServer(builder)
 	assert.Nil(t, err)
 
 	s.WithLogger(logger.NewLogger())
-	assert.Equal(t, fmt.Sprintf(`http server(%s)`, conf.Addr), s.Name())
+	assert.Equal(t, fmt.Sprintf(`http std server(%s)`, conf.Addr), s.Name())
 
 	go func() {
 		defer s.Stop()
@@ -41,7 +41,7 @@ func TestHTTPServerStop(t *testing.T) {
 	port, err := util.GetFreePort()
 	assert.Nil(t, err)
 
-	conf := serverconf.HTTPConfig{
+	conf := &serverconf.HTTPConfig{
 		Addr: fmt.Sprintf("localhost:%d", port),
 	}
 
@@ -51,17 +51,14 @@ func TestHTTPServerStop(t *testing.T) {
 		InitRoute: initRoute,
 	}
 
-	s, err := NewHTTPServer(&conf, builder)
+	s, err := NewHTTPServer(builder)
 	assert.Nil(t, err)
 
-	s.Stop()
-
-	s.s = nil
 	s.Stop()
 }
 
 func TestHTTPServerStartError(t *testing.T) {
-	conf := serverconf.HTTPConfig{
+	conf := &serverconf.HTTPConfig{
 		Addr: "error addr",
 	}
 
@@ -71,7 +68,7 @@ func TestHTTPServerStartError(t *testing.T) {
 		InitRoute: initRoute,
 	}
 
-	s, err := NewHTTPServer(&conf, builder)
+	s, err := NewHTTPServer(builder)
 	assert.Nil(t, err)
 
 	s.Start()
@@ -80,9 +77,9 @@ func TestHTTPServerStartError(t *testing.T) {
 func TestHTTPServerEmptyConfig(t *testing.T) {
 	initRoute := func(_ *gin.Engine) {}
 	builder := &GinHandlerBuilder{
-		Conf:      serverconf.HTTPConfig{},
+		Conf:      nil,
 		InitRoute: initRoute,
 	}
-	_, err := NewHTTPServer(nil, builder)
+	_, err := NewHTTPServer(builder)
 	assert.EqualValues(t, err, ErrEmptyHTTPConf)
 }
