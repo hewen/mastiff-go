@@ -2,12 +2,13 @@
 package core
 
 import (
+	"net/http"
 	"testing"
 
 	"{{.PackageName}}/pkg/model"
 
 	"github.com/alicebob/miniredis/v2"
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/hewen/mastiff-go/config"
 	"github.com/hewen/mastiff-go/config/loggerconf"
 	"github.com/hewen/mastiff-go/config/serverconf"
@@ -93,7 +94,7 @@ func TestNewCore(t *testing.T) {
 
 	s, _ := miniredis.Run()
 	c, err := NewCore(&config.Config{
-		Grpc: &serverconf.GrpcConfig{
+		RPC: &serverconf.RPCConfig{
 			Addr: "0.0.0.0:9090",
 		},
 		HTTP: &serverconf.HTTPConfig{
@@ -121,7 +122,16 @@ func TestCore_StartAndStop(_ *testing.T) {
 	c.Stop()
 }
 
-func TestInitGinRoute(_ *testing.T) {
+func TestInitGinRoute(t *testing.T) {
 	c := new(Core)
-	c.initGinRoute(gin.New())
+	app := fiber.New()
+	c.initFiberRoute(app)
+	req, _ := http.NewRequest("GET", "/api/v1/test", nil)
+	resp, err := app.Test(req)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
 }

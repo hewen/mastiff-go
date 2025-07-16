@@ -11,10 +11,13 @@ import (
 	// MODULE_PACKAGE_START
 	// MODULE_PACKAGE_END
 
-	"github.com/gin-gonic/gin"
+	"github.com/gofiber/fiber/v2"
 	"github.com/hewen/mastiff-go/config"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/server"
+	"github.com/hewen/mastiff-go/server/httpx"
+	"github.com/hewen/mastiff-go/server/queuex"
+	"github.com/hewen/mastiff-go/server/rpcx"
 	"github.com/hewen/mastiff-go/server/test"
 	"google.golang.org/grpc"
 	healthpb "google.golang.org/grpc/health/grpc_health_v1"
@@ -50,7 +53,12 @@ func NewCore(conf *config.Config) (*Core, error) {
 	}
 
 	if conf.HTTP != nil {
-		httpServer, err := server.NewHTTPServer(conf.HTTP, c.initGinRoute)
+		builder := &httpx.FiberHandlerBuilder{
+			Conf:      conf.HTTP,
+			InitRoute: c.initFiberRoute,
+		}
+
+		httpServer, err := httpx.NewHTTPServer(builder)
 		if err != nil {
 			return nil, err
 		}
@@ -58,11 +66,15 @@ func NewCore(conf *config.Config) (*Core, error) {
 		c.servers.Add(httpServer)
 	}
 
-	if conf.Grpc != nil {
-		grpcServer, err := server.NewGrpcServer(conf.Grpc, func(s *grpc.Server) {
-			healthpb.RegisterHealthServer(s, c)
-			// TODO add your gRPC service: rpc.RegisterYourServer(s, c)
-		})
+	if conf.RPC != nil {
+		builder := &rpcx.GrpcHandlerBuilder{
+			Conf: conf.RPC,
+			RegisterFunc: func(s *grpc.Server) {
+				healthpb.RegisterHealthServer(s, c)
+				// TODO add your gRPC service: rpc.RegisterYourServer(s, c)
+			},
+		}
+		grpcServer, err := rpcx.NewRPCServer(builder)
 		if err != nil {
 			return nil, err
 		}
@@ -77,8 +89,8 @@ func NewCore(conf *config.Config) (*Core, error) {
 		newMsgFn := func() *test.TestMsg {
 			return &test.TestMsg{}
 		}
-		handler := server.NewQueueProtoRedisHandler(model.RStore.GetDb(), conf.Queue.QueueName, handleFn, newMsgFn)
-		queueServer, err := server.NewQueueServer(*conf.Queue, handler)
+		handler := queuex.NewProtoRedisHandler(model.RStore.GetDb(), conf.Queue.QueueName, handleFn, newMsgFn)
+		queueServer, err := queuex.NewQueueServer(*conf.Queue, handler)
 		if err != nil {
 			return nil, err
 		}
@@ -92,10 +104,15 @@ func NewCore(conf *config.Config) (*Core, error) {
 }
 
 // initGinRoute initializes the Gin routes for the application.
-func (c *Core) initGinRoute(r *gin.Engine) {
-	api := r.Group("/api/v1")
+func (c *Core) initFiberRoute(app *fiber.App) {
 	// TODO remove test route, add your routes
-	api.POST("/test", func(_ *gin.Context) {})
+
+	api := app.Group("/api/v1/")
+	api.Get("/test", func(c *fiber.Ctx) error {
+		return c.JSON(map[string]string{
+			"message": "ok",
+		})
+	})
 
 	// MODULE_ROUTES_START
 	// MODULE_ROUTES_END
