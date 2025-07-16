@@ -155,7 +155,7 @@ func TestLimiterManager_Wait(t *testing.T) {
 	err = limiter.AllowOrWait(ctx)
 	duration := time.Since(t1)
 	assert.Nil(t, err)
-	assert.GreaterOrEqual(t, duration, time.Second)
+	assert.InDelta(t, 1.0, duration.Seconds(), 0.05) // ±5%
 }
 
 func TestLimiterManager_Cleanup(t *testing.T) {
