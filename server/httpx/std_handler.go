@@ -26,8 +26,9 @@ func (s *StdHTTPHandlerBuilder) BuildHandler() (HTTPHandler, error) {
 		server: http.Server{
 			Addr:         s.Conf.Addr,
 			Handler:      s.Handler,
-			ReadTimeout:  time.Duration(s.Conf.ReadTimeout),
-			WriteTimeout: time.Duration(s.Conf.WriteTimeout),
+			ReadTimeout:  toDuration(s.Conf.ReadTimeout),
+			WriteTimeout: toDuration(s.Conf.WriteTimeout),
+			IdleTimeout:  toDuration(s.Conf.IdleTimeout),
 		},
 		name: "std",
 	}, nil

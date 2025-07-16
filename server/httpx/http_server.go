@@ -3,6 +3,7 @@ package httpx
 
 import (
 	"sync"
+	"time"
 
 	"github.com/hewen/mastiff-go/logger"
 )
@@ -55,4 +56,11 @@ func (s *HTTPServer) WithLogger(l logger.Logger) {
 	if l != nil {
 		s.logger = l
 	}
+}
+
+func toDuration(sec int64) time.Duration {
+	if sec == 0 {
+		return HTTPTimeoutDefault * time.Second
+	}
+	return time.Duration(sec) * time.Second
 }

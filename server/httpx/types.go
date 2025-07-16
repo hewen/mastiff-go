@@ -11,10 +11,8 @@ var (
 )
 
 const (
-	// HTTPTimeoutReadDefault is the default timeout for reading requests.
-	HTTPTimeoutReadDefault = 10
-	// HTTPTimeoutWriteDefault is the default timeout for writing responses.
-	HTTPTimeoutWriteDefault = 10
+	// HTTPTimeoutDefault is the default timeout for reading requests.
+	HTTPTimeoutDefault = 10
 )
 
 // HTTPHandler represents a unified HTTP server.

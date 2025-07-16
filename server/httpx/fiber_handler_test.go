@@ -75,3 +75,13 @@ func TestFiberHandlerBuilder(t *testing.T) {
 
 	s.Stop()
 }
+
+func TestFiberGetConfig(t *testing.T) {
+	builder := FiberHandlerBuilder{
+		Conf: &serverconf.HTTPConfig{
+			Mode: "release",
+		},
+	}
+	conf := builder.GetConfig()
+	assert.Equal(t, true, conf.Prefork)
+}

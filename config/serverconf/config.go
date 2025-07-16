@@ -20,6 +20,8 @@ type (
 		ReadTimeout int64
 		// TimeoutWrite represents the timeout for writing responses in milliseconds.
 		WriteTimeout int64
+		// IdleTimeout represents the timeout for idle responses in milliseconds.
+		IdleTimeout int64
 		// PprofEnabled represents whether to enable pprof for profiling.
 		PprofEnabled bool
 	}

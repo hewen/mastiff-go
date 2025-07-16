@@ -3,7 +3,6 @@ package httpx
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/gofiber/adaptor/v2"
 	"github.com/gofiber/fiber/v2"
@@ -26,10 +25,7 @@ func (f *FiberHandlerBuilder) BuildHandler() (HTTPHandler, error) {
 		return nil, ErrEmptyHTTPConf
 	}
 
-	app := fiber.New(fiber.Config{
-		ReadTimeout:  time.Duration(f.Conf.ReadTimeout),
-		WriteTimeout: time.Duration(f.Conf.WriteTimeout),
-	})
+	app := fiber.New(f.GetConfig())
 
 	for _, mw := range middleware.LoadFiberMiddlewares(f.Conf.Middlewares) {
 		app.Use(mw)
@@ -53,6 +49,33 @@ func (f *FiberHandlerBuilder) BuildHandler() (HTTPHandler, error) {
 		addr: f.Conf.Addr,
 		name: "fiber",
 	}, nil
+}
+
+// GetConfig returns the Fiber configuration.
+func (f *FiberHandlerBuilder) GetConfig() fiber.Config {
+	if f.Conf.Mode == "release" {
+		return fiber.Config{
+			Prefork:               true,
+			CaseSensitive:         true,
+			StrictRouting:         true,
+			EnablePrintRoutes:     false,
+			DisableStartupMessage: true,
+			ReadTimeout:           toDuration(f.Conf.ReadTimeout),
+			WriteTimeout:          toDuration(f.Conf.WriteTimeout),
+			IdleTimeout:           toDuration(f.Conf.IdleTimeout),
+		}
+	}
+
+	return fiber.Config{
+		Prefork:               false,
+		CaseSensitive:         true,
+		StrictRouting:         false,
+		EnablePrintRoutes:     true,
+		DisableStartupMessage: true,
+		ReadTimeout:           toDuration(f.Conf.ReadTimeout),
+		WriteTimeout:          toDuration(f.Conf.WriteTimeout),
+		IdleTimeout:           toDuration(f.Conf.IdleTimeout),
+	}
 }
 
 // FiberHandler is a handler that provides a unified HTTP abstraction over Fiber.

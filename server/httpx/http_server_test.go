@@ -3,6 +3,7 @@ package httpx
 import (
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/config/serverconf"
@@ -82,4 +83,12 @@ func TestHTTPServerEmptyConfig(t *testing.T) {
 	}
 	_, err := NewHTTPServer(builder)
 	assert.EqualValues(t, err, ErrEmptyHTTPConf)
+}
+
+func TestToDuration(t *testing.T) {
+	dur := toDuration(0)
+	assert.Equal(t, HTTPTimeoutDefault*time.Second, dur)
+
+	dur = toDuration(1)
+	assert.Equal(t, 1*time.Second, dur)
 }

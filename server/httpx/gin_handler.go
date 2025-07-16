@@ -3,7 +3,6 @@ package httpx
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/gin-contrib/pprof"
 	"github.com/gin-gonic/gin"
@@ -26,7 +25,7 @@ func (g *GinHandlerBuilder) BuildHandler() (HTTPHandler, error) {
 	}
 
 	gin.SetMode(g.Conf.Mode)
-	r := gin.Default()
+	r := gin.New()
 
 	for _, mw := range middleware.LoadGinMiddlewares(g.Conf.Middlewares) {
 		r.Use(mw)
@@ -48,8 +47,9 @@ func (g *GinHandlerBuilder) BuildHandler() (HTTPHandler, error) {
 		server: http.Server{
 			Addr:         g.Conf.Addr,
 			Handler:      r,
-			ReadTimeout:  time.Duration(g.Conf.ReadTimeout),
-			WriteTimeout: time.Duration(g.Conf.WriteTimeout),
+			ReadTimeout:  toDuration(g.Conf.ReadTimeout),
+			WriteTimeout: toDuration(g.Conf.WriteTimeout),
+			IdleTimeout:  toDuration(g.Conf.IdleTimeout),
 		},
 		name: "std",
 	}, nil
