@@ -12,6 +12,16 @@ import (
 // getCurrentUser returns the current user.
 var getCurrentUser = user.Current
 
+// absPath returns the absolute path.
+var absPath = filepath.Abs
+
+// MarkerUpdate represents a line to be inserted between markers.
+type MarkerUpdate struct {
+	Start string
+	End   string
+	Line  string
+}
+
 // ExpandPath expands a path that starts with ~/ to the full path.
 func ExpandPath(path string) string {
 	if !strings.HasPrefix(path, "~/") {
@@ -30,63 +40,44 @@ func ExpandPath(path string) string {
 	return filepath.Join(".", path[2:])
 }
 
-// AppendToCoreGo appends lines to core.go.
-func AppendToCoreGo(coreGoPath string, fieldLine, initLine string) error {
-	data, err := os.ReadFile(coreGoPath) // #nosec
+// updateCoreGoSections updates core.go with the given updates.
+func updateCoreGoSections(path string, updates []MarkerUpdate) error {
+	data, err := os.ReadFile(path) // #nosec
 	if err != nil {
 		return err
 	}
 	content := string(data)
 
-	fieldStart := "// MODULE_FIELDS_START"
-	fieldEnd := "// MODULE_FIELDS_END"
-	content, err = insertBetweenMarkers(content, fieldStart, fieldEnd, fieldLine)
-	if err != nil {
-		return err
+	for _, u := range updates {
+		content, err = insertBetweenMarkers(content, u.Start, u.End, u.Line)
+		if err != nil {
+			return err
+		}
 	}
 
-	initStart := "// MODULE_INITS_START"
-	initEnd := "// MODULE_INITS_END"
-	content, err = insertBetweenMarkers(content, initStart, initEnd, initLine)
-	if err != nil {
-		return err
-	}
+	return os.WriteFile(path, []byte(content), 0600)
+}
 
-	return os.WriteFile(coreGoPath, []byte(content), 0600)
+// AppendToCoreGo appends lines to core.go.
+func AppendToCoreGo(path, fieldLine, initLine string) error {
+	return updateCoreGoSections(path, []MarkerUpdate{
+		{Start: "// MODULE_FIELDS_START", End: "// MODULE_FIELDS_END", Line: fieldLine},
+		{Start: "// MODULE_INITS_START", End: "// MODULE_INITS_END", Line: initLine},
+	})
 }
 
 // AppendToCoreGoRoutes appends lines to core.go.
-func AppendToCoreGoRoutes(coreGoPath string, routeLine string) error {
-	data, err := os.ReadFile(coreGoPath) // #nosec
-	if err != nil {
-		return err
-	}
-	content := string(data)
-
-	routeStart := "// MODULE_ROUTES_START"
-	routeEnd := "// MODULE_ROUTES_END"
-	content, err = insertBetweenMarkers(content, routeStart, routeEnd, routeLine)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(coreGoPath, []byte(content), 0600)
+func AppendToCoreGoRoutes(path, routeLine string) error {
+	return updateCoreGoSections(path, []MarkerUpdate{
+		{Start: "// MODULE_ROUTES_START", End: "// MODULE_ROUTES_END", Line: routeLine},
+	})
 }
 
 // AppendToCorePackage appends lines to core.go.
-func AppendToCorePackage(coreGoPath string, packageLine string) error {
-	data, err := os.ReadFile(coreGoPath) // #nosec
-	if err != nil {
-		return err
-	}
-	content := string(data)
-
-	packageStart := "// MODULE_PACKAGE_START"
-	packageEnd := "// MODULE_PACKAGE_END"
-	content, err = insertBetweenMarkers(content, packageStart, packageEnd, packageLine)
-	if err != nil {
-		return err
-	}
-	return os.WriteFile(coreGoPath, []byte(content), 0600)
+func AppendToCorePackage(path, packageLine string) error {
+	return updateCoreGoSections(path, []MarkerUpdate{
+		{Start: "// MODULE_PACKAGE_START", End: "// MODULE_PACKAGE_END", Line: packageLine},
+	})
 }
 
 // insertBetweenMarkers inserts a line between markers.
@@ -121,7 +112,7 @@ func IsEmptyDir(dir string) (bool, error) {
 	// Clean the path to remove any path traversal elements
 	cleanDir := filepath.Clean(dir)
 	// Ensure the path is absolute
-	absDir, err := filepath.Abs(cleanDir)
+	absDir, err := absPath(cleanDir)
 	if err != nil {
 		return false, err
 	}

@@ -61,11 +61,11 @@ func processTemplateFile(path string, templateRoot string, outputRoot string, da
 		return err
 	}
 
-	absTargetPath, err := filepath.Abs(targetPath)
+	absTargetPath, err := absPath(targetPath)
 	if err != nil {
 		return err
 	}
-	absOutputRoot, err := filepath.Abs(outputRoot)
+	absOutputRoot, err := absPath(outputRoot)
 	if err != nil {
 		return err
 	}

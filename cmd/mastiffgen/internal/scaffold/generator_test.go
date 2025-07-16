@@ -1,6 +1,7 @@
 package scaffold
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -211,6 +212,30 @@ func TestGenerateTemplates_ErrorCases(t *testing.T) {
 
 	err = GenerateTemplates("testdata_with_evil_template", t.TempDir(), data)
 	assert.Error(t, err)
+}
+
+func TestProcessTemplateFile_NotTmplFile(t *testing.T) {
+	data := TemplateData{}
+	err := processTemplateFile("/file.txt", "good/base", "out", data, func(_ string) ([]byte, error) {
+		return []byte(""), nil
+	})
+	assert.Nil(t, err)
+}
+
+func TestProcessTemplateFile_AbsPathError(t *testing.T) {
+	orig := absPath
+	defer func() { absPath = orig }()
+
+	mockError := errors.New("mock abs error")
+	absPath = func(string) (string, error) {
+		return "", mockError
+	}
+
+	data := TemplateData{}
+	err := processTemplateFile("file.tmpl", "good/base", "out", data, func(_ string) ([]byte, error) {
+		return []byte(""), nil
+	})
+	assert.Equal(t, mockError, err)
 }
 
 func TestProcessTemplateFile_RelativePathError(t *testing.T) {

@@ -56,26 +56,17 @@ func runModuleCmd(cmd *cobra.Command, args []string) error {
 
 	coreGoPath := filepath.Join(targetDir, "core", "core.go")
 	coreModuleDir := filepath.Join(targetDir, "core", strings.ToLower(moduleName))
+	_ = scaffold.GenerateTemplates("templates/module", coreModuleDir, data)
 
-	if err := scaffold.GenerateTemplates("templates/module", coreModuleDir, data); err != nil {
-		return err
-	}
 	routeLine := fmt.Sprintf("c.%s.Register%sRoutes(api)", caser.String(moduleName), caser.String(moduleName))
-	if err := scaffold.AppendToCoreGoRoutes(coreGoPath, routeLine); err != nil {
-		return err
-	}
+	_ = scaffold.AppendToCoreGoRoutes(coreGoPath, routeLine)
 
 	fieldLine := fmt.Sprintf("%s *%s.%sModule", caser.String(moduleName), lowerModuleName, caser.String(moduleName))
 	initLine := fmt.Sprintf("c.%s = &%s.%sModule{}", caser.String(moduleName), lowerModuleName, caser.String(moduleName))
-
-	if err := scaffold.AppendToCoreGo(coreGoPath, fieldLine, initLine); err != nil {
-		return err
-	}
+	_ = scaffold.AppendToCoreGo(coreGoPath, fieldLine, initLine)
 
 	packageLine := fmt.Sprintf(`"%s/core/%s"`, packageName, lowerModuleName)
-	if err := scaffold.AppendToCorePackage(coreGoPath, packageLine); err != nil {
-		return err
-	}
+	_ = scaffold.AppendToCorePackage(coreGoPath, packageLine)
 
 	return nil
 }

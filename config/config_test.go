@@ -225,3 +225,12 @@ func NewViperForTest(t *testing.T, content string) *viper.Viper {
 	assert.Nil(t, err)
 	return v
 }
+
+func TestUnmarshalAll_BaseConfigError(t *testing.T) {
+	v := viper.New()
+	v.Set("port", "invalid")
+
+	err := UnmarshalAll(v, nil, nil)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "error unmarshaling base config")
+}

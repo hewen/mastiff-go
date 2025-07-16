@@ -385,3 +385,19 @@ func TestNewPlainFileLogger_Failure(t *testing.T) {
 	w := newPlainFileLogger(cfg)
 	assert.NotNil(t, w)
 }
+
+func TestInitLogger_ErrorBackend(t *testing.T) {
+	err := InitLogger(loggerconf.Config{
+		Backend: "error",
+	})
+
+	assert.NotNil(t, err)
+}
+
+func TestLogerLever(t *testing.T) {
+	err := SetLevel(LogLevelError)
+	assert.Nil(t, err)
+	l := NewLogger()
+	l.Infof("not display")
+	l.Errorf("display")
+}

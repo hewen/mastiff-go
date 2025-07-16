@@ -78,3 +78,16 @@ func TestNewGatewayHandlerFiber_Success(t *testing.T) {
 	assert.Nil(t, err)
 	assert.Equal(t, http.StatusOK, resp.StatusCode)
 }
+
+func TestNewGatewayHandlerFiber_RegisterErrorPanic(t *testing.T) {
+	mockRegister := func(_ context.Context, _ *runtime.ServeMux, _ string, _ []grpc.DialOption) error {
+		return context.DeadlineExceeded
+	}
+
+	r := fiber.New()
+	handlerFunc := NewGatewayHandlerFiber("localhost:1234", mockRegister)
+
+	assert.Panics(t, func() {
+		handlerFunc(r)
+	})
+}
