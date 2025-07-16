@@ -1,4 +1,4 @@
-// Package middleware provides middleware for HTTP, gRPC, and Gin servers.
+// Package middleware provides middleware for HTTP, gRPC, Gin, Fiber servers.
 package middleware
 
 import (
@@ -21,33 +21,36 @@ import (
 
 // Config is the configuration for middleware.
 type Config struct {
-	Auth           *authconf.Config           // Auth middleware configuration
-	RateLimit      *ratelimitconf.Config      // Rate limit middleware configuration
-	CircuitBreaker *circuitbreakerconf.Config // Circuit breaker middleware configuration
-	TimeoutSeconds *int                       // Timeout seconds for requests
-	EnableMetrics  *bool                      // Enable metrics middleware
-	EnableRecovery *bool                      // Enable recovery middleware, default enabled
+	// Auth middleware configuration
+	Auth *authconf.Config
+	// Rate limit middleware configuration
+	RateLimit *ratelimitconf.Config
+	// Circuit breaker middleware configuration
+	CircuitBreaker *circuitbreakerconf.Config
+	// Timeout seconds for requests
+	TimeoutSeconds *int
+	// Enable metrics middleware
+	EnableMetrics *bool
+	// Enable recovery middleware, default enabled
+	EnableRecovery *bool
+	// Enable logging middleware, default enabled
+	EnableLogging *bool
 }
-
-const (
-	// defaultTimeout is the default timeout for requests.
-	defaultTimeout = 30
-)
 
 // LoadGRPCMiddlewares loads gRPC middlewares based on the provided configuration.
 func LoadGRPCMiddlewares(conf Config) []grpc.UnaryServerInterceptor {
-	var result []grpc.UnaryServerInterceptor
-	result = append(result, logging.UnaryServerInterceptor())
+	conf.SetDefaults()
 
-	if conf.EnableRecovery == nil || *conf.EnableRecovery {
+	var result []grpc.UnaryServerInterceptor
+
+	if isEnabled(conf.EnableLogging) {
+		result = append(result, logging.UnaryServerInterceptor())
+	}
+	if isEnabled(conf.EnableRecovery) {
 		result = append(result, recovery.UnaryServerInterceptor())
 	}
-	if conf.TimeoutSeconds == nil || *conf.TimeoutSeconds > 0 {
-		var timeoutSeconds = defaultTimeout
-		if conf.TimeoutSeconds != nil {
-			timeoutSeconds = *conf.TimeoutSeconds
-		}
-		result = append(result, timeout.UnaryServerInterceptor(time.Duration(timeoutSeconds)*time.Second))
+	if conf.TimeoutSeconds != nil && *conf.TimeoutSeconds > 0 {
+		result = append(result, timeout.UnaryServerInterceptor(time.Duration(*conf.TimeoutSeconds)*time.Second))
 	}
 	if conf.Auth != nil {
 		result = append(result, auth.UnaryServerInterceptor(*conf.Auth))
@@ -60,18 +63,23 @@ func LoadGRPCMiddlewares(conf Config) []grpc.UnaryServerInterceptor {
 		mgr := ratelimit.NewLimiterManager(conf.RateLimit)
 		result = append(result, ratelimit.UnaryServerInterceptor(mgr))
 	}
-	if conf.EnableMetrics != nil {
+	if isEnabled(conf.EnableMetrics) {
 		result = append(result, metrics.UnaryServerInterceptor())
 	}
+
 	return result
 }
 
 // LoadGinMiddlewares loads Gin middlewares based on the provided configuration.
 func LoadGinMiddlewares(conf Config) []gin.HandlerFunc {
-	var result []gin.HandlerFunc
-	result = append(result, logging.GinMiddleware())
+	conf.SetDefaults()
 
-	if conf.EnableRecovery == nil || *conf.EnableRecovery {
+	var result []gin.HandlerFunc
+
+	if isEnabled(conf.EnableLogging) {
+		result = append(result, logging.GinMiddleware())
+	}
+	if isEnabled(conf.EnableRecovery) {
 		result = append(result, recovery.GinMiddleware())
 	}
 	if conf.Auth != nil {
@@ -85,7 +93,7 @@ func LoadGinMiddlewares(conf Config) []gin.HandlerFunc {
 		mgr := ratelimit.NewLimiterManager(conf.RateLimit)
 		result = append(result, ratelimit.GinMiddleware(mgr))
 	}
-	if conf.EnableMetrics != nil {
+	if isEnabled(conf.EnableMetrics) {
 		result = append(result, metrics.GinMiddleware())
 	}
 
@@ -94,10 +102,14 @@ func LoadGinMiddlewares(conf Config) []gin.HandlerFunc {
 
 // LoadFiberMiddlewares loads Fiber middlewares based on the provided configuration.
 func LoadFiberMiddlewares(conf Config) []func(*fiber.Ctx) error {
-	var result []func(*fiber.Ctx) error
-	result = append(result, logging.FiberMiddleware())
+	conf.SetDefaults()
 
-	if conf.EnableRecovery == nil || *conf.EnableRecovery {
+	var result []func(*fiber.Ctx) error
+
+	if isEnabled(conf.EnableLogging) {
+		result = append(result, logging.FiberMiddleware())
+	}
+	if isEnabled(conf.EnableRecovery) {
 		result = append(result, recovery.FiberMiddleware())
 	}
 	if conf.Auth != nil {
@@ -111,9 +123,34 @@ func LoadFiberMiddlewares(conf Config) []func(*fiber.Ctx) error {
 		mgr := ratelimit.NewLimiterManager(conf.RateLimit)
 		result = append(result, ratelimit.FiberMiddleware(mgr))
 	}
-	if conf.EnableMetrics != nil {
+	if isEnabled(conf.EnableMetrics) {
 		result = append(result, metrics.FiberMiddleware())
 	}
 
 	return result
+}
+
+// SetDefaults sets default values for the configuration.
+func (c *Config) SetDefaults() {
+	if c.EnableLogging == nil {
+		b := true
+		c.EnableLogging = &b
+	}
+	if c.EnableRecovery == nil {
+		b := true
+		c.EnableRecovery = &b
+	}
+	if c.EnableMetrics == nil {
+		b := false
+		c.EnableMetrics = &b
+	}
+	if c.TimeoutSeconds == nil {
+		d := 30
+		c.TimeoutSeconds = &d
+	}
+}
+
+// isEnabled returns true if the flag is nil or true.
+func isEnabled(flag *bool) bool {
+	return flag == nil || *flag
 }
