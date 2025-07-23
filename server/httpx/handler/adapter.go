@@ -8,8 +8,8 @@ import (
 	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 )
 
-// AsFiberHandler converts a list of UniversalHandlerFunc to a list of fiber.Handler.
-func AsFiberHandler(handlers ...UniversalHandlerFunc) []fiber.Handler {
+// AsFiberHandler converts a list of HTTPHandlerFunc to a list of fiber.Handler.
+func AsFiberHandler(handlers ...HTTPHandlerFunc) []fiber.Handler {
 	out := make([]fiber.Handler, len(handlers))
 	for i, h := range handlers {
 		handler := h
@@ -21,8 +21,8 @@ func AsFiberHandler(handlers ...UniversalHandlerFunc) []fiber.Handler {
 	return out
 }
 
-// AsGinHandler converts a list of UniversalHandlerFunc to a list of gin.HandlerFunc.
-func AsGinHandler(handlers ...UniversalHandlerFunc) []gin.HandlerFunc {
+// AsGinHandler converts a list of HTTPHandlerFunc to a list of gin.HandlerFunc.
+func AsGinHandler(handlers ...HTTPHandlerFunc) []gin.HandlerFunc {
 	out := make([]gin.HandlerFunc, len(handlers))
 	for i, h := range handlers {
 		handler := h
@@ -34,16 +34,16 @@ func AsGinHandler(handlers ...UniversalHandlerFunc) []gin.HandlerFunc {
 	return out
 }
 
-// FromHTTPHandlerFunc converts a HTTP handler function to a UniversalHandlerFunc.
-func FromHTTPHandlerFunc(h func(w http.ResponseWriter, r *http.Request)) UniversalHandlerFunc {
+// FromHTTPHandlerFunc converts a HTTP handler function to a HTTPHandlerFunc.
+func FromHTTPHandlerFunc(h func(w http.ResponseWriter, r *http.Request)) HTTPHandlerFunc {
 	return func(ctx unicontext.UniversalContext) error {
 		h(ctx.ResponseWriter(), ctx.Request())
 		return nil
 	}
 }
 
-// FromHTTPHandler converts a HTTP handler to a UniversalHandlerFunc.
-func FromHTTPHandler(h http.Handler) UniversalHandlerFunc {
+// FromHTTPHandler converts a HTTP handler to a HTTPHandlerFunc.
+func FromHTTPHandler(h http.Handler) HTTPHandlerFunc {
 	return func(ctx unicontext.UniversalContext) error {
 		h.ServeHTTP(ctx.ResponseWriter(), ctx.Request())
 		return nil

@@ -21,7 +21,7 @@ import (
 )
 
 // Helper function to test basic handler functionality.
-func testBasicHandlerFunctionality(t *testing.T, handler UniversalHandler) {
+func testBasicHandlerFunctionality(t *testing.T, handler HTTPHandler) {
 	// Add a test route
 	handler.Get("/test", func(ctx unicontext.UniversalContext) error {
 		return ctx.JSON(http.StatusOK, map[string]string{"message": "test"})
@@ -59,7 +59,7 @@ func testBasicHandlerFunctionality(t *testing.T, handler UniversalHandler) {
 }
 
 // Helper function to test router group functionality.
-func testRouterGroupFunctionality(t *testing.T, handler UniversalHandler) {
+func testRouterGroupFunctionality(t *testing.T, handler HTTPHandler) {
 	// Create a group
 	apiGroup := handler.Group("/api")
 	assert.NotNil(t, apiGroup)
@@ -82,7 +82,7 @@ func testRouterGroupFunctionality(t *testing.T, handler UniversalHandler) {
 }
 
 // Helper function to test router Use functionality.
-func testRouterUseFunctionality(t *testing.T, handler UniversalHandler) {
+func testRouterUseFunctionality(t *testing.T, handler HTTPHandler) {
 	middlewareCalled := false
 	middleware := func(ctx unicontext.UniversalContext) error {
 		middlewareCalled = true
@@ -114,9 +114,9 @@ func testRouterUseFunctionality(t *testing.T, handler UniversalHandler) {
 }
 
 // Helper function to test HTTP methods.
-func testHTTPMethods(t *testing.T, handler UniversalHandler) {
+func testHTTPMethods(t *testing.T, handler HTTPHandler) {
 	// Test all HTTP methods
-	methods := map[string]func(string, ...UniversalHandlerFunc) Router{
+	methods := map[string]func(string, ...HTTPHandlerFunc) Router{
 		"GET":     handler.Get,
 		"POST":    handler.Post,
 		"PUT":     handler.Put,

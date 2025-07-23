@@ -11,33 +11,28 @@ import (
 
 // HTTPServer is a server that provides a unified HTTP abstraction over Gin.
 type HTTPServer struct {
-	handler.UniversalHandler
-
+	handler.HTTPHandler
 	logger logger.Logger
 	mu     sync.Mutex
 }
 
 // NewHTTPServer creates a new HTTPServer.
-func NewHTTPServer(conf *serverconf.HTTPConfig) (*HTTPServer, error) {
-	if conf == nil {
-		return nil, handler.ErrEmptyHTTPConf
-	}
-
-	h, err := handler.NewHandler(conf)
+func NewHTTPServer(conf *serverconf.HTTPConfig, opts ...handler.ServerOption) (*HTTPServer, error) {
+	h, err := handler.NewHandler(conf, opts...)
 	if err != nil {
 		return nil, err
 	}
 
 	return &HTTPServer{
-		UniversalHandler: h,
-		logger:           logger.NewLogger(),
+		HTTPHandler: h,
+		logger:      logger.NewLogger(),
 	}, nil
 
 }
 
 // Start starts the HTTPServer.
 func (s *HTTPServer) Start() {
-	if err := s.UniversalHandler.Start(); err != nil {
+	if err := s.HTTPHandler.Start(); err != nil {
 		s.logger.Errorf("http server start failed: %v", err)
 	}
 
@@ -48,14 +43,14 @@ func (s *HTTPServer) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.UniversalHandler != nil {
-		_ = s.UniversalHandler.Stop()
+	if s.HTTPHandler != nil {
+		_ = s.HTTPHandler.Stop()
 	}
 }
 
 // Name returns the name of the HTTPServer.
 func (s *HTTPServer) Name() string {
-	return s.UniversalHandler.Name()
+	return s.HTTPHandler.Name()
 }
 
 // WithLogger sets the logger for the HTTPServer.

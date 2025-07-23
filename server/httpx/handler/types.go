@@ -19,11 +19,11 @@ const (
 	HTTPTimeoutDefault = 10
 )
 
-// UniversalHandlerFunc is the function signature for HTTP handlers.
-type UniversalHandlerFunc func(unicontext.UniversalContext) error
+// HTTPHandlerFunc is the function signature for HTTP handlers.
+type HTTPHandlerFunc func(unicontext.UniversalContext) error
 
-// UniversalHandler represents a unified HTTP server.
-type UniversalHandler interface {
+// HTTPHandler represents a unified HTTP server.
+type HTTPHandler interface {
 	RouterGroup
 
 	Start() error
@@ -35,22 +35,22 @@ type UniversalHandler interface {
 // RouterGroup represents a group of routes.
 type RouterGroup interface {
 	Router
-	Group(relativePath string, handlers ...UniversalHandlerFunc) RouterGroup
+	Group(relativePath string, handlers ...HTTPHandlerFunc) RouterGroup
 }
 
 // Router represents a router.
 type Router interface {
-	Use(...UniversalHandlerFunc) Router
-	Handle(string, string, ...UniversalHandlerFunc) Router
-	Any(string, ...UniversalHandlerFunc) Router
-	Get(string, ...UniversalHandlerFunc) Router
-	Post(string, ...UniversalHandlerFunc) Router
-	Delete(string, ...UniversalHandlerFunc) Router
-	Patch(string, ...UniversalHandlerFunc) Router
-	Put(string, ...UniversalHandlerFunc) Router
-	Options(string, ...UniversalHandlerFunc) Router
-	Head(string, ...UniversalHandlerFunc) Router
-	Match(methods []string, path string, handlers ...UniversalHandlerFunc) Router
+	Use(...HTTPHandlerFunc) Router
+	Handle(string, string, ...HTTPHandlerFunc) Router
+	Any(string, ...HTTPHandlerFunc) Router
+	Get(string, ...HTTPHandlerFunc) Router
+	Post(string, ...HTTPHandlerFunc) Router
+	Delete(string, ...HTTPHandlerFunc) Router
+	Patch(string, ...HTTPHandlerFunc) Router
+	Put(string, ...HTTPHandlerFunc) Router
+	Options(string, ...HTTPHandlerFunc) Router
+	Head(string, ...HTTPHandlerFunc) Router
+	Match(methods []string, path string, handlers ...HTTPHandlerFunc) Router
 }
 
 // toDuration converts a timeout in seconds to a time.Duration.

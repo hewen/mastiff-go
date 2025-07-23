@@ -42,7 +42,7 @@ func (g *GinHandler) Name() string {
 }
 
 // Use adds middleware to the router.
-func (g *GinHandler) Use(handler ...UniversalHandlerFunc) Router {
+func (g *GinHandler) Use(handler ...HTTPHandlerFunc) Router {
 	return newGinRouter(g.ginEngine.Use(AsGinHandler(handler...)...))
 }
 
@@ -64,7 +64,7 @@ func (g *GinHandler) Test(req *http.Request, msTimeout ...int) (*http.Response, 
 }
 
 // NewGinHandler creates a new GinHandler.
-func NewGinHandler(conf *serverconf.HTTPConfig) (UniversalHandler, error) {
+func NewGinHandler(conf *serverconf.HTTPConfig) (HTTPHandler, error) {
 	if conf == nil {
 		return nil, ErrEmptyHTTPConf
 	}
@@ -94,7 +94,7 @@ type GinRouterGroup struct {
 }
 
 // Group creates a new router group with the given relative path and handlers.
-func (group *GinRouterGroup) Group(relativePath string, handlers ...UniversalHandlerFunc) RouterGroup {
+func (group *GinRouterGroup) Group(relativePath string, handlers ...HTTPHandlerFunc) RouterGroup {
 	return newGinRouterGroup(group.r.Group(relativePath, AsGinHandler(handlers...)...))
 }
 
@@ -104,67 +104,67 @@ type GinRouter struct {
 }
 
 // Use adds middleware to the router.
-func (g *GinRouter) Use(handlers ...UniversalHandlerFunc) Router {
+func (g *GinRouter) Use(handlers ...HTTPHandlerFunc) Router {
 	g.r.Use(AsGinHandler(handlers...)...)
 	return g
 }
 
 // Handle adds a route with the given method and path.
-func (g *GinRouter) Handle(method, path string, handlers ...UniversalHandlerFunc) Router {
+func (g *GinRouter) Handle(method, path string, handlers ...HTTPHandlerFunc) Router {
 	g.r.Handle(method, path, AsGinHandler(handlers...)...)
 	return g
 }
 
 // Any adds a route that matches all HTTP methods.
-func (g *GinRouter) Any(path string, handlers ...UniversalHandlerFunc) Router {
+func (g *GinRouter) Any(path string, handlers ...HTTPHandlerFunc) Router {
 	g.r.Any(path, AsGinHandler(handlers...)...)
 	return g
 }
 
 // Get adds a route that matches GET requests.
-func (g *GinRouter) Get(path string, handlers ...UniversalHandlerFunc) Router {
+func (g *GinRouter) Get(path string, handlers ...HTTPHandlerFunc) Router {
 	g.r.GET(path, AsGinHandler(handlers...)...)
 	return g
 }
 
 // Post adds a route that matches POST requests.
-func (g *GinRouter) Post(path string, handlers ...UniversalHandlerFunc) Router {
+func (g *GinRouter) Post(path string, handlers ...HTTPHandlerFunc) Router {
 	g.r.POST(path, AsGinHandler(handlers...)...)
 	return g
 }
 
 // Delete adds a route that matches DELETE requests.
-func (g *GinRouter) Delete(path string, handlers ...UniversalHandlerFunc) Router {
+func (g *GinRouter) Delete(path string, handlers ...HTTPHandlerFunc) Router {
 	g.r.DELETE(path, AsGinHandler(handlers...)...)
 	return g
 }
 
 // Patch adds a route that matches PATCH requests.
-func (g *GinRouter) Patch(path string, handlers ...UniversalHandlerFunc) Router {
+func (g *GinRouter) Patch(path string, handlers ...HTTPHandlerFunc) Router {
 	g.r.PATCH(path, AsGinHandler(handlers...)...)
 	return g
 }
 
 // Put adds a route that matches PUT requests.
-func (g *GinRouter) Put(path string, handlers ...UniversalHandlerFunc) Router {
+func (g *GinRouter) Put(path string, handlers ...HTTPHandlerFunc) Router {
 	g.r.PUT(path, AsGinHandler(handlers...)...)
 	return g
 }
 
 // Options adds a route that matches OPTIONS requests.
-func (g *GinRouter) Options(path string, handlers ...UniversalHandlerFunc) Router {
+func (g *GinRouter) Options(path string, handlers ...HTTPHandlerFunc) Router {
 	g.r.OPTIONS(path, AsGinHandler(handlers...)...)
 	return g
 }
 
 // Head adds a route that matches HEAD requests.
-func (g *GinRouter) Head(path string, handlers ...UniversalHandlerFunc) Router {
+func (g *GinRouter) Head(path string, handlers ...HTTPHandlerFunc) Router {
 	g.r.HEAD(path, AsGinHandler(handlers...)...)
 	return g
 }
 
 // Match adds a route that matches the given HTTP methods.
-func (g *GinRouter) Match(methods []string, path string, handlers ...UniversalHandlerFunc) Router {
+func (g *GinRouter) Match(methods []string, path string, handlers ...HTTPHandlerFunc) Router {
 	g.r.Match(methods, path, AsGinHandler(handlers...)...)
 	return g
 }

@@ -38,7 +38,7 @@ func (f *FiberHandler) Test(req *http.Request, msTimeout ...int) (*http.Response
 }
 
 // Use adds middleware to the router.
-func (f *FiberHandler) Use(handlers ...UniversalHandlerFunc) Router {
+func (f *FiberHandler) Use(handlers ...HTTPHandlerFunc) Router {
 	args := make([]any, len(handlers))
 	h := AsFiberHandler(handlers...)
 	for i := range h {
@@ -69,7 +69,7 @@ func getFiberConfig(mode string) fiber.Config {
 }
 
 // NewFiberHandler creates a new FiberHandler.
-func NewFiberHandler(conf *serverconf.HTTPConfig) (UniversalHandler, error) {
+func NewFiberHandler(conf *serverconf.HTTPConfig) (HTTPHandler, error) {
 	if conf == nil {
 		return nil, ErrEmptyHTTPConf
 	}
@@ -96,7 +96,7 @@ type FiberRouterGroup struct {
 }
 
 // Group creates a new router group with the given relative path and handlers.
-func (group *FiberRouterGroup) Group(relativePath string, handlers ...UniversalHandlerFunc) RouterGroup {
+func (group *FiberRouterGroup) Group(relativePath string, handlers ...HTTPHandlerFunc) RouterGroup {
 	return newFiberRouterGroup(group.r.Group(relativePath, AsFiberHandler(handlers...)...))
 }
 
@@ -107,7 +107,7 @@ type FiberRouter struct {
 }
 
 // Use adds middleware to the router.
-func (f *FiberRouter) Use(handlers ...UniversalHandlerFunc) Router {
+func (f *FiberRouter) Use(handlers ...HTTPHandlerFunc) Router {
 	args := make([]any, len(handlers))
 	h := AsFiberHandler(handlers...)
 	for i := range h {
@@ -117,61 +117,61 @@ func (f *FiberRouter) Use(handlers ...UniversalHandlerFunc) Router {
 }
 
 // Handle adds a route with the given method and path.
-func (f *FiberRouter) Handle(method, path string, handlers ...UniversalHandlerFunc) Router {
+func (f *FiberRouter) Handle(method, path string, handlers ...HTTPHandlerFunc) Router {
 	f.r.Add(method, path, AsFiberHandler(handlers...)...)
 	return f
 }
 
 // Any adds a route that matches all HTTP methods.
-func (f *FiberRouter) Any(path string, handlers ...UniversalHandlerFunc) Router {
+func (f *FiberRouter) Any(path string, handlers ...HTTPHandlerFunc) Router {
 	f.r.All(path, AsFiberHandler(handlers...)...)
 	return f
 }
 
 // Get adds a route that matches GET requests.
-func (f *FiberRouter) Get(path string, handlers ...UniversalHandlerFunc) Router {
+func (f *FiberRouter) Get(path string, handlers ...HTTPHandlerFunc) Router {
 	f.r.Get(path, AsFiberHandler(handlers...)...)
 	return f
 }
 
 // Post adds a route that matches POST requests.
-func (f *FiberRouter) Post(path string, handlers ...UniversalHandlerFunc) Router {
+func (f *FiberRouter) Post(path string, handlers ...HTTPHandlerFunc) Router {
 	f.r.Post(path, AsFiberHandler(handlers...)...)
 	return f
 }
 
 // Delete adds a route that matches DELETE requests.
-func (f *FiberRouter) Delete(path string, handlers ...UniversalHandlerFunc) Router {
+func (f *FiberRouter) Delete(path string, handlers ...HTTPHandlerFunc) Router {
 	f.r.Delete(path, AsFiberHandler(handlers...)...)
 	return f
 }
 
 // Patch adds a route that matches PATCH requests.
-func (f *FiberRouter) Patch(path string, handlers ...UniversalHandlerFunc) Router {
+func (f *FiberRouter) Patch(path string, handlers ...HTTPHandlerFunc) Router {
 	f.r.Patch(path, AsFiberHandler(handlers...)...)
 	return f
 }
 
 // Put adds a route that matches PUT requests.
-func (f *FiberRouter) Put(path string, handlers ...UniversalHandlerFunc) Router {
+func (f *FiberRouter) Put(path string, handlers ...HTTPHandlerFunc) Router {
 	f.r.Put(path, AsFiberHandler(handlers...)...)
 	return f
 }
 
 // Options adds a route that matches OPTIONS requests.
-func (f *FiberRouter) Options(path string, handlers ...UniversalHandlerFunc) Router {
+func (f *FiberRouter) Options(path string, handlers ...HTTPHandlerFunc) Router {
 	f.r.Options(path, AsFiberHandler(handlers...)...)
 	return f
 }
 
 // Head adds a route that matches HEAD requests.
-func (f *FiberRouter) Head(path string, handlers ...UniversalHandlerFunc) Router {
+func (f *FiberRouter) Head(path string, handlers ...HTTPHandlerFunc) Router {
 	f.r.Head(path, AsFiberHandler(handlers...)...)
 	return f
 }
 
 // Match adds a route that matches the given HTTP methods.
-func (f *FiberRouter) Match(methods []string, path string, handlers ...UniversalHandlerFunc) Router {
+func (f *FiberRouter) Match(methods []string, path string, handlers ...HTTPHandlerFunc) Router {
 	for _, method := range methods {
 		f.r.Add(method, path, AsFiberHandler(handlers...)...)
 	}

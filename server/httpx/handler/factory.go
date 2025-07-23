@@ -9,12 +9,12 @@ import (
 )
 
 // NewHandler creates a new HTTP handler.
-func NewHandler(conf *serverconf.HTTPConfig, opts ...ServerOption) (UniversalHandler, error) {
+func NewHandler(conf *serverconf.HTTPConfig, opts ...ServerOption) (HTTPHandler, error) {
 	if conf == nil {
 		return nil, ErrEmptyHTTPConf
 	}
 
-	var h UniversalHandler
+	var h HTTPHandler
 	var err error
 	switch conf.FrameworkType {
 	case serverconf.FrameworkGin:
@@ -36,18 +36,18 @@ func NewHandler(conf *serverconf.HTTPConfig, opts ...ServerOption) (UniversalHan
 }
 
 // ServerOption is a function that configures a HTTP server.
-type ServerOption func(UniversalHandler)
+type ServerOption func(HTTPHandler)
 
 // WithMetrics adds a metrics handler to the server.
 func WithMetrics() ServerOption {
-	return func(h UniversalHandler) {
+	return func(h HTTPHandler) {
 		h.Get("/metrics", FromHTTPHandler(promhttp.Handler()))
 	}
 }
 
 // WithPprof adds a pprof handler to the server.
 func WithPprof() ServerOption {
-	return func(h UniversalHandler) {
+	return func(h HTTPHandler) {
 		h.Get("/debug/pprof/", FromHTTPHandlerFunc(pprof.Index))
 		h.Get("/debug/pprof/cmdline", FromHTTPHandlerFunc(pprof.Cmdline))
 		h.Get("/debug/pprof/profile", FromHTTPHandlerFunc(pprof.Profile))

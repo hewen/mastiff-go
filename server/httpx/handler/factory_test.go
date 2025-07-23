@@ -15,7 +15,7 @@ import (
 )
 
 // Helper function to test pprof endpoints for any handler.
-func testPprofEndpoints(t *testing.T, handler UniversalHandler) {
+func testPprofEndpoints(t *testing.T, handler HTTPHandler) {
 	// Test pprof endpoints
 	pprofEndpoints := []string{
 		"/debug/pprof/",
@@ -51,7 +51,7 @@ func testPprofEndpoints(t *testing.T, handler UniversalHandler) {
 }
 
 // Helper function to test metrics and pprof together.
-func testMetricsAndPprof(t *testing.T, handler UniversalHandler) {
+func testMetricsAndPprof(t *testing.T, handler HTTPHandler) {
 	// Test metrics endpoint
 	req := httptest.NewRequest("GET", "/metrics", nil)
 	resp, err := handler.Test(req)
@@ -125,7 +125,7 @@ func TestNewHandler(t *testing.T) {
 		}
 
 		optionCalled := false
-		testOption := func(h UniversalHandler) {
+		testOption := func(h HTTPHandler) {
 			optionCalled = true
 			assert.NotNil(t, h)
 		}
@@ -144,10 +144,10 @@ func TestNewHandler(t *testing.T) {
 		}
 
 		var callOrder []int
-		option1 := func(h UniversalHandler) {
+		option1 := func(h HTTPHandler) {
 			callOrder = append(callOrder, 1)
 		}
-		option2 := func(h UniversalHandler) {
+		option2 := func(h HTTPHandler) {
 			callOrder = append(callOrder, 2)
 		}
 
@@ -286,7 +286,7 @@ func TestServerOptionIntegration(t *testing.T) {
 			FrameworkType: serverconf.FrameworkGin,
 		}
 
-		customOption := func(h UniversalHandler) {
+		customOption := func(h HTTPHandler) {
 			h.Get("/custom", func(ctx unicontext.UniversalContext) error {
 				return ctx.JSON(200, map[string]string{"message": "custom"})
 			})
