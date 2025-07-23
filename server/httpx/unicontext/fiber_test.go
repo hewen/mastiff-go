@@ -363,15 +363,16 @@ func TestFiberContext_Redirect(t *testing.T) {
 func TestFiberContext_File(t *testing.T) {
 	// Create a temporary file for testing
 	content := "test file content"
-	tmpFile := t.TempDir() + "/test.txt"
-	err := os.WriteFile(tmpFile, []byte(content), 0600)
+	tmpFile, err := os.CreateTemp(os.TempDir(), "test.txt")
+	require.NoError(t, err)
+	err = os.WriteFile(tmpFile.Name(), []byte(content), 0600)
 	require.NoError(t, err)
 
 	app := fiber.New()
 
 	app.Get("/test", func(c *fiber.Ctx) error {
 		fiberCtx := &FiberContext{Ctx: c}
-		return fiberCtx.File(tmpFile)
+		return fiberCtx.File(tmpFile.Name())
 	})
 
 	req := httptest.NewRequest("GET", "/test", nil)
@@ -388,15 +389,16 @@ func TestFiberContext_File(t *testing.T) {
 func TestFiberContext_Attachment(t *testing.T) {
 	// Create a temporary file for testing
 	content := "attachment content"
-	tmpFile := t.TempDir() + "/attachment.txt"
-	err := os.WriteFile(tmpFile, []byte(content), 0600)
+	tmpFile, err := os.CreateTemp(os.TempDir(), "attachment.txt")
+	require.NoError(t, err)
+	err = os.WriteFile(tmpFile.Name(), []byte(content), 0600)
 	require.NoError(t, err)
 
 	app := fiber.New()
 
 	app.Get("/test", func(c *fiber.Ctx) error {
 		fiberCtx := &FiberContext{Ctx: c}
-		return fiberCtx.Attachment(tmpFile, "download.txt")
+		return fiberCtx.Attachment(tmpFile.Name(), "download.txt")
 	})
 
 	req := httptest.NewRequest("GET", "/test", nil)
