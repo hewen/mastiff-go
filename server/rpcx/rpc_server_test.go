@@ -2,9 +2,12 @@ package rpcx
 
 import (
 	"fmt"
+	"net/http"
 	"testing"
 
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
+	"github.com/hewen/mastiff-go/server/rpcx/handler"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -22,38 +25,32 @@ func (*MockRPCHandler) Name() string {
 	return "mock rpc"
 }
 
-type MockRPCHandlerBuilder struct {
-}
-
-func (*MockRPCHandlerBuilder) BuildRPC() (RPCHandler, error) {
-	return &MockRPCHandler{}, nil
-}
-
-type MockRPCHandlerBuilderError struct {
-}
-
-func (*MockRPCHandlerBuilderError) BuildRPC() (RPCHandler, error) {
-	return &MockRPCHandler{}, fmt.Errorf("error")
-}
-
 func TestRPCServer(t *testing.T) {
-	builder := &MockRPCHandlerBuilder{}
-
-	s, err := NewRPCServer(builder)
+	s, err := NewRPCServer(&serverconf.RPCConfig{
+		FrameworkType: serverconf.FrameworkConnect,
+	}, handler.RPCBuildParams{
+		ConnectRegisterMux: func(*http.ServeMux) {},
+	})
 	assert.NotNil(t, s)
 	assert.Nil(t, err)
-
-	s.WithLogger(logger.NewLogger())
-	_ = s.Name()
-	s.Start()
-	s.Stop()
 }
 
 func TestRPCServerError(t *testing.T) {
-	builder := &MockRPCHandlerBuilderError{}
-
-	s, err := NewRPCServer(builder)
+	s, err := NewRPCServer(nil, handler.RPCBuildParams{
+		ConnectRegisterMux: func(*http.ServeMux) {},
+	})
 	assert.Nil(t, s)
 	assert.NotNil(t, err)
+}
 
+func TestRPCServerStart(_ *testing.T) {
+	s := &RPCServer{
+		handler: &MockRPCHandler{},
+		logger:  logger.NewLogger(),
+	}
+
+	s.Start()
+	s.Stop()
+	s.WithLogger(logger.NewLogger())
+	s.Name()
 }

@@ -1,4 +1,4 @@
-package rpcx
+package handler
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 
 	"github.com/hewen/mastiff-go/config/middlewareconf"
 	"github.com/hewen/mastiff-go/config/serverconf"
-	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -25,21 +24,15 @@ func TestConnectServer(t *testing.T) {
 		Reflection: true,
 	}
 
-	builder := &ConnectHandlerBuilder{
-		Conf:        c,
-		RegisterMux: func(_ *http.ServeMux) {},
-	}
-
-	s, err := NewRPCServer(builder)
+	s, err := NewConnectHandler(c, func(_ *http.ServeMux) {})
 	assert.NotNil(t, s)
 	assert.Nil(t, err)
 
-	s.WithLogger(logger.NewLogger())
 	_ = s.Name()
 
 	go func() {
-		defer s.Stop()
-		s.Start()
+		defer func() { _ = s.Stop() }()
+		_ = s.Start()
 	}()
 }
 
@@ -59,25 +52,20 @@ func TestConnectHandler_StartError(t *testing.T) {
 func TestConnectServerStop(t *testing.T) {
 	c := &serverconf.RPCConfig{}
 
-	builder := &ConnectHandlerBuilder{
-		Conf:        c,
-		RegisterMux: func(_ *http.ServeMux) {},
-	}
-
-	s, err := NewRPCServer(builder)
+	s, err := NewConnectHandler(c, func(_ *http.ServeMux) {})
 	assert.Nil(t, err)
 	assert.NotNil(t, s)
 
-	s.Stop()
+	err = s.Stop()
+	assert.Nil(t, err)
 }
 
 func TestConnectServerEmptyConfig(t *testing.T) {
-	builder := &ConnectHandlerBuilder{
-		Conf:        nil,
-		RegisterMux: func(_ *http.ServeMux) {},
-	}
+	_, err := NewConnectHandler(
+		nil,
+		func(_ *http.ServeMux) {},
+	)
 
-	_, err := NewRPCServer(builder)
 	assert.EqualValues(t, err, ErrEmptyRPCConf)
 }
 
@@ -86,11 +74,10 @@ func TestNewConnectServerError(t *testing.T) {
 		Addr: "error",
 	}
 
-	builder := &ConnectHandlerBuilder{
-		Conf:        c,
-		RegisterMux: func(_ *http.ServeMux) {},
-	}
+	_, err := NewConnectHandler(
+		c,
+		func(_ *http.ServeMux) {},
+	)
 
-	_, err := NewRPCServer(builder)
 	assert.EqualValues(t, "listen tcp: address error: missing port in address", err.Error())
 }

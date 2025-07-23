@@ -2,6 +2,7 @@
 package handler
 
 import (
+	"fmt"
 	"net/http/pprof"
 
 	"github.com/hewen/mastiff-go/config/serverconf"
@@ -22,7 +23,7 @@ func NewHandler(conf *serverconf.HTTPConfig, opts ...ServerOption) (HTTPHandler,
 	case serverconf.FrameworkFiber:
 		h, err = NewFiberHandler(conf)
 	default:
-		panic("unknown framework type")
+		return nil, fmt.Errorf("unsupported http type: %s", conf.FrameworkType)
 	}
 	if err != nil {
 		return nil, err

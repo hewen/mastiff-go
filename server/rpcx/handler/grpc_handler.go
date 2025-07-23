@@ -1,5 +1,5 @@
-// Package rpcx provides a unified RPC abstraction over gRPC and Connect.
-package rpcx
+// Package handler provides a unified RPC abstraction over gRPC and Connect.
+package handler
 
 import (
 	"fmt"
@@ -19,34 +19,31 @@ type GrpcHandler struct {
 	addr string
 }
 
-// GrpcHandlerBuilder builds a gRPC handler.
-type GrpcHandlerBuilder struct {
-	Conf              *serverconf.RPCConfig
-	RegisterFunc      func(*grpc.Server)
-	ExtraInterceptors []grpc.UnaryServerInterceptor
-}
-
-// BuildRPC builds a gRPC handler.
-func (b *GrpcHandlerBuilder) BuildRPC() (RPCHandler, error) {
-	if b.Conf == nil {
+// NewGrpcHandler builds a gRPC handler.
+func NewGrpcHandler(
+	conf *serverconf.RPCConfig,
+	registerFunc func(*grpc.Server),
+	extraInterceptors ...grpc.UnaryServerInterceptor,
+) (RPCHandler, error) {
+	if conf == nil {
 		return nil, ErrEmptyRPCConf
 	}
 
-	interceptors := middleware.LoadGRPCMiddlewares(b.Conf.Middlewares)
-	interceptors = append(interceptors, b.ExtraInterceptors...)
+	interceptors := middleware.LoadGRPCMiddlewares(conf.Middlewares)
+	interceptors = append(interceptors, extraInterceptors...)
 
 	opts := []grpc.ServerOption{
 		grpc.UnaryInterceptor(grpc_middleware.ChainUnaryServer(interceptors...)),
 	}
 
 	s := grpc.NewServer(opts...)
-	b.RegisterFunc(s)
+	registerFunc(s)
 
-	if b.Conf.Reflection {
+	if conf.Reflection {
 		reflection.Register(s)
 	}
 
-	ln, err := net.Listen("tcp", b.Conf.Addr)
+	ln, err := net.Listen("tcp", conf.Addr)
 	if err != nil {
 		return nil, err
 	}
@@ -54,7 +51,7 @@ func (b *GrpcHandlerBuilder) BuildRPC() (RPCHandler, error) {
 	return &GrpcHandler{
 		s:    s,
 		ln:   ln,
-		addr: b.Conf.Addr,
+		addr: conf.Addr,
 	}, nil
 }
 

@@ -1,5 +1,5 @@
-// Package rpcx provides a unified RPC abstraction over gRPC and Connect.
-package rpcx
+// Package handler provides a unified RPC abstraction over gRPC and Connect.
+package handler
 
 import (
 	"fmt"
@@ -19,38 +19,32 @@ type ConnectHandler struct {
 	addr   string
 }
 
-// ConnectHandlerBuilder builds a Connect handler.
-type ConnectHandlerBuilder struct {
-	RegisterMux func(mux *http.ServeMux)
-	Conf        *serverconf.RPCConfig
-}
-
-// BuildRPC builds a Connect handler.
-func (b *ConnectHandlerBuilder) BuildRPC() (RPCHandler, error) {
-	if b.Conf == nil {
+// NewConnectHandler builds a Connect handler.
+func NewConnectHandler(conf *serverconf.RPCConfig, registerMux func(mux *http.ServeMux)) (RPCHandler, error) {
+	if conf == nil {
 		return nil, ErrEmptyRPCConf
 	}
-	if b.RegisterMux == nil {
+	if registerMux == nil {
 		return nil, fmt.Errorf("connect: register mux is nil")
 	}
 
 	mux := http.NewServeMux()
-	b.RegisterMux(mux)
+	registerMux(mux)
 
 	handler := h2c.NewHandler(mux, &http2.Server{})
 
-	if b.Conf.Timeout == 0 {
-		b.Conf.Timeout = RPCTimeoutDefault
+	if conf.Timeout == 0 {
+		conf.Timeout = RPCTimeoutDefault
 	}
 
 	srv := http.Server{
-		Addr:         b.Conf.Addr,
+		Addr:         conf.Addr,
 		Handler:      handler,
-		ReadTimeout:  time.Duration(b.Conf.Timeout) * time.Second,
-		WriteTimeout: time.Duration(b.Conf.Timeout) * time.Second,
+		ReadTimeout:  time.Duration(conf.Timeout) * time.Second,
+		WriteTimeout: time.Duration(conf.Timeout) * time.Second,
 	}
 
-	ln, err := net.Listen("tcp", b.Conf.Addr)
+	ln, err := net.Listen("tcp", conf.Addr)
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +52,7 @@ func (b *ConnectHandlerBuilder) BuildRPC() (RPCHandler, error) {
 	return &ConnectHandler{
 		server: &srv,
 		ln:     ln,
-		addr:   b.Conf.Addr,
+		addr:   conf.Addr,
 	}, nil
 }
 

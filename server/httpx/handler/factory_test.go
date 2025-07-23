@@ -112,9 +112,8 @@ func TestNewHandler(t *testing.T) {
 			FrameworkType: "unknown",
 		}
 
-		assert.Panics(t, func() {
-			NewHandler(conf)
-		})
+		_, err := NewHandler(conf)
+		assert.Error(t, err)
 	})
 
 	t.Run("with server options", func(t *testing.T) {

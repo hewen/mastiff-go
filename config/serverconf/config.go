@@ -37,6 +37,8 @@ type (
 	RPCConfig struct {
 		// Middlewares represents the configuration for middlewares.
 		Middlewares middlewareconf.Config
+		// FrameworkType either "gin", "fiber".
+		FrameworkType FrameworkType
 		// Addr represents the gRPC server address.
 		Addr string
 		// Timeout represents the timeout for gRPC requests in milliseconds.
@@ -61,4 +63,9 @@ const (
 	FrameworkGin FrameworkType = "gin"
 	// FrameworkFiber represents the type of framework used for the HTTP server, which is Fiber.
 	FrameworkFiber FrameworkType = "fiber"
+
+	// FrameworkGrpc represents the type of framework used for the rpc server, which is gRPC.
+	FrameworkGrpc FrameworkType = "grpc"
+	// FrameworkConnect represents the type of framework used for the rpc server, which is connect.
+	FrameworkConnect FrameworkType = "connect"
 )

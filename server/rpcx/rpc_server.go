@@ -2,25 +2,23 @@
 package rpcx
 
 import (
-	"fmt"
 	"sync"
 
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
+	"github.com/hewen/mastiff-go/server/rpcx/handler"
 )
-
-// ErrEmptyRPCConf is the error returned when the RPC config is empty.
-var ErrEmptyRPCConf = fmt.Errorf("empty rpc config")
 
 // RPCServer is a server that provides a unified RPC abstraction over gRPC and Connect.
 type RPCServer struct {
-	handler RPCHandler
+	handler handler.RPCHandler
 	logger  logger.Logger
 	mu      sync.Mutex
 }
 
 // NewRPCServer creates a new RPCServer.
-func NewRPCServer(builder RPCHandlerBuilder) (*RPCServer, error) {
-	h, err := builder.BuildRPC()
+func NewRPCServer(conf *serverconf.RPCConfig, params handler.RPCBuildParams) (*RPCServer, error) {
+	h, err := handler.NewHandler(conf, params)
 	if err != nil {
 		return nil, err
 	}
