@@ -14,12 +14,15 @@ require (
 	github.com/gofiber/adaptor/v2 v2.2.1
 	github.com/gofiber/fiber/v2 v2.52.8
 	github.com/golang-jwt/jwt/v5 v5.2.2
+	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1
 	github.com/jmoiron/sqlx v1.4.0
+	github.com/klauspost/compress v1.18.0
 	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/miekg/dns v1.0.14
 	github.com/panjf2000/ants/v2 v2.11.3
+	github.com/pierrec/lz4/v4 v4.1.22
 	github.com/prometheus/client_golang v1.22.0
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.34.0
@@ -62,7 +65,6 @@ require (
 	github.com/hashicorp/golang-lru v0.5.4 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
-	github.com/klauspost/compress v1.18.0 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.10 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect
