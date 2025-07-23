@@ -340,6 +340,7 @@ func NewOutgoingContextWithIncomingContext(ctx context.Context) context.Context 
 	}
 	md := metadata.Pairs(string(contextkeys.LoggerTraceIDKey), traceID)
 	ctx = metadata.NewOutgoingContext(ctx, md)
+
 	return contextkeys.SetTraceID(ctx, traceID)
 }
 

@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 )
 
 const (
@@ -115,6 +116,12 @@ func ContextFrom(v any) context.Context {
 	// NOTE: Order matters in type switch — match *gin.Context and *fiber.Ctx
 	// before context.Context to avoid premature capture.
 	switch c := v.(type) {
+	case unicontext.UniversalContext:
+		if val, ok := c.Get(ContextKey); ok && val != nil {
+			if ctx, ok := val.(context.Context); ok {
+				return ctx
+			}
+		}
 	case *gin.Context:
 		if req := c.Request; req != nil {
 			return req.Context()
@@ -135,6 +142,8 @@ func ContextFrom(v any) context.Context {
 // InjectContext sets the updated context.Context back into the carrier (gin/fiber).
 func InjectContext(ctx context.Context, carrier any) {
 	switch c := carrier.(type) {
+	case unicontext.UniversalContext:
+		c.Set(ContextKey, ctx)
 	case *gin.Context:
 		c.Request = c.Request.WithContext(ctx)
 	case *fiber.Ctx:

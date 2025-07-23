@@ -9,6 +9,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/gofiber/fiber/v2"
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"
 )
@@ -120,6 +121,22 @@ func TestContextFrom_FiberCtx(t *testing.T) {
 	assert.Equal(t, "abcde", traceID)
 }
 
+func TestContextFrom_Unicontext(t *testing.T) {
+	testCtx := context.WithValue(context.Background(), LoggerTraceIDKey, "abcde")
+
+	app := fiber.New()
+	ctx := &unicontext.FiberContext{
+		Ctx: app.AcquireCtx(&fasthttp.RequestCtx{}),
+	}
+	ctx.Set(ContextKey, testCtx)
+
+	got := ContextFrom(ctx)
+	traceID, ok := GetTraceID(got)
+
+	assert.True(t, ok)
+	assert.Equal(t, "abcde", traceID)
+}
+
 func TestContextFrom_Context(t *testing.T) {
 	ctx := context.WithValue(context.Background(), LoggerTraceIDKey, "xyz")
 
@@ -160,6 +177,28 @@ func TestInjectContext_Fiber(t *testing.T) {
 
 	val := c.Locals(ContextKey)
 	assert.NotNil(t, val)
+
+	retrieved, ok := val.(context.Context)
+	assert.True(t, ok)
+
+	traceID, found := GetTraceID(retrieved)
+	assert.True(t, found)
+	assert.Equal(t, "fiber-trace", traceID)
+}
+
+func TestInjectContext_Unicontext(t *testing.T) {
+	app := fiber.New()
+	ctx := context.WithValue(context.Background(), LoggerTraceIDKey, "fiber-trace")
+
+	c := &unicontext.FiberContext{
+		Ctx: app.AcquireCtx(&fasthttp.RequestCtx{}),
+	}
+
+	InjectContext(ctx, c)
+
+	val, ok := c.Get(ContextKey)
+	assert.NotNil(t, val)
+	assert.True(t, ok)
 
 	retrieved, ok := val.(context.Context)
 	assert.True(t, ok)

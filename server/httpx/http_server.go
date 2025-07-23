@@ -3,34 +3,41 @@ package httpx
 
 import (
 	"sync"
-	"time"
 
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
+	"github.com/hewen/mastiff-go/server/httpx/handler"
 )
 
 // HTTPServer is a server that provides a unified HTTP abstraction over Gin.
 type HTTPServer struct {
-	handler HTTPHandler
-	logger  logger.Logger
-	mu      sync.Mutex
+	handler.UniversalHandler
+
+	logger logger.Logger
+	mu     sync.Mutex
 }
 
 // NewHTTPServer creates a new HTTPServer.
-func NewHTTPServer(builder HTTPHandlerBuilder) (*HTTPServer, error) {
-	h, err := builder.BuildHandler()
+func NewHTTPServer(conf *serverconf.HTTPConfig) (*HTTPServer, error) {
+	if conf == nil {
+		return nil, handler.ErrEmptyHTTPConf
+	}
+
+	h, err := handler.NewHandler(conf)
 	if err != nil {
 		return nil, err
 	}
 
 	return &HTTPServer{
-		handler: h,
-		logger:  logger.NewLogger(),
+		UniversalHandler: h,
+		logger:           logger.NewLogger(),
 	}, nil
+
 }
 
 // Start starts the HTTPServer.
 func (s *HTTPServer) Start() {
-	if err := s.handler.Start(); err != nil {
+	if err := s.UniversalHandler.Start(); err != nil {
 		s.logger.Errorf("http server start failed: %v", err)
 	}
 
@@ -41,14 +48,14 @@ func (s *HTTPServer) Stop() {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 
-	if s.handler != nil {
-		_ = s.handler.Stop()
+	if s.UniversalHandler != nil {
+		_ = s.UniversalHandler.Stop()
 	}
 }
 
 // Name returns the name of the HTTPServer.
 func (s *HTTPServer) Name() string {
-	return s.handler.Name()
+	return s.UniversalHandler.Name()
 }
 
 // WithLogger sets the logger for the HTTPServer.
@@ -56,11 +63,4 @@ func (s *HTTPServer) WithLogger(l logger.Logger) {
 	if l != nil {
 		s.logger = l
 	}
-}
-
-func toDuration(sec int64) time.Duration {
-	if sec == 0 {
-		return HTTPTimeoutDefault * time.Second
-	}
-	return time.Duration(sec) * time.Second
 }

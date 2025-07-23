@@ -8,7 +8,6 @@ require (
 	github.com/fsnotify/fsnotify v1.8.0
 	github.com/gchaincl/sqlhooks v1.3.0
 	github.com/ggwhite/go-masker/v2 v2.1.0
-	github.com/gin-contrib/pprof v1.5.3
 	github.com/gin-gonic/gin v1.10.1
 	github.com/go-redis/redis/v7 v7.4.1
 	github.com/go-sql-driver/mysql v1.9.3
@@ -28,7 +27,6 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.20.1
 	github.com/stretchr/testify v1.10.0
-	github.com/tomasen/realip v0.0.0-20180522021738-f0c99a92ddce
 	github.com/valyala/fasthttp v1.51.0
 	go.uber.org/automaxprocs v1.6.0
 	go.uber.org/zap v1.18.1

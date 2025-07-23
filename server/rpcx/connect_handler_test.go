@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hewen/mastiff-go/config/middlewareconf"
 	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/middleware"
 	"github.com/hewen/mastiff-go/pkg/util"
 	"github.com/stretchr/testify/assert"
 )
@@ -19,7 +19,7 @@ func TestConnectServer(t *testing.T) {
 	enableMetrics := true
 	c := &serverconf.RPCConfig{
 		Addr: fmt.Sprintf("localhost:%d", port),
-		Middlewares: middleware.Config{
+		Middlewares: middlewareconf.Config{
 			EnableMetrics: &enableMetrics,
 		},
 		Reflection: true,

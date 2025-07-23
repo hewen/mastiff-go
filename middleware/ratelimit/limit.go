@@ -8,10 +8,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/gofiber/fiber/v2"
-	"github.com/hewen/mastiff-go/config/middleware/ratelimitconf"
+	"github.com/hewen/mastiff-go/config/middlewareconf/ratelimitconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
+	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc/peer"
 )
@@ -80,27 +79,6 @@ func (mgr *LimiterManager) cleanerOnce() {
 	mgr.mu.Unlock()
 }
 
-// getKeyFromGin returns the key for the limiter from the gin context.
-func (mgr *LimiterManager) getKeyFromGin(ctx *gin.Context, cfg *ratelimitconf.RouteLimitConfig) string {
-	parts := []string{}
-	if cfg.EnableRoute {
-		route := ctx.FullPath()
-		if route == "" {
-			route = ctx.Request.URL.Path
-		}
-		parts = append(parts, route)
-	}
-	if cfg.EnableIP {
-		parts = append(parts, ctx.ClientIP())
-	}
-	if cfg.EnableUserID {
-		if uid, ok := contextkeys.GetUserID(ctx.Request.Context()); ok {
-			parts = append(parts, fmt.Sprint(uid))
-		}
-	}
-	return strings.Join(parts, "|")
-}
-
 // getKeyFromContext returns the key for the limiter from the context.
 func (mgr *LimiterManager) getKeyFromContext(ctx context.Context, route string, cfg *ratelimitconf.RouteLimitConfig) string {
 	parts := []string{}
@@ -120,14 +98,15 @@ func (mgr *LimiterManager) getKeyFromContext(ctx context.Context, route string, 
 	return strings.Join(parts, "|")
 }
 
-func (mgr *LimiterManager) getKeyFromFiber(ctx *fiber.Ctx, cfg *ratelimitconf.RouteLimitConfig) string {
+// getKeyFromHttpx returns the key for the limiter from the httpx context.
+func (mgr *LimiterManager) getKeyFromHttpx(ctx unicontext.UniversalContext, cfg *ratelimitconf.RouteLimitConfig) string {
 	parts := []string{}
 	if cfg.EnableRoute {
-		route := ctx.Path()
+		route := ctx.FullPath()
 		parts = append(parts, route)
 	}
 	if cfg.EnableIP {
-		parts = append(parts, ctx.Context().RemoteIP().String())
+		parts = append(parts, ctx.ClientIP())
 	}
 	if cfg.EnableUserID {
 		if uid, ok := contextkeys.GetUserID(contextkeys.ContextFrom(ctx)); ok {

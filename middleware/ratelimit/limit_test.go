@@ -4,13 +4,14 @@ package ratelimit
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
-	"github.com/hewen/mastiff-go/config/middleware/ratelimitconf"
+	"github.com/hewen/mastiff-go/config/middlewareconf/ratelimitconf"
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
+	"github.com/hewen/mastiff-go/server/httpx"
+	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,29 +47,16 @@ func TestLimiterManager_CleanerOnce(t *testing.T) {
 	assert.False(t, exist)
 }
 
-func TestLimiterManager_GetKeyFromGin(t *testing.T) {
-	cfg := &ratelimitconf.Config{
-		Default: &ratelimitconf.RouteLimitConfig{
-			Rate:         1,
-			Burst:        1,
-			Mode:         ratelimitconf.ModeAllow,
-			EnableRoute:  true,
-			EnableIP:     true,
-			EnableUserID: true,
-		},
-	}
-	mgr := NewLimiterManager(cfg)
-	defer mgr.Stop()
-
+func TestLimiterManager_GetKeyFromHttpx(t *testing.T) {
 	cfgs := []*ratelimitconf.RouteLimitConfig{
 		{EnableRoute: true},
 		{EnableIP: true},
 		{EnableUserID: true},
 	}
 
-	for i, cfg := range cfgs {
+	for k, v := range cfgs {
 		name := ""
-		switch i {
+		switch k {
 		case 0:
 			name = "EnableRoute"
 		case 1:
@@ -77,17 +65,40 @@ func TestLimiterManager_GetKeyFromGin(t *testing.T) {
 			name = "EnableUserID"
 		}
 		t.Run(name, func(t *testing.T) {
-			c, _ := gin.CreateTestContext(httptest.NewRecorder())
-			c.Request, _ = http.NewRequest("GET", "/path", nil)
-			c.Request.URL.Path = "/urlpath"
-			c.Request.RequestURI = "/urlpath"
-			c.Set("somekey", "someval")
-			c.Request.RemoteAddr = "127.0.0.1:12345"
-			c.Request = c.Request.WithContext(contextkeys.SetUserID(c.Request.Context(), "uid123"))
+			cfg := &ratelimitconf.Config{
+				Default: &ratelimitconf.RouteLimitConfig{
+					Rate:         1,
+					Burst:        1,
+					Mode:         ratelimitconf.ModeAllow,
+					EnableRoute:  v.EnableRoute,
+					EnableIP:     v.EnableIP,
+					EnableUserID: v.EnableUserID,
+				},
+			}
 
-			key := mgr.getKeyFromGin(c, cfg)
+			mgr := NewLimiterManager(cfg)
+			defer mgr.Stop()
 
-			assert.NotEmpty(t, key)
+			r, err := httpx.NewHTTPServer(&serverconf.HTTPConfig{
+				FrameworkType: serverconf.FrameworkFiber,
+			})
+			assert.Nil(t, err)
+
+			r.Use(HttpxMiddleware(mgr))
+			r.Get("/path", func(c unicontext.UniversalContext) error {
+				return c.String(http.StatusOK, "path")
+			})
+
+			req, _ := http.NewRequest("GET", "/path", nil)
+			req.RemoteAddr = "127.0.0.1:12345"
+			req = req.WithContext(contextkeys.SetUserID(req.Context(), "uid123"))
+
+			resp, err := r.Test(req)
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			assert.Nil(t, err)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 	}
 }

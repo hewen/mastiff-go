@@ -7,9 +7,9 @@ import (
 	"net"
 	"testing"
 
+	"github.com/hewen/mastiff-go/config/middlewareconf"
 	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/middleware"
 	"github.com/hewen/mastiff-go/pkg/util"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -21,7 +21,7 @@ func TestGrpcServer(t *testing.T) {
 	enableMetrics := true
 	c := &serverconf.RPCConfig{
 		Addr: fmt.Sprintf("localhost:%d", port),
-		Middlewares: middleware.Config{
+		Middlewares: middlewareconf.Config{
 			EnableMetrics: &enableMetrics,
 		},
 		Reflection: true,

@@ -3,12 +3,11 @@ package httpx
 import (
 	"fmt"
 	"testing"
-	"time"
 
-	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/pkg/util"
+	"github.com/hewen/mastiff-go/server/httpx/handler"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -17,20 +16,16 @@ func TestHTTPServer(t *testing.T) {
 	assert.Nil(t, err)
 
 	conf := &serverconf.HTTPConfig{
-		Addr:         fmt.Sprintf("localhost:%d", port),
-		PprofEnabled: true,
+		Addr:          fmt.Sprintf("localhost:%d", port),
+		PprofEnabled:  true,
+		FrameworkType: serverconf.FrameworkGin,
 	}
 
-	initRoute := func(_ *gin.Engine) {}
-	builder := &GinHandlerBuilder{
-		Conf:      conf,
-		InitRoute: initRoute,
-	}
-	s, err := NewHTTPServer(builder)
+	s, err := NewHTTPServer(conf)
 	assert.Nil(t, err)
 
 	s.WithLogger(logger.NewLogger())
-	assert.Equal(t, fmt.Sprintf(`http std server(%s)`, conf.Addr), s.Name())
+	assert.Equal(t, fmt.Sprintf(`http gin server(%s)`, conf.Addr), s.Name())
 
 	go func() {
 		defer s.Stop()
@@ -43,16 +38,11 @@ func TestHTTPServerStop(t *testing.T) {
 	assert.Nil(t, err)
 
 	conf := &serverconf.HTTPConfig{
-		Addr: fmt.Sprintf("localhost:%d", port),
+		Addr:          fmt.Sprintf("localhost:%d", port),
+		FrameworkType: serverconf.FrameworkGin,
 	}
 
-	initRoute := func(_ *gin.Engine) {}
-	builder := &GinHandlerBuilder{
-		Conf:      conf,
-		InitRoute: initRoute,
-	}
-
-	s, err := NewHTTPServer(builder)
+	s, err := NewHTTPServer(conf)
 	assert.Nil(t, err)
 
 	s.Stop()
@@ -60,35 +50,17 @@ func TestHTTPServerStop(t *testing.T) {
 
 func TestHTTPServerStartError(t *testing.T) {
 	conf := &serverconf.HTTPConfig{
-		Addr: "error addr",
+		Addr:          "error addr",
+		FrameworkType: serverconf.FrameworkGin,
 	}
 
-	initRoute := func(_ *gin.Engine) {}
-	builder := &GinHandlerBuilder{
-		Conf:      conf,
-		InitRoute: initRoute,
-	}
-
-	s, err := NewHTTPServer(builder)
+	s, err := NewHTTPServer(conf)
 	assert.Nil(t, err)
 
 	s.Start()
 }
 
 func TestHTTPServerEmptyConfig(t *testing.T) {
-	initRoute := func(_ *gin.Engine) {}
-	builder := &GinHandlerBuilder{
-		Conf:      nil,
-		InitRoute: initRoute,
-	}
-	_, err := NewHTTPServer(builder)
-	assert.EqualValues(t, err, ErrEmptyHTTPConf)
-}
-
-func TestToDuration(t *testing.T) {
-	dur := toDuration(0)
-	assert.Equal(t, HTTPTimeoutDefault*time.Second, dur)
-
-	dur = toDuration(1)
-	assert.Equal(t, 1*time.Second, dur)
+	_, err := NewHTTPServer(nil)
+	assert.EqualValues(t, err, handler.ErrEmptyHTTPConf)
 }

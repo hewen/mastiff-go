@@ -1,7 +1,7 @@
 package circuitbreaker
 
 import (
-	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
+	"github.com/hewen/mastiff-go/config/middlewareconf/circuitbreakerconf"
 	"github.com/sony/gobreaker"
 )
 

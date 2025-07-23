@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hewen/mastiff-go/config/middleware/authconf"
+	"github.com/hewen/mastiff-go/config/middlewareconf/authconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/middleware/internal/shared"
 

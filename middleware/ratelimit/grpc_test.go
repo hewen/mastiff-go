@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hewen/mastiff-go/config/middleware/ratelimitconf"
+	"github.com/hewen/mastiff-go/config/middlewareconf/ratelimitconf"
 	"github.com/hewen/mastiff-go/middleware/internal/shared"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"

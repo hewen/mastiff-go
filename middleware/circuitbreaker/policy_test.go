@@ -3,7 +3,7 @@ package circuitbreaker
 import (
 	"testing"
 
-	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
+	"github.com/hewen/mastiff-go/config/middlewareconf/circuitbreakerconf"
 	"github.com/sony/gobreaker"
 	"github.com/stretchr/testify/assert"
 )

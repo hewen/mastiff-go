@@ -5,7 +5,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hewen/mastiff-go/config/middleware/circuitbreakerconf"
+	"github.com/hewen/mastiff-go/config/middlewareconf/circuitbreakerconf"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/status"
