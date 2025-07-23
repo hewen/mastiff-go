@@ -15,6 +15,7 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.8
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
+	github.com/google/gofuzz v1.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1
 	github.com/jmoiron/sqlx v1.4.0
