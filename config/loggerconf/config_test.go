@@ -1,6 +1,7 @@
 package loggerconf
 
 import (
+	"os"
 	"testing"
 )
 
@@ -15,7 +16,7 @@ func TestValidate(t *testing.T) {
 			conf: Config{
 				Outputs: []string{"file"},
 				FileOutput: &FileOutputConfig{
-					Path: "/tmp/test.log",
+					Path: os.TempDir() + "/tmp/test.log",
 				},
 				Backend: "zerolog",
 			},

@@ -15,7 +15,6 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.8
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
-	github.com/google/gofuzz v1.0.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1
 	github.com/jmoiron/sqlx v1.4.0
@@ -33,7 +32,7 @@ require (
 	github.com/stretchr/testify v1.10.0
 	github.com/valyala/fasthttp v1.51.0
 	go.uber.org/automaxprocs v1.6.0
-	go.uber.org/zap v1.18.1
+	go.uber.org/zap v1.27.0
 	golang.org/x/net v0.40.0
 	golang.org/x/text v0.26.0
 	golang.org/x/time v0.8.0
@@ -100,8 +99,7 @@ require (
 	github.com/yuin/gopher-lua v1.1.1 // indirect
 	go.opentelemetry.io/otel v1.35.0 // indirect
 	go.opentelemetry.io/otel/trace v1.35.0 // indirect
-	go.uber.org/atomic v1.9.0 // indirect
-	go.uber.org/multierr v1.9.0 // indirect
+	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/arch v0.16.0 // indirect
 	golang.org/x/crypto v0.38.0 // indirect
 	golang.org/x/mod v0.25.0 // indirect

@@ -297,6 +297,12 @@ func TestConcurrentLogging(t *testing.T) {
 }
 
 func TestValidate(t *testing.T) {
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(t, err)
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
+
 	tests := []struct {
 		name    string
 		conf    loggerconf.Config
@@ -307,7 +313,7 @@ func TestValidate(t *testing.T) {
 			conf: loggerconf.Config{
 				Outputs: []string{"file"},
 				FileOutput: &loggerconf.FileOutputConfig{
-					Path: "/tmp/test.log",
+					Path: tmpFile.Name(),
 				},
 				Backend: "zerolog",
 			},
@@ -341,6 +347,12 @@ func TestValidate(t *testing.T) {
 }
 
 func TestCreateFileWriter(t *testing.T) {
+	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
+	assert.Nil(t, err)
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
+
 	tests := []struct {
 		policy string
 	}{
@@ -353,7 +365,7 @@ func TestCreateFileWriter(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.policy, func(t *testing.T) {
 			cfg := loggerconf.FileOutputConfig{
-				Path:         "/tmp/test.log",
+				Path:         tmpFile.Name(),
 				RotatePolicy: tt.policy,
 				MaxSize:      1,
 			}
@@ -375,13 +387,17 @@ func TestNewSizeLogger(t *testing.T) {
 func TestNewPlainFileLogger_Success(t *testing.T) {
 	tmpFile, err := os.CreateTemp(os.TempDir(), "tmp.log")
 	assert.Nil(t, err)
+	defer func() {
+		_ = os.Remove(tmpFile.Name())
+	}()
+
 	cfg := loggerconf.FileOutputConfig{Path: tmpFile.Name()}
 	w := newPlainFileLogger(cfg)
 	assert.NotNil(t, w)
 }
 
 func TestNewPlainFileLogger_Failure(t *testing.T) {
-	cfg := loggerconf.FileOutputConfig{Path: "/root/forbidden.log"} // or "///invalid"
+	cfg := loggerconf.FileOutputConfig{Path: os.TempDir() + "errordir/forbidden.log"}
 	w := newPlainFileLogger(cfg)
 	assert.NotNil(t, w)
 }
