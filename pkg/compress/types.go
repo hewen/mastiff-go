@@ -15,6 +15,8 @@ const (
 	CompressTypeLz4
 	// CompressTypeZstd is the type of zstd compression.
 	CompressTypeZstd
+	// CompressTypeBrotli is the type of brotli compression.
+	CompressTypeBrotli
 )
 
 // Compressor is an interface for compressing and decompressing data.
