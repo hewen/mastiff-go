@@ -10,19 +10,30 @@ import (
 )
 
 // BrotliCompressor implements Compressor interface.
-type BrotliCompressor struct{}
+type BrotliCompressor struct {
+	writerFactory func(io.Writer) io.WriteCloser
+}
+
+// NewBrotliCompressor create BrotliCompressor.
+func NewBrotliCompressor() *BrotliCompressor {
+	return &BrotliCompressor{
+		writerFactory: func(w io.Writer) io.WriteCloser {
+			return brotli.NewWriter(w)
+		},
+	}
+}
 
 // Compress uses Brotli to compress data.
-func (BrotliCompressor) Compress(data []byte) ([]byte, error) {
-	var b bytes.Buffer
-	w := brotli.NewWriter(&b)
+func (b BrotliCompressor) Compress(data []byte) ([]byte, error) {
+	var buf bytes.Buffer
+	w := b.writerFactory(&buf)
 	_, writeErr := w.Write(data)
 	closeErr := w.Close()
 	if writeErr != nil || closeErr != nil {
 		return nil, errors.Join(writeErr, closeErr)
 	}
 
-	return b.Bytes(), nil
+	return buf.Bytes(), nil
 }
 
 // Decompress uses Brotli to decompress data.

@@ -9,7 +9,7 @@ func init() {
 	RegisterCompressor(CompressTypeSnappy, SnappyCompressor{})
 	RegisterCompressor(CompressTypeLz4, Lz4Compressor{})
 	RegisterCompressor(CompressTypeZstd, ZstdCompressor{})
-	RegisterCompressor(CompressTypeBrotli, BrotliCompressor{})
+	RegisterCompressor(CompressTypeBrotli, NewBrotliCompressor())
 }
 
 // compressorRegistry is a map of compress type to compressor.
