@@ -46,3 +46,9 @@ func TestNewHandler_ErrorType(t *testing.T) {
 	assert.Nil(t, s)
 	assert.NotNil(t, err)
 }
+
+func TestNewHandler_ErrorConfig(t *testing.T) {
+	s, err := NewHandler(nil, RPCBuildParams{})
+	assert.Nil(t, s)
+	assert.NotNil(t, err)
+}

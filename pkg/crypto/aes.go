@@ -14,9 +14,11 @@ type AESCipher struct {
 	AddData []byte
 }
 
+var aesNewCipher = aes.NewCipher
+
 // NewAESCipher creates a new AESCipher.
 func NewAESCipher(key []byte) (*AESCipher, error) {
-	block, err := aes.NewCipher(key)
+	block, err := aesNewCipher(key)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AES cipher block: %w", err)
 	}

@@ -69,6 +69,16 @@ func TestConnectServerEmptyConfig(t *testing.T) {
 	assert.EqualValues(t, err, ErrEmptyRPCConf)
 }
 
+func TestConnectServerNotSetRegisterMux(t *testing.T) {
+	c := &serverconf.RPCConfig{}
+	_, err := NewConnectHandler(
+		c,
+		nil,
+	)
+
+	assert.EqualValues(t, err.Error(), "connect: register mux is nil")
+}
+
 func TestNewConnectServerError(t *testing.T) {
 	c := &serverconf.RPCConfig{
 		Addr: "error",

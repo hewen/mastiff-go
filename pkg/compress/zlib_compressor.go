@@ -4,11 +4,19 @@ package compress
 import (
 	"bytes"
 	"compress/flate"
+	"errors"
 	"io"
 )
 
+type writerCloser interface {
+	io.Writer
+	io.Closer
+}
+
 // flateNewWriter is a variable to allow for mocking in tests.
-var flateNewWriter = flate.NewWriter
+var flateNewWriter = func(w io.Writer, level int) (writerCloser, error) {
+	return flate.NewWriter(w, level)
+}
 
 // ZlibCompressor implements Compressor interface.
 type ZlibCompressor struct{}
@@ -21,14 +29,11 @@ func (ZlibCompressor) Compress(data []byte) ([]byte, error) {
 		return nil, err
 	}
 
-	_, err = w.Write(data)
-	if err != nil {
-		return nil, err
-	}
+	_, writeErr := w.Write(data)
+	closeErr := w.Close()
 
-	err = w.Close()
-	if err != nil {
-		return nil, err
+	if writeErr != nil || closeErr != nil {
+		return nil, errors.Join(writeErr, closeErr)
 	}
 
 	return b.Bytes(), nil

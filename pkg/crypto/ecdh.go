@@ -25,6 +25,10 @@ const (
 	ECDHCurveP521
 )
 
+var generateKey = func(curve ecdh.Curve) (*ecdh.PrivateKey, error) {
+	return curve.GenerateKey(RandomReader)
+}
+
 func curveFromType(tp ECDHCurveType) (ecdh.Curve, error) {
 	switch tp {
 	case ECDHCurveP256:
@@ -44,7 +48,7 @@ func NewECDHCipher(tp ECDHCurveType) (*ECDHCipher, error) {
 	if err != nil {
 		return nil, err
 	}
-	priv, err := curve.GenerateKey(RandomReader)
+	priv, err := generateKey(curve)
 	if err != nil {
 		return nil, err
 	}

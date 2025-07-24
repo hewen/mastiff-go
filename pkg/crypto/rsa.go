@@ -16,6 +16,8 @@ type RSA struct {
 	PrivateKey *rsa.PrivateKey
 }
 
+var readAll = io.ReadAll
+
 // NewRSAFromPEM creates a new RSA from PEM bytes.
 func NewRSAFromPEM(pemBytes []byte) (*RSA, error) {
 	block, _ := pem.Decode(pemBytes)
@@ -39,7 +41,7 @@ func NewRSAFromFile(path string) (*RSA, error) {
 	}
 	defer func() { _ = file.Close() }()
 
-	content, err := io.ReadAll(file)
+	content, err := readAll(file)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read file: %w", err)
 	}

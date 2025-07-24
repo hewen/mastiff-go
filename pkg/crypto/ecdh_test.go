@@ -1,9 +1,13 @@
 package crypto
 
 import (
+	"crypto/ecdh"
+	"crypto/rand"
+	"errors"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestECDHCipher_SharedSecret(t *testing.T) {
@@ -55,4 +59,32 @@ func TestCurveFromType(t *testing.T) {
 	curve, err = curveFromType(ECDHCurveType(999))
 	assert.Error(t, err)
 	assert.Nil(t, curve)
+}
+
+func TestNewECDHCipher_GenerateKeyError(t *testing.T) {
+	original := generateKey
+	defer func() { generateKey = original }()
+
+	generateKey = func(_ ecdh.Curve) (*ecdh.PrivateKey, error) {
+		return nil, errors.New("mock generate key error")
+	}
+
+	_, err := NewECDHCipher(ECDHCurveP256)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "mock generate key error")
+}
+
+func TestCalcSharedSecret_ECDHError(t *testing.T) {
+	c1, err := NewECDHCipher(ECDHCurveP256)
+	require.NoError(t, err)
+
+	otherCurve := ecdh.P384()
+	otherKey, err := otherCurve.GenerateKey(rand.Reader)
+	require.NoError(t, err)
+
+	peerPubKey := otherKey.PublicKey().Bytes()
+
+	secret, err := c1.CalcSharedSecret(peerPubKey)
+	require.Error(t, err)
+	require.Nil(t, secret)
 }

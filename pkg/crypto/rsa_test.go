@@ -4,10 +4,13 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/pem"
+	"errors"
+	"io"
 	"os"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func generateTempPrivateKeyFile(t *testing.T) string {
@@ -85,4 +88,33 @@ func TestNewRSAFromFileInvalidPEM(t *testing.T) {
 
 	_, err = NewRSAFromFile(tmpFile.Name())
 	assert.Error(t, err)
+}
+
+func TestNewRSAFromFile_ReadFail(t *testing.T) {
+	originalReadAll := readAll
+	defer func() { readAll = originalReadAll }()
+
+	readAll = func(_ io.Reader) ([]byte, error) {
+		return nil, errors.New("mock read error")
+	}
+
+	tmp, err := os.CreateTemp("", "rsa_test_*.pem")
+	require.NoError(t, err)
+	defer func() { _ = os.Remove(tmp.Name()) }()
+
+	_, err = NewRSAFromFile(tmp.Name())
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to read file")
+	require.Contains(t, err.Error(), "mock read error")
+}
+
+func TestNewRSAFromPEM_ParseKeyFail(t *testing.T) {
+	badPEM := pem.EncodeToMemory(&pem.Block{
+		Type:  "RSA PRIVATE KEY",
+		Bytes: []byte("not a real key"),
+	})
+
+	_, err := NewRSAFromPEM(badPEM)
+	require.Error(t, err)
+	require.Contains(t, err.Error(), "failed to parse RSA private key")
 }
