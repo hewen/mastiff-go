@@ -3,6 +3,7 @@ module github.com/hewen/mastiff-go
 require (
 	github.com/DATA-DOG/go-sqlmock v1.5.2
 	github.com/alicebob/miniredis/v2 v2.35.0
+	github.com/andybalholm/brotli v1.1.0
 	github.com/dolthub/go-mysql-server v0.20.0
 	github.com/dolthub/vitess v0.0.0-20250512224608-8fb9c6ea092c
 	github.com/fsnotify/fsnotify v1.8.0
@@ -15,7 +16,6 @@ require (
 	github.com/gofiber/fiber/v2 v2.52.8
 	github.com/golang-jwt/jwt/v5 v5.2.2
 	github.com/golang/snappy v0.0.0-20180518054509-2e65f85255db
-	github.com/google/brotli/go/cbrotli v1.1.0
 	github.com/grpc-ecosystem/go-grpc-middleware v1.4.0
 	github.com/grpc-ecosystem/grpc-gateway/v2 v2.27.1
 	github.com/jmoiron/sqlx v1.4.0
@@ -44,7 +44,6 @@ require (
 
 require (
 	filippo.io/edwards25519 v1.1.0 // indirect
-	github.com/andybalholm/brotli v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/bytedance/sonic v1.13.2 // indirect
 	github.com/bytedance/sonic/loader v0.2.4 // indirect
