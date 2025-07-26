@@ -8,9 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAESCipher_EncryptDecrypt(t *testing.T) {
+func TestAESGCMCipher_EncryptDecrypt(t *testing.T) {
 	key := []byte("examplekey123456") // 16 bytes
-	cipher, err := NewAESCipher(key)
+	cipher, err := NewAESGCMCipher(key)
 	assert.NoError(t, err)
 
 	cipher.Nonce = []byte("123456789012") // 12 bytes
@@ -26,15 +26,15 @@ func TestAESCipher_EncryptDecrypt(t *testing.T) {
 	assert.Equal(t, data, decrypted)
 }
 
-func TestAESCipher_InvalidKey(t *testing.T) {
+func TestAESGCMCipher_InvalidKey(t *testing.T) {
 	key := []byte("shortkey")
-	_, err := NewAESCipher(key)
+	_, err := NewAESGCMCipher(key)
 	assert.Error(t, err)
 }
 
-func TestAESCipher_CalcSize(t *testing.T) {
+func TestAESGCMCipher_CalcSize(t *testing.T) {
 	key := []byte("examplekey123456") // 16 bytes
-	cipher, err := NewAESCipher(key)
+	cipher, err := NewAESGCMCipher(key)
 	assert.NoError(t, err)
 
 	data := []byte("hello")
@@ -50,7 +50,7 @@ func (badBlock) BlockSize() int      { return 8 }
 func (badBlock) Encrypt(_, _ []byte) {}
 func (badBlock) Decrypt(_, _ []byte) {}
 
-func TestNewAESCipher_GCMInitFail(t *testing.T) {
+func TestNewAESGCMCipher_GCMInitFail(t *testing.T) {
 	_, err := cipher.NewGCM(badBlock{})
 	require.Error(t, err)
 
@@ -61,7 +61,7 @@ func TestNewAESCipher_GCMInitFail(t *testing.T) {
 		return badBlock{}, nil
 	}
 
-	_, err = NewAESCipher([]byte("0123456789abcdef"))
+	_, err = NewAESGCMCipher([]byte("0123456789abcdef"))
 	require.Error(t, err)
 	require.Contains(t, err.Error(), "failed to create GCM mode")
 }

@@ -7,8 +7,8 @@ import (
 	"fmt"
 )
 
-// AESCipher implements Cipher interface.
-type AESCipher struct {
+// AESGCMCipher implements Cipher interface.
+type AESGCMCipher struct {
 	aead    cipher.AEAD
 	Nonce   []byte
 	AddData []byte
@@ -16,8 +16,8 @@ type AESCipher struct {
 
 var aesNewCipher = aes.NewCipher
 
-// NewAESCipher creates a new AESCipher.
-func NewAESCipher(key []byte) (*AESCipher, error) {
+// NewAESGCMCipher creates a new AESGCMCipher.
+func NewAESGCMCipher(key []byte) (*AESGCMCipher, error) {
 	block, err := aesNewCipher(key)
 	if err != nil {
 		return nil, fmt.Errorf("failed to create AES cipher block: %w", err)
@@ -28,23 +28,23 @@ func NewAESCipher(key []byte) (*AESCipher, error) {
 		return nil, fmt.Errorf("failed to create GCM mode: %w", err)
 	}
 
-	return &AESCipher{
+	return &AESGCMCipher{
 		aead:  aead,
 		Nonce: make([]byte, aead.NonceSize()),
 	}, nil
 }
 
 // Encrypt encrypts data.
-func (a *AESCipher) Encrypt(data []byte) ([]byte, error) {
+func (a *AESGCMCipher) Encrypt(data []byte) ([]byte, error) {
 	return a.aead.Seal(nil, a.Nonce, data, a.AddData), nil
 }
 
 // Decrypt decrypts data.
-func (a *AESCipher) Decrypt(data []byte) ([]byte, error) {
+func (a *AESGCMCipher) Decrypt(data []byte) ([]byte, error) {
 	return a.aead.Open(nil, a.Nonce, data, a.AddData)
 }
 
 // CalcSize calculates the size of encrypted data.
-func (a *AESCipher) CalcSize(data []byte) int {
+func (a *AESGCMCipher) CalcSize(data []byte) int {
 	return len(data) + a.aead.Overhead()
 }
