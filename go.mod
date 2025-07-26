@@ -23,6 +23,7 @@ require (
 	github.com/matoous/go-nanoid/v2 v2.1.0
 	github.com/miekg/dns v1.0.14
 	github.com/panjf2000/ants/v2 v2.11.3
+	github.com/panjf2000/gnet/v2 v2.9.1
 	github.com/pierrec/lz4/v4 v4.1.22
 	github.com/prometheus/client_golang v1.22.0
 	github.com/robfig/cron/v3 v3.0.1
