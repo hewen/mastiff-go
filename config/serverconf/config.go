@@ -5,6 +5,11 @@ import (
 	"time"
 
 	"github.com/hewen/mastiff-go/config/middlewareconf"
+	"github.com/panjf2000/gnet/v2"
+)
+
+const (
+	defaultTickInterval = 1 * time.Minute
 )
 
 type (
@@ -56,6 +61,19 @@ type (
 		// EmptySleepInterval represents the duration to sleep when the queue is empty.
 		EmptySleepInterval time.Duration
 	}
+
+	// SocketConfig holds the configuration for a socket server.
+	SocketConfig struct {
+
+		// Addr represents the socket server address.
+		Addr string
+		// FrameworkType either "gnet".
+		FrameworkType FrameworkType
+		// GnetOptions represents the options for the gnet framework.
+		GnetOptions gnet.Options
+		// TickInterval represents the interval for the tick function.
+		TickInterval time.Duration
+	}
 )
 
 const (
@@ -68,4 +86,14 @@ const (
 	FrameworkGrpc FrameworkType = "grpc"
 	// FrameworkConnect represents the type of framework used for the rpc server, which is connect.
 	FrameworkConnect FrameworkType = "connect"
+
+	// FrameworkGnet represents the type of framework used for the socket server, which is gnet.
+	FrameworkGnet FrameworkType = "gnet"
 )
+
+// SetDefault sets default values for the configuration.
+func (c *SocketConfig) SetDefault() {
+	if c.TickInterval == 0 {
+		c.TickInterval = defaultTickInterval
+	}
+}
