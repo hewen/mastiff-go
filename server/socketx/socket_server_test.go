@@ -50,6 +50,7 @@ func TestSocketServer(t *testing.T) {
 	expectedData := []byte("response data")
 	mockEvent.On("OnOpen", mock.Anything).Return(expectedData, gnet.None)
 	mockEvent.On("OnClose", mock.Anything, mock.Anything).Return(gnet.None)
+	mockEvent.On("OnTraffic", mock.Anything).Return(gnet.None)
 
 	s, err := NewSocketServer(conf, handler.BuildParams{
 		GnetHandler: mockEvent,
