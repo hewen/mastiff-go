@@ -1,0 +1,16 @@
+// Package queue provides the implementation for the queue server.
+package queue
+
+import (
+	"{{.PackageName}}/internal/core/interfaces/queue/handler"
+	"{{.PackageName}}/internal/core/interfaces/repository"
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/hewen/mastiff-go/server/queuex"
+	"github.com/hewen/mastiff-go/server/test"
+)
+
+// NewQueueServer creates a new instance of QueueServer with the provided configuration.
+func NewQueueServer(conf *serverconf.QueueConfig) (*queuex.QueueServer[*test.TestMsg], error) {
+	h := queuex.NewProtoRedisHandler(repository.RStore.GetDb(), conf.QueueName, handler.ConsumerHandle, handler.NewMsg)
+	return queuex.NewQueueServer(*conf, h)
+}

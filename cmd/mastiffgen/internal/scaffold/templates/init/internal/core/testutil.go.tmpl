@@ -1,0 +1,26 @@
+// Package core provides the core functionality for the application.
+package core
+
+import (
+	"{{.PackageName}}/internal/core/interfaces/repository"
+
+	"github.com/hewen/mastiff-go/store"
+)
+
+// InitMockRedis initializes a mock Redis store.
+func InitMockRedis() {
+	redisConn := store.InitMockRedis()
+
+	hook := &store.RedisHook{}
+	redisConn.AddHook(hook)
+	repository.RStore = repository.NewRedisStore(redisConn)
+}
+
+// InitMockMysql initializes a mock MySQL store.
+func InitMockMysql(sqlDir string) {
+	dbConn, err := store.InitMockMysql(sqlDir)
+	if err != nil {
+		panic(err)
+	}
+	repository.DStore = repository.NewDbStore(dbConn)
+}

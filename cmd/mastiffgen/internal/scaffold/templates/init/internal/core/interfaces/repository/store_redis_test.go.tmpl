@@ -1,0 +1,23 @@
+package repository
+
+import (
+	"testing"
+
+	"github.com/hewen/mastiff-go/store"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewRedisStore(t *testing.T) {
+	client := store.InitMockRedis()
+	store := NewRedisStore(client)
+	assert.NotNil(t, store)
+
+	err := store.Ping()
+	assert.NoError(t, err)
+
+	db := store.GetDb()
+	assert.NotNil(t, db)
+
+	err = store.Close()
+	assert.NoError(t, err)
+}

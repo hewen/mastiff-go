@@ -1,0 +1,44 @@
+// Package handler provides the implementation for the RPC handlers.
+package handler
+
+import (
+	"context"
+
+	"{{.PackageName}}/internal/core/interfaces/repository"
+	"google.golang.org/grpc/codes"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/status"
+)
+
+// Check implements the health check for the Core service.
+func (c *Handler) Check(_ context.Context, _ *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
+	if repository.DStore != nil {
+		if err := repository.DStore.Ping(); err != nil {
+			return &healthpb.HealthCheckResponse{
+				Status: healthpb.HealthCheckResponse_NOT_SERVING,
+			}, err
+		}
+	}
+
+	if repository.RStore != nil {
+		if err := repository.RStore.Ping(); err != nil {
+			return &healthpb.HealthCheckResponse{
+				Status: healthpb.HealthCheckResponse_NOT_SERVING,
+			}, err
+		}
+	}
+
+	return &healthpb.HealthCheckResponse{
+		Status: healthpb.HealthCheckResponse_SERVING,
+	}, nil
+}
+
+// Watch implements the health watch functionality for the Core service.
+func (c *Handler) Watch(*healthpb.HealthCheckRequest, healthpb.Health_WatchServer) error {
+	return status.Error(codes.Unimplemented, "unimplemented")
+}
+
+// List implements the health list functionality for the Core service.
+func (c *Handler) List(context.Context, *healthpb.HealthListRequest) (*healthpb.HealthListResponse, error) {
+	return &healthpb.HealthListResponse{}, nil
+}

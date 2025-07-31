@@ -13,8 +13,14 @@ const (
 )
 
 type (
-	// FrameworkType represents the type of framework used for the HTTP server.
-	FrameworkType string
+	// HTTPFrameworkType represents the type of framework used for the HTTP server.
+	HTTPFrameworkType string
+
+	// RPCFrameworkType represents the type of framework used for the RPC server.
+	RPCFrameworkType string
+
+	// SocketFrameworkType represents the type of framework used for the RPC server.
+	SocketFrameworkType string
 
 	// HTTPConfig holds the configuration for an HTTP server.
 	HTTPConfig struct {
@@ -25,7 +31,7 @@ type (
 		// Mode represents the server mode, either "debug", "release", or "test".
 		Mode string
 		// FrameworkType either "gin", "fiber".
-		FrameworkType FrameworkType
+		FrameworkType HTTPFrameworkType
 		// TimeoutRead represents the timeout for reading requests in milliseconds.
 		ReadTimeout int64
 		// TimeoutWrite represents the timeout for writing responses in milliseconds.
@@ -42,8 +48,8 @@ type (
 	RPCConfig struct {
 		// Middlewares represents the configuration for middlewares.
 		Middlewares middlewareconf.Config
-		// FrameworkType either "gin", "fiber".
-		FrameworkType FrameworkType
+		// FrameworkType either "grpc", "connect".
+		FrameworkType RPCFrameworkType
 		// Addr represents the gRPC server address.
 		Addr string
 		// Timeout represents the timeout for gRPC requests in milliseconds.
@@ -64,11 +70,10 @@ type (
 
 	// SocketConfig holds the configuration for a socket server.
 	SocketConfig struct {
-
 		// Addr represents the socket server address.
 		Addr string
 		// FrameworkType either "gnet".
-		FrameworkType FrameworkType
+		FrameworkType SocketFrameworkType
 		// GnetOptions represents the options for the gnet framework.
 		GnetOptions gnet.Options
 		// TickInterval represents the interval for the tick function.
@@ -78,17 +83,17 @@ type (
 
 const (
 	// FrameworkGin represents the type of framework used for the HTTP server, which is Gin.
-	FrameworkGin FrameworkType = "gin"
+	FrameworkGin HTTPFrameworkType = "gin"
 	// FrameworkFiber represents the type of framework used for the HTTP server, which is Fiber.
-	FrameworkFiber FrameworkType = "fiber"
+	FrameworkFiber HTTPFrameworkType = "fiber"
 
 	// FrameworkGrpc represents the type of framework used for the rpc server, which is gRPC.
-	FrameworkGrpc FrameworkType = "grpc"
+	FrameworkGrpc RPCFrameworkType = "grpc"
 	// FrameworkConnect represents the type of framework used for the rpc server, which is connect.
-	FrameworkConnect FrameworkType = "connect"
+	FrameworkConnect RPCFrameworkType = "connect"
 
 	// FrameworkGnet represents the type of framework used for the socket server, which is gnet.
-	FrameworkGnet FrameworkType = "gnet"
+	FrameworkGnet SocketFrameworkType = "gnet"
 )
 
 // SetDefault sets default values for the configuration.

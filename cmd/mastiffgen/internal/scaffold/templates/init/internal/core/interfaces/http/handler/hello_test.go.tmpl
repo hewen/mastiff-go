@@ -1,0 +1,28 @@
+package handler
+
+import (
+	"net/http"
+	"testing"
+
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/hewen/mastiff-go/server/httpx"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestHello(t *testing.T) {
+	r, err := httpx.NewHTTPServer(&serverconf.HTTPConfig{
+		FrameworkType: serverconf.FrameworkFiber,
+	})
+
+	assert.Nil(t, err)
+	h := Handler{}
+	r.Get("/hello", h.Hello)
+	req, _ := http.NewRequest("GET", "/hello", nil)
+	resp, err := r.Test(req)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+}

@@ -4,9 +4,8 @@ package cmd
 import (
 	"os"
 
-	"{{.PackageName}}/config"
-	"{{.PackageName}}/core"
-
+	"{{.PackageName}}/internal/config"
+	"{{.PackageName}}/internal/di"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/spf13/cobra"
 )
@@ -24,13 +23,13 @@ var runCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		c, err := core.NewCore(conf)
+		servers, err := di.InitApp(conf, l)
 		if err != nil {
 			l.Errorf("%s", err.Error())
 			os.Exit(1)
 		}
 
-		c.Start()
+		servers.Start()
 	},
 }
 

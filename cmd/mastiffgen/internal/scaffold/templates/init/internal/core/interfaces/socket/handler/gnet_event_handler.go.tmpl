@@ -1,0 +1,40 @@
+// Package handler provides the implementation for the socket handlers.
+package handler
+
+import (
+	"time"
+
+	"github.com/hewen/mastiff-go/logger"
+	"github.com/panjf2000/gnet/v2"
+)
+
+// OnBoot implements the gnet.OnBoot interface.
+func (h *Handler) OnBoot(_ gnet.Engine) gnet.Action {
+	return gnet.None
+}
+
+// OnShutdown implements the gnet.OnShutdown interface.
+func (h *Handler) OnShutdown(_ gnet.Engine) {
+	logger.NewLogger().Infof("OnShutdown")
+	// TODO OnShutdown.
+}
+
+// OnOpen implements the gnet.OnOpen interface.
+func (h *Handler) OnOpen(_ gnet.Conn) ([]byte, gnet.Action) {
+	return nil, gnet.None
+}
+
+// OnClose implements the gnet.OnClose interface.
+func (h *Handler) OnClose(_ gnet.Conn, _ error) gnet.Action {
+	return gnet.None
+}
+
+// OnTraffic implements the gnet.OnTraffic interface.
+func (h *Handler) OnTraffic(_ gnet.Conn) gnet.Action {
+	return gnet.None
+}
+
+// OnTick implements the gnet.OnTick interface.
+func (h *Handler) OnTick() (time.Duration, gnet.Action) {
+	return 0, gnet.None
+}

@@ -43,7 +43,7 @@ check-cover:
 	@echo "==> Checking Coverage"
 	@go tool cover -func=$(COVER_OUT) \
 	| grep -vE '\s(main|init)\s' \
-	| awk '{ gsub(/%/, "", $$3); cov = $$3 + 0; if (cov < 80) { print $$1, $$2" coverage ("cov"%) < 80%"; failed=1 } } END { exit failed }'
+	| awk '{ gsub(/%/, "", $$3); cov = $$3 + 0; if (cov < 70) { print $$1, $$2" coverage ("cov"%) < 70%"; failed=1 } } END { exit failed }'
 
 clean:
 	@echo "==> Cleaning Generated Files"

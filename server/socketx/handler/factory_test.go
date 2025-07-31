@@ -146,7 +146,7 @@ func TestNewHandler_AllFrameworkTypes(t *testing.T) {
 
 	// Test all known framework types
 	frameworkTests := []struct {
-		framework   serverconf.FrameworkType
+		framework   serverconf.SocketFrameworkType
 		expectError bool
 	}{
 		{serverconf.FrameworkGnet, false},

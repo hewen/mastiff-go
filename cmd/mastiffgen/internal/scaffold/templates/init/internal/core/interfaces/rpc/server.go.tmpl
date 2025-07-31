@@ -1,0 +1,30 @@
+// Package rpc provides the implementation for the RPC server.
+package rpc
+
+import (
+	"net/http"
+
+	"{{.PackageName}}/internal/core/interfaces/rpc/handler"
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/hewen/mastiff-go/server/rpcx"
+	rhandler "github.com/hewen/mastiff-go/server/rpcx/handler"
+	"google.golang.org/grpc"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+)
+
+// NewRPCServer creates a new instance of RPCServer with the provided configuration.
+func NewRPCServer(conf *serverconf.RPCConfig) (*rpcx.RPCServer, error) {
+	h := new(handler.Handler)
+	return rpcx.NewRPCServer(conf, rhandler.RPCBuildParams{
+		// conf.FrameworkType: grpc
+		GrpcRegisterFunc: func(s *grpc.Server) {
+			healthpb.RegisterHealthServer(s, h)
+			// TODO add your gRPC service: rpc.RegisterYourServer(s, h)
+		},
+		// conf.FrameworkType: connect
+		ConnectRegisterMux: func(_ *http.ServeMux) {
+			// TODO add your connect service: mux.Handle(rpc.NewYourServiceHandler(h))
+		},
+	})
+
+}

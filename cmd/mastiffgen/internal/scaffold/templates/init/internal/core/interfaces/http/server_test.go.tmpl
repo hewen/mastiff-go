@@ -1,0 +1,16 @@
+package http
+
+import (
+	"testing"
+
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewHTTPServer(t *testing.T) {
+	s, err := NewHTTPServer(&serverconf.HTTPConfig{
+		FrameworkType: serverconf.FrameworkFiber,
+	})
+	assert.Nil(t, err)
+	assert.NotNil(t, s)
+}

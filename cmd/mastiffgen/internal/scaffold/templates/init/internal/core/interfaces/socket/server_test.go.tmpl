@@ -1,0 +1,16 @@
+package socket
+
+import (
+	"testing"
+
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewSocketServer(t *testing.T) {
+	s, err := NewSocketServer(&serverconf.SocketConfig{
+		FrameworkType: serverconf.FrameworkGnet,
+	})
+	assert.Nil(t, err)
+	assert.NotNil(t, s)
+}

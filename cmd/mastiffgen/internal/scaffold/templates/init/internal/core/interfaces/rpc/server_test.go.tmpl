@@ -1,0 +1,16 @@
+package rpc
+
+import (
+	"testing"
+
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewRPCServer(t *testing.T) {
+	s, err := NewRPCServer(&serverconf.RPCConfig{
+		FrameworkType: serverconf.FrameworkGrpc,
+	})
+	assert.Nil(t, err)
+	assert.NotNil(t, s)
+}

@@ -52,7 +52,7 @@ func BenchmarkGin(b *testing.B) {
 	}
 }
 
-func initFrameworkType(b *testing.B, ft serverconf.FrameworkType) int {
+func initFrameworkType(b *testing.B, ft serverconf.HTTPFrameworkType) int {
 	port, err := util.GetFreePort()
 	assert.Nil(b, err)
 

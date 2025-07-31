@@ -95,7 +95,7 @@ func TestSocketConfig_SetDefault_PartialDefaults(t *testing.T) {
 
 func TestFrameworkType_Constants(t *testing.T) {
 	// Test that framework type constants are defined correctly
-	assert.Equal(t, FrameworkType("gnet"), FrameworkGnet)
+	assert.Equal(t, SocketFrameworkType("gnet"), FrameworkGnet)
 	assert.NotEmpty(t, string(FrameworkGnet))
 }
 

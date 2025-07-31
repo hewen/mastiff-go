@@ -3,10 +3,10 @@ sql:
   - name: '{{.PackageName}}'
     engine: 'mysql'
     schema:
-      - 'pkg/sql/schema/test.sql'
+      - 'internal/core/interfaces/repository/sql/schema/test.sql'
     queries:
-      - 'pkg/sql/queries/test.sql'
+      - 'internal/core/interfaces/repository/sql/queries/test.sql'
     gen:
       go:
-        out: 'pkg/model/sqlc'
+        out: 'internal/core/interfaces/repository/sqlc'
         package: 'sqlc'

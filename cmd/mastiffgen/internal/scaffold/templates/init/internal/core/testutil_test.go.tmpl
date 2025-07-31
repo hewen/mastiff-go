@@ -1,0 +1,21 @@
+package core
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/assert"
+)
+
+func TestInitMockRedis(_ *testing.T) {
+	InitMockRedis()
+}
+
+func TestInitMockMysql(_ *testing.T) {
+	InitMockMysql("./interfaces/repository/sql")
+}
+
+func TestInitMockMysql_Error(t *testing.T) {
+	assert.Panics(t, func() {
+		InitMockMysql("./error")
+	})
+}

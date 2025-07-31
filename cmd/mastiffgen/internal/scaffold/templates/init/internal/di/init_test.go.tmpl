@@ -1,0 +1,120 @@
+package di
+
+import (
+	"testing"
+
+	"{{.PackageName}}/internal/core"
+	"{{.PackageName}}/internal/core/interfaces/repository"
+	"github.com/alicebob/miniredis/v2"
+	"github.com/hewen/mastiff-go/config"
+	"github.com/hewen/mastiff-go/config/loggerconf"
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/hewen/mastiff-go/config/storeconf"
+	"github.com/hewen/mastiff-go/logger"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestInitAppEmptyConfig(t *testing.T) {
+	_, err := InitApp(nil, nil)
+	assert.NotNil(t, err)
+}
+
+func TestInitAppEmptyLoggerConfig(t *testing.T) {
+	_, err := InitApp(&config.Config{}, logger.NewLogger())
+	assert.EqualValues(t, "empty logger config", err.Error())
+}
+
+func TestInitApp_InitConnectorError(t *testing.T) {
+	_, err := InitApp(&config.Config{
+		Logger: &loggerconf.Config{
+			Level: "info",
+		},
+		Mysql: &storeconf.MysqlConfig{
+			DataSourceName: "error",
+		},
+	}, logger.NewLogger())
+	assert.EqualValues(t, "invalid DSN: missing the slash separating the database name", err.Error())
+}
+
+func TestInitApp_Http(t *testing.T) {
+	c, err := InitApp(&config.Config{
+		Logger: &loggerconf.Config{
+			Level: "info",
+		},
+		HTTP: &serverconf.HTTPConfig{
+			Addr:          "error",
+			FrameworkType: serverconf.FrameworkFiber,
+		},
+	}, logger.NewLogger())
+
+	assert.Nil(t, err)
+	assert.NotNil(t, c)
+}
+
+func TestInitApp_Rpc(t *testing.T) {
+	c, err := InitApp(&config.Config{
+		Logger: &loggerconf.Config{
+			Level: "info",
+		},
+		RPC: &serverconf.RPCConfig{
+			Addr:          "0.0.0.0:8080",
+			FrameworkType: serverconf.FrameworkGrpc,
+		},
+	}, logger.NewLogger())
+
+	assert.Nil(t, err)
+	assert.NotNil(t, c)
+}
+
+func TestInitApp_Queue(t *testing.T) {
+	s, _ := miniredis.Run()
+	c, err := InitApp(&config.Config{
+		Logger: &loggerconf.Config{
+			Level: "info",
+		},
+		Queue: &serverconf.QueueConfig{
+			QueueName: "test",
+		},
+		Redis: &storeconf.RedisConfig{
+			Addr:     s.Addr(),
+			Password: "",
+			DB:       0,
+		},
+	}, logger.NewLogger())
+
+	assert.Nil(t, err)
+	assert.NotNil(t, c)
+}
+
+func TestInitApp(t *testing.T) {
+	core.InitMockMysql("../core/interfaces/repository/sql")
+
+	s, _ := miniredis.Run()
+	c, err := InitApp(&config.Config{
+		RPC: &serverconf.RPCConfig{
+			Addr:          "0.0.0.0:9090",
+			FrameworkType: serverconf.FrameworkGrpc,
+		},
+		HTTP: &serverconf.HTTPConfig{
+			Addr:          "0.0.0.0:8080",
+			FrameworkType: serverconf.FrameworkFiber,
+		},
+		Mysql: &storeconf.MysqlConfig{
+			DataSourceName: repository.DStore.DataSourceName(),
+		},
+		Socket: &serverconf.SocketConfig{
+			Addr:          "0.0.0.0:6060",
+			FrameworkType: serverconf.FrameworkGnet,
+		},
+		Redis: &storeconf.RedisConfig{
+			Addr:     s.Addr(),
+			Password: "",
+			DB:       0,
+		},
+		Logger: &loggerconf.Config{
+			Level: "info",
+		},
+	}, logger.NewLogger())
+	assert.Nil(t, err)
+	assert.NotNil(t, c)
+}

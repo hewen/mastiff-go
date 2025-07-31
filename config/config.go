@@ -18,6 +18,7 @@ type Config struct {
 	Logger *loggerconf.Config
 	HTTP   *serverconf.HTTPConfig
 	RPC    *serverconf.RPCConfig
+	Socket *serverconf.SocketConfig
 	Queue  *serverconf.QueueConfig
 	Mysql  *storeconf.MysqlConfig
 	Redis  *storeconf.RedisConfig

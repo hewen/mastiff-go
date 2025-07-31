@@ -1,0 +1,79 @@
+// Package di provides the dependency injection setup for the application.
+package di
+
+import (
+	"fmt"
+
+	"{{.PackageName}}/internal/core/interfaces/http"
+	"{{.PackageName}}/internal/core/interfaces/queue"
+	"{{.PackageName}}/internal/core/interfaces/repository"
+	"{{.PackageName}}/internal/core/interfaces/rpc"
+	"{{.PackageName}}/internal/core/interfaces/socket"
+	"github.com/hewen/mastiff-go/config"
+	"github.com/hewen/mastiff-go/logger"
+	"github.com/hewen/mastiff-go/server"
+)
+
+// InitApp initializes the application by loading the configuration and creating the necessary servers.
+func InitApp(conf *config.Config, l logger.Logger) (*server.Servers, error) {
+	if conf == nil {
+		return nil, fmt.Errorf("empty config")
+	}
+	if conf.Logger == nil {
+		return nil, fmt.Errorf("empty logger config")
+	}
+	if err := repository.InitConnector(conf); err != nil {
+		return nil, err
+	}
+	if err := logger.InitLogger(*conf.Logger); err != nil {
+		return nil, err
+	}
+
+	svrs := &server.Servers{}
+
+	if conf.HTTP != nil {
+		s, err := http.NewHTTPServer(conf.HTTP)
+		if err != nil {
+			return nil, err
+		}
+		svrs.Add(s)
+	}
+
+	if conf.RPC != nil {
+		s, err := rpc.NewRPCServer(conf.RPC)
+		if err != nil {
+			return nil, err
+		}
+		svrs.Add(s)
+	}
+
+	if conf.Queue != nil {
+		s, err := queue.NewQueueServer(conf.Queue)
+		if err != nil {
+			return nil, err
+		}
+		svrs.Add(s)
+	}
+
+	if conf.Socket != nil {
+		s, err := socket.NewSocketServer(conf.Socket)
+		if err != nil {
+			return nil, err
+		}
+		svrs.Add(s)
+	}
+
+	server.AddGracefulStop(svrs.Stop)
+	server.AddGracefulStop(func() {
+		if err := repository.RStore.Close(); err != nil {
+			l.Errorf("%v", err)
+		}
+	})
+	server.AddGracefulStop(func() {
+		if err := repository.DStore.Close(); err != nil {
+			l.Errorf("%v", err)
+		}
+	})
+
+	return svrs, nil
+}

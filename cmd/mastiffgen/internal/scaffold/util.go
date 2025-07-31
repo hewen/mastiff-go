@@ -40,46 +40,6 @@ func ExpandPath(path string) string {
 	return filepath.Join(".", path[2:])
 }
 
-// updateCoreGoSections updates core.go with the given updates.
-func updateCoreGoSections(path string, updates []MarkerUpdate) error {
-	data, err := os.ReadFile(path) // #nosec
-	if err != nil {
-		return err
-	}
-	content := string(data)
-
-	for _, u := range updates {
-		content, err = insertBetweenMarkers(content, u.Start, u.End, u.Line)
-		if err != nil {
-			return err
-		}
-	}
-
-	return os.WriteFile(path, []byte(content), 0600)
-}
-
-// AppendToCoreGo appends lines to core.go.
-func AppendToCoreGo(path, fieldLine, initLine string) error {
-	return updateCoreGoSections(path, []MarkerUpdate{
-		{Start: "// MODULE_FIELDS_START", End: "// MODULE_FIELDS_END", Line: fieldLine},
-		{Start: "// MODULE_INITS_START", End: "// MODULE_INITS_END", Line: initLine},
-	})
-}
-
-// AppendToCoreGoRoutes appends lines to core.go.
-func AppendToCoreGoRoutes(path, routeLine string) error {
-	return updateCoreGoSections(path, []MarkerUpdate{
-		{Start: "// MODULE_ROUTES_START", End: "// MODULE_ROUTES_END", Line: routeLine},
-	})
-}
-
-// AppendToCorePackage appends lines to core.go.
-func AppendToCorePackage(path, packageLine string) error {
-	return updateCoreGoSections(path, []MarkerUpdate{
-		{Start: "// MODULE_PACKAGE_START", End: "// MODULE_PACKAGE_END", Line: packageLine},
-	})
-}
-
 // insertBetweenMarkers inserts a line between markers.
 func insertBetweenMarkers(content, start, end, line string) (string, error) {
 	startIdx := strings.Index(content, start)
