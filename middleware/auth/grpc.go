@@ -3,6 +3,7 @@ package auth
 import (
 	"context"
 
+	"github.com/hewen/mastiff-go/config/middlewareconf/authconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/middleware/internal/shared"
 	"google.golang.org/grpc"
@@ -12,7 +13,7 @@ import (
 )
 
 // authenticate handles token extraction and validation.
-func authenticate(ctx context.Context, method string, conf Config) (context.Context, error) {
+func authenticate(ctx context.Context, method string, conf authconf.Config) (context.Context, error) {
 	if isWhiteListed(method, conf.WhiteList) {
 		return ctx, nil
 	}
@@ -37,7 +38,7 @@ func authenticate(ctx context.Context, method string, conf Config) (context.Cont
 }
 
 // UnaryServerInterceptor implements unary auth interceptor.
-func UnaryServerInterceptor(conf Config) grpc.UnaryServerInterceptor {
+func UnaryServerInterceptor(conf authconf.Config) grpc.UnaryServerInterceptor {
 	return func(
 		ctx context.Context,
 		req any,
@@ -53,7 +54,7 @@ func UnaryServerInterceptor(conf Config) grpc.UnaryServerInterceptor {
 }
 
 // StreamServerInterceptor implements stream auth interceptor.
-func StreamServerInterceptor(conf Config) grpc.StreamServerInterceptor {
+func StreamServerInterceptor(conf authconf.Config) grpc.StreamServerInterceptor {
 	return func(
 		srv interface{},
 		ss grpc.ServerStream,

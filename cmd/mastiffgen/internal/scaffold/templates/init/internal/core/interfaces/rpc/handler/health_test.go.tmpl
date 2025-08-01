@@ -1,0 +1,55 @@
+package handler
+
+import (
+	"context"
+	"testing"
+
+	"{{.PackageName}}/internal/core"
+	"{{.PackageName}}/internal/core/interfaces/repository"
+
+	"github.com/stretchr/testify/assert"
+	healthpb "google.golang.org/grpc/health/grpc_health_v1"
+	"google.golang.org/grpc/metadata"
+)
+
+func TestCheck(t *testing.T) {
+	c := new(Handler)
+	ctx := context.TODO()
+	if repository.RStore != nil {
+		_ = repository.RStore.Close()
+	}
+
+	res, err := c.Check(ctx, &healthpb.HealthCheckRequest{})
+	assert.NotNil(t, err)
+	assert.Equal(t, healthpb.HealthCheckResponse_NOT_SERVING, res.Status)
+
+	core.InitMockRedis()
+	res, err = c.Check(ctx, &healthpb.HealthCheckRequest{})
+	assert.Nil(t, err)
+	assert.Equal(t, healthpb.HealthCheckResponse_SERVING, res.Status)
+}
+
+func TestWatch(t *testing.T) {
+	c := new(Handler)
+	var ws testWatchServer
+	err := c.Watch(&healthpb.HealthCheckRequest{}, &ws)
+	assert.NotNil(t, err)
+}
+
+func TestList(t *testing.T) {
+	c := new(Handler)
+	_, err := c.List(context.TODO(), &healthpb.HealthListRequest{})
+	assert.Nil(t, err)
+}
+
+type testWatchServer struct {
+}
+
+func (*testWatchServer) Send(*healthpb.HealthCheckResponse) error { return nil }
+
+func (*testWatchServer) SetHeader(metadata.MD) error  { return nil }
+func (*testWatchServer) SendHeader(metadata.MD) error { return nil }
+func (*testWatchServer) SetTrailer(metadata.MD)       {}
+func (*testWatchServer) Context() context.Context     { return nil }
+func (*testWatchServer) SendMsg(any) error            { return nil }
+func (*testWatchServer) RecvMsg(any) error            { return nil }

@@ -4,26 +4,26 @@ package ratelimit
 import (
 	"context"
 	"net/http"
-	"net/http/httptest"
 	"testing"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/middlewareconf/ratelimitconf"
+	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
+	"github.com/hewen/mastiff-go/server/httpx"
+	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestLimiterManager_CleanerOnce(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
-			Rate:  1,
-			Burst: 1,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
-				EnableRoute:  true,
-				EnableIP:     true,
-				EnableUserID: true,
-			},
+	cfg := &ratelimitconf.Config{
+		Default: &ratelimitconf.RouteLimitConfig{
+			Rate:         1,
+			Burst:        1,
+			Mode:         ratelimitconf.ModeAllow,
+			EnableRoute:  true,
+			EnableIP:     true,
+			EnableUserID: true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)
@@ -47,31 +47,16 @@ func TestLimiterManager_CleanerOnce(t *testing.T) {
 	assert.False(t, exist)
 }
 
-func TestLimiterManager_GetKeyFromGin(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
-			Rate:  1,
-			Burst: 1,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
-				EnableRoute:  true,
-				EnableIP:     true,
-				EnableUserID: true,
-			},
-		},
-	}
-	mgr := NewLimiterManager(cfg)
-	defer mgr.Stop()
-
-	cfgs := []*RouteLimitConfig{
-		{Strategy: Strategy{EnableRoute: true}},
-		{Strategy: Strategy{EnableIP: true}},
-		{Strategy: Strategy{EnableUserID: true}},
+func TestLimiterManager_GetKeyFromHttpx(t *testing.T) {
+	cfgs := []*ratelimitconf.RouteLimitConfig{
+		{EnableRoute: true},
+		{EnableIP: true},
+		{EnableUserID: true},
 	}
 
-	for i, cfg := range cfgs {
+	for k, v := range cfgs {
 		name := ""
-		switch i {
+		switch k {
 		case 0:
 			name = "EnableRoute"
 		case 1:
@@ -80,32 +65,53 @@ func TestLimiterManager_GetKeyFromGin(t *testing.T) {
 			name = "EnableUserID"
 		}
 		t.Run(name, func(t *testing.T) {
-			c, _ := gin.CreateTestContext(httptest.NewRecorder())
-			c.Request, _ = http.NewRequest("GET", "/path", nil)
-			c.Request.URL.Path = "/urlpath"
-			c.Request.RequestURI = "/urlpath"
-			c.Set("somekey", "someval")
-			c.Request.RemoteAddr = "127.0.0.1:12345"
-			c.Request = c.Request.WithContext(contextkeys.SetUserID(c.Request.Context(), "uid123"))
+			cfg := &ratelimitconf.Config{
+				Default: &ratelimitconf.RouteLimitConfig{
+					Rate:         1,
+					Burst:        1,
+					Mode:         ratelimitconf.ModeAllow,
+					EnableRoute:  v.EnableRoute,
+					EnableIP:     v.EnableIP,
+					EnableUserID: v.EnableUserID,
+				},
+			}
 
-			key := mgr.getKeyFromGin(c, cfg)
+			mgr := NewLimiterManager(cfg)
+			defer mgr.Stop()
 
-			assert.NotEmpty(t, key)
+			r, err := httpx.NewHTTPServer(&serverconf.HTTPConfig{
+				FrameworkType: serverconf.FrameworkFiber,
+			})
+			assert.Nil(t, err)
+
+			r.Use(HttpxMiddleware(mgr))
+			r.Get("/path", func(c unicontext.UniversalContext) error {
+				return c.String(http.StatusOK, "path")
+			})
+
+			req, _ := http.NewRequest("GET", "/path", nil)
+			req.RemoteAddr = "127.0.0.1:12345"
+			req = req.WithContext(contextkeys.SetUserID(req.Context(), "uid123"))
+
+			resp, err := r.Test(req)
+			defer func() {
+				_ = resp.Body.Close()
+			}()
+			assert.Nil(t, err)
+			assert.Equal(t, http.StatusOK, resp.StatusCode)
 		})
 	}
 }
 
 func TestLimiterManager_Allow(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
-			Rate:  2,
-			Burst: 1,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
-				EnableRoute:  true,
-				EnableIP:     true,
-				EnableUserID: true,
-			},
+	cfg := &ratelimitconf.Config{
+		Default: &ratelimitconf.RouteLimitConfig{
+			Rate:         2,
+			Burst:        1,
+			Mode:         ratelimitconf.ModeAllow,
+			EnableRoute:  true,
+			EnableIP:     true,
+			EnableUserID: true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)
@@ -133,16 +139,14 @@ func TestLimiterManager_Allow(t *testing.T) {
 }
 
 func TestLimiterManager_Wait(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
-			Rate:  1,
-			Burst: 1,
-			Mode:  ModeWait,
-			Strategy: Strategy{
-				EnableRoute:  true,
-				EnableIP:     true,
-				EnableUserID: true,
-			},
+	cfg := &ratelimitconf.Config{
+		Default: &ratelimitconf.RouteLimitConfig{
+			Rate:         1,
+			Burst:        1,
+			Mode:         ratelimitconf.ModeWait,
+			EnableRoute:  true,
+			EnableIP:     true,
+			EnableUserID: true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)
@@ -162,20 +166,18 @@ func TestLimiterManager_Wait(t *testing.T) {
 	err = limiter.AllowOrWait(ctx)
 	duration := time.Since(t1)
 	assert.Nil(t, err)
-	assert.GreaterOrEqual(t, duration, time.Second)
+	assert.InDelta(t, 1.0, duration.Seconds(), 0.05) // ±5%
 }
 
 func TestLimiterManager_Cleanup(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
-			Rate:  10,
-			Burst: 2,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
-				EnableRoute:  true,
-				EnableIP:     true,
-				EnableUserID: true,
-			},
+	cfg := &ratelimitconf.Config{
+		Default: &ratelimitconf.RouteLimitConfig{
+			Rate:         10,
+			Burst:        2,
+			Mode:         ratelimitconf.ModeAllow,
+			EnableRoute:  true,
+			EnableIP:     true,
+			EnableUserID: true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)

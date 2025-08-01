@@ -1,0 +1,17 @@
+// Package http provides the implementation for the HTTP server.
+package http
+
+import (
+	"{{.PackageName}}/internal/core/interfaces/http/handler"
+	"github.com/hewen/mastiff-go/server/httpx"
+)
+
+// initRoute initializes the routes for the application.
+func initRoute(server *httpx.HTTPServer) {
+	h := new(handler.Handler)
+
+	api := server.Group("/api/v1")
+	// TODO remove test route, add your routes
+
+	api.Get("/hello", h.Hello)
+}

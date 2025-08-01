@@ -14,8 +14,8 @@ import (
 // ExtractTokenFromHeader extracts token from header.
 func extractTokenFromHeader(value string, prefixes []string) string {
 	for _, p := range prefixes {
-		if value, ok := strings.CutPrefix(value, p); ok {
-			return strings.TrimSpace(value)
+		if v, ok := strings.CutPrefix(value, p); ok {
+			return strings.TrimSpace(v)
 		}
 	}
 	return value

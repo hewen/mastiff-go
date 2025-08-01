@@ -1,0 +1,19 @@
+package handler
+
+import (
+	"context"
+	"testing"
+
+	"github.com/hewen/mastiff-go/server/test"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestConsumerHandle(t *testing.T) {
+	err := ConsumerHandle(context.TODO(), &test.TestMsg{})
+	assert.Nil(t, err)
+}
+
+func TestNewMsg(t *testing.T) {
+	msg := NewMsg()
+	assert.NotNil(t, msg)
+}

@@ -9,6 +9,7 @@ import (
 
 	"github.com/gchaincl/sqlhooks"
 	"github.com/go-sql-driver/mysql"
+	"github.com/hewen/mastiff-go/config/storeconf"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -20,11 +21,11 @@ type DB struct {
 
 // DatabaseOption defines options for initializing a database connection.
 type DatabaseOption struct {
-	RegisterHookDriver bool
 	Hook               sqlhooks.Hooks
+	ConnMaxLifetime    time.Duration
 	MaxIdleConns       int
 	MaxOpenConns       int
-	ConnMaxLifetime    time.Duration
+	RegisterHookDriver bool
 }
 
 // InitDB initializes a database connection.
@@ -113,6 +114,6 @@ func (db *DB) Close() error {
 }
 
 // InitMysql initializes a MySQL connection.
-func InitMysql(conf MysqlConf, opt ...DatabaseOption) (*DB, error) {
+func InitMysql(conf storeconf.MysqlConfig, opt ...DatabaseOption) (*DB, error) {
 	return InitDB("mysql", conf.DataSourceName, mysql.MySQLDriver{}, opt...)
 }

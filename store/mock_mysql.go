@@ -14,7 +14,8 @@ import (
 	"github.com/dolthub/go-mysql-server/server"
 	gsql "github.com/dolthub/go-mysql-server/sql"
 	vsql "github.com/dolthub/vitess/go/mysql"
-	"github.com/hewen/mastiff-go/util"
+	"github.com/hewen/mastiff-go/config/storeconf"
+	"github.com/hewen/mastiff-go/pkg/util"
 )
 
 var (
@@ -45,7 +46,7 @@ func InitMockMysql(sqlDir string) (*DB, error) {
 
 	// 3. connect to mock mysql server
 	connStr := fmt.Sprintf("root:@tcp(%s)/%s?charset=utf8mb4&parseTime=true&interpolateParams=true", address, dbName)
-	dbConn, err := initMysqlFunc(MysqlConf{DataSourceName: connStr}, DatabaseOption{RegisterHookDriver: true})
+	dbConn, err := initMysqlFunc(storeconf.MysqlConfig{DataSourceName: connStr}, DatabaseOption{RegisterHookDriver: true})
 	if err != nil {
 		return nil, err
 	}

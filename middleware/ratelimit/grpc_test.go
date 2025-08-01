@@ -5,6 +5,7 @@ import (
 	"context"
 	"testing"
 
+	"github.com/hewen/mastiff-go/config/middlewareconf/ratelimitconf"
 	"github.com/hewen/mastiff-go/middleware/internal/shared"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
@@ -14,12 +15,12 @@ import (
 )
 
 func TestUnaryServerInterceptor(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
-			Rate:  1,
-			Burst: 1,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
+	cfg := &ratelimitconf.Config{
+		PerRoute: map[string]*ratelimitconf.RouteLimitConfig{
+			"/ratelimit.TestService/Ping": &ratelimitconf.RouteLimitConfig{
+				Rate:        1,
+				Burst:       1,
+				Mode:        ratelimitconf.ModeAllow,
 				EnableRoute: true,
 				EnableIP:    true,
 			},
@@ -30,6 +31,17 @@ func TestUnaryServerInterceptor(t *testing.T) {
 
 	handle := UnaryServerInterceptor(mgr)
 	_, err := handle(context.Background(),
+		&emptypb.Empty{},
+		&grpc.UnaryServerInfo{
+			FullMethod: "/ratelimit.TestService/Test",
+		},
+		func(_ context.Context, _ any) (any, error) {
+			return &emptypb.Empty{}, nil
+		},
+	)
+	assert.Nil(t, err)
+
+	_, err = handle(context.Background(),
 		&emptypb.Empty{},
 		&grpc.UnaryServerInfo{
 			FullMethod: "/ratelimit.TestService/Ping",
@@ -53,15 +65,13 @@ func TestUnaryServerInterceptor(t *testing.T) {
 }
 
 func TestStreamServerInterceptor(t *testing.T) {
-	cfg := &Config{
-		Default: &RouteLimitConfig{
-			Rate:  1,
-			Burst: 1,
-			Mode:  ModeAllow,
-			Strategy: Strategy{
-				EnableRoute: true,
-				EnableIP:    true,
-			},
+	cfg := &ratelimitconf.Config{
+		Default: &ratelimitconf.RouteLimitConfig{
+			Rate:        1,
+			Burst:       1,
+			Mode:        ratelimitconf.ModeAllow,
+			EnableRoute: true,
+			EnableIP:    true,
 		},
 	}
 	mgr := NewLimiterManager(cfg)

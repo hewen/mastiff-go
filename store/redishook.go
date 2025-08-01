@@ -8,7 +8,7 @@ import (
 	"github.com/go-redis/redis/v7"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/util"
+	"github.com/hewen/mastiff-go/pkg/util"
 )
 
 // RedisHook implements redis.Hook interface for logging Redis commands.

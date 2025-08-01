@@ -1,0 +1,12 @@
+version: '2'
+sql:
+  - name: '{{.PackageName}}'
+    engine: 'mysql'
+    schema:
+      - 'internal/core/interfaces/repository/sql/schema/test.sql'
+    queries:
+      - 'internal/core/interfaces/repository/sql/queries/test.sql'
+    gen:
+      go:
+        out: 'internal/core/interfaces/repository/sqlc'
+        package: 'sqlc'

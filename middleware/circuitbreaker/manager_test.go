@@ -3,18 +3,15 @@ package circuitbreaker
 import (
 	"testing"
 
-	"github.com/sony/gobreaker"
+	"github.com/hewen/mastiff-go/config/middlewareconf/circuitbreakerconf"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewManagerAndGet(t *testing.T) {
-	cfg := &Config{
+	cfg := &circuitbreakerconf.Config{
 		MaxRequests: 3,
 		Interval:    1,
 		Timeout:     1,
-		ReadyToTrip: func(counts gobreaker.Counts) bool {
-			return counts.ConsecutiveFailures > 2
-		},
 	}
 
 	mgr := NewManager(cfg)
@@ -25,13 +22,10 @@ func TestNewManagerAndGet(t *testing.T) {
 }
 
 func TestGetReuseBreaker(t *testing.T) {
-	cfg := &Config{
+	cfg := &circuitbreakerconf.Config{
 		MaxRequests: 3,
 		Interval:    1,
 		Timeout:     1,
-		ReadyToTrip: func(_ gobreaker.Counts) bool {
-			return false
-		},
 	}
 
 	mgr := NewManager(cfg)

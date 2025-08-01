@@ -6,15 +6,15 @@ package logger
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io"
 	"log"
 	"os"
 	"path/filepath"
-	"slices"
+	"sync/atomic"
 	"time"
 
+	"github.com/hewen/mastiff-go/config/loggerconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/robfig/cron/v3"
@@ -26,10 +26,7 @@ import (
 )
 
 // LogLevelFlag represents the log level as an integer flag.
-type LogLevelFlag int
-
-// LogLevel represents the log level as a string.
-type LogLevel string
+type LogLevelFlag int32
 
 const (
 	// LogLevelFlagFatal is the log level flag for fatal errors.
@@ -46,17 +43,17 @@ const (
 	LogLevelFlagDebug LogLevelFlag = 6
 
 	// LogLevelFatal is the log level string for fatal errors.
-	LogLevelFatal LogLevel = "fatal"
+	LogLevelFatal loggerconf.LogLevel = "fatal"
 	// LogLevelPanic is the log level string for panic errors.
-	LogLevelPanic LogLevel = "panic"
+	LogLevelPanic loggerconf.LogLevel = "panic"
 	// LogLevelError is the log level string for error messages.
-	LogLevelError LogLevel = "error"
+	LogLevelError loggerconf.LogLevel = "error"
 	// LogLevelWarn is the log level string for warning messages.
-	LogLevelWarn LogLevel = "warn"
+	LogLevelWarn loggerconf.LogLevel = "warn"
 	// LogLevelInfo is the log level string for informational messages.
-	LogLevelInfo LogLevel = "info"
+	LogLevelInfo loggerconf.LogLevel = "info"
 	// LogLevelDebug is the log level string for debug messages.
-	LogLevelDebug LogLevel = "debug"
+	LogLevelDebug loggerconf.LogLevel = "debug"
 
 	// TimestampFieldName is the field name for the timestamp in log entries.
 	TimestampFieldName = "time"
@@ -70,10 +67,10 @@ const (
 
 var (
 	// logLevel is the current log level.
-	logLevel = LogLevelFlagInfo
+	logLevel atomic.Int32
 
 	// logLevelMap is a map of log level strings to their corresponding LogLevelFlag values.
-	logLevelMap = map[LogLevel]LogLevelFlag{
+	logLevelMap = map[loggerconf.LogLevel]LogLevelFlag{
 		LogLevelFatal: LogLevelFlagFatal,
 		LogLevelPanic: LogLevelFlagPanic,
 		LogLevelError: LogLevelFlagError,
@@ -83,7 +80,7 @@ var (
 	}
 
 	// logLevelValueMap is a map of LogLevelFlag values to their corresponding LogLevel strings.
-	logLevelValueMap = map[LogLevelFlag]LogLevel{
+	logLevelValueMap = map[LogLevelFlag]loggerconf.LogLevel{
 		LogLevelFlagFatal: LogLevelFatal,
 		LogLevelFlagPanic: LogLevelPanic,
 		LogLevelFlagError: LogLevelError,
@@ -115,10 +112,11 @@ var (
 
 func init() {
 	zerolog.TimeFieldFormat = time.RFC3339Nano
+	logLevel.Store(int32(LogLevelFlagInfo))
 }
 
 // InitLogger initializes the global logger with the given configuration.
-func InitLogger(conf Config) error {
+func InitLogger(conf loggerconf.Config) error {
 	if err := conf.Validate(); err != nil {
 		return err
 	}
@@ -172,19 +170,8 @@ func InitLogger(conf Config) error {
 	return err
 }
 
-// Validate checks the configuration for errors.
-func (cfg *Config) Validate() error {
-	if slices.Contains(cfg.Outputs, "file") && (cfg.FileOutput == nil || cfg.FileOutput.Path == "") {
-		return errors.New("file output selected but FileOutput.Path is empty")
-	}
-	if cfg.Backend != "zap" && cfg.Backend != "zerolog" && cfg.Backend != "std" && cfg.Backend != "" {
-		return fmt.Errorf("unsupported backend: %s", cfg.Backend)
-	}
-	return nil
-}
-
 // createFileWriter creates a new file writer based on the configuration.
-func createFileWriter(cfg FileOutputConfig) io.Writer {
+func createFileWriter(cfg loggerconf.FileOutputConfig) io.Writer {
 	switch cfg.RotatePolicy {
 	case "daily":
 		return newDailyRotatingLogger(cfg)
@@ -204,7 +191,7 @@ func ensureLogDirExists(path string) {
 }
 
 // newDailyRotatingLogger creates a new logger that rotates daily.
-func newDailyRotatingLogger(cfg FileOutputConfig) *lumberjack.Logger {
+func newDailyRotatingLogger(cfg loggerconf.FileOutputConfig) *lumberjack.Logger {
 	ensureLogDirExists(cfg.Path)
 
 	logger := &lumberjack.Logger{
@@ -222,7 +209,7 @@ func newDailyRotatingLogger(cfg FileOutputConfig) *lumberjack.Logger {
 }
 
 // newSizeLogger creates a new logger that rotates when the log file reaches a certain size.
-func newSizeLogger(cfg FileOutputConfig) *lumberjack.Logger {
+func newSizeLogger(cfg loggerconf.FileOutputConfig) *lumberjack.Logger {
 	ensureLogDirExists(cfg.Path)
 
 	return &lumberjack.Logger{
@@ -233,7 +220,7 @@ func newSizeLogger(cfg FileOutputConfig) *lumberjack.Logger {
 }
 
 // newPlainFileLogger creates a new logger that writes to a plain file without rotation.
-func newPlainFileLogger(cfg FileOutputConfig) io.Writer {
+func newPlainFileLogger(cfg loggerconf.FileOutputConfig) io.Writer {
 	ensureLogDirExists(cfg.Path)
 
 	f, err := os.OpenFile(cfg.Path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0600)
@@ -284,17 +271,21 @@ func newStdLogger(out io.Writer) *log.Logger {
 }
 
 // SetLevel sets the global logging level.
-func SetLevel(level LogLevel) error {
+func SetLevel(level loggerconf.LogLevel) error {
 	if level == "" {
-		logLevel = LogLevelFlagInfo
+		logLevel.Store(int32(LogLevelFlagInfo))
 		return nil
 	}
 	lv, ok := logLevelMap[level]
 	if !ok {
 		return fmt.Errorf("invalid log level: %s", level)
 	}
-	logLevel = lv
+	logLevel.Store(int32(lv))
 	return nil
+}
+
+func getLogLevel() LogLevelFlag {
+	return LogLevelFlag(logLevel.Load())
 }
 
 // NewTraceID generates a new trace ID using the nanoid package.
@@ -349,21 +340,22 @@ func NewOutgoingContextWithIncomingContext(ctx context.Context) context.Context 
 	}
 	md := metadata.Pairs(string(contextkeys.LoggerTraceIDKey), traceID)
 	ctx = metadata.NewOutgoingContext(ctx, md)
+
 	return contextkeys.SetTraceID(ctx, traceID)
 }
 
 // stdLogger is a Logger implementation using the standard log package.
 type stdLogger struct {
 	logger        *log.Logger
-	traceID       string
 	fields        map[string]any
+	traceID       string
 	EnableMasking bool
 }
 
 func (l *stdLogger) GetTraceID() string { return l.traceID }
 
 func (l *stdLogger) logOutput(level LogLevelFlag, format string, v ...any) {
-	if level > logLevel {
+	if level > getLogLevel() {
 		return
 	}
 	fields := make(map[string]any, len(l.fields)+2)
@@ -410,7 +402,7 @@ type zapLogger struct {
 func (l *zapLogger) GetTraceID() string { return l.traceID }
 
 func (l *zapLogger) logOutput(level LogLevelFlag, format string, v ...any) {
-	if level > logLevel {
+	if level > getLogLevel() {
 		return
 	}
 
@@ -459,7 +451,7 @@ type zerologLogger struct {
 func (l *zerologLogger) GetTraceID() string { return l.traceID }
 
 func (l *zerologLogger) logOutput(level LogLevelFlag, format string, v ...any) {
-	if level > logLevel {
+	if level > getLogLevel() {
 		return
 	}
 	var e *zerolog.Event

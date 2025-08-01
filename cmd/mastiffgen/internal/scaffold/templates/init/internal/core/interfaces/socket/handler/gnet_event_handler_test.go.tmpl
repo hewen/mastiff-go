@@ -1,0 +1,37 @@
+package handler
+
+import (
+	"testing"
+
+	"github.com/panjf2000/gnet/v2"
+)
+
+func TestOnBoot(_ *testing.T) {
+	h := new(Handler)
+	_ = h.OnBoot(gnet.Engine{})
+}
+
+func TestOnShutdown(_ *testing.T) {
+	h := new(Handler)
+	h.OnShutdown(gnet.Engine{})
+}
+
+func TestOnOpen(_ *testing.T) {
+	h := new(Handler)
+	_, _ = h.OnOpen(nil)
+}
+
+func TestOnClose(_ *testing.T) {
+	h := new(Handler)
+	_ = h.OnClose(nil, nil)
+}
+
+func TestOnTraffic(_ *testing.T) {
+	h := new(Handler)
+	_ = h.OnTraffic(nil)
+}
+
+func TestOnTick(_ *testing.T) {
+	h := new(Handler)
+	_, _ = h.OnTick()
+}

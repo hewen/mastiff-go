@@ -1,0 +1,14 @@
+package handler
+
+import (
+	"os"
+	"testing"
+
+	"{{.PackageName}}/internal/core"
+)
+
+func TestMain(m *testing.M) {
+	core.InitMockRedis()
+	core.InitMockMysql("../../repository/sql/schema")
+	os.Exit(m.Run())
+}

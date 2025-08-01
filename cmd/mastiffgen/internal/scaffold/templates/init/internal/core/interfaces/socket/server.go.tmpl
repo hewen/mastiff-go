@@ -1,0 +1,18 @@
+// Package socket provides the implementation for the socket server.
+package socket
+
+import (
+	"{{.PackageName}}/internal/core/interfaces/socket/handler"
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/hewen/mastiff-go/server/socketx"
+	shandler "github.com/hewen/mastiff-go/server/socketx/handler"
+)
+
+// NewSocketServer creates a new instance of SocketServer with the provided configuration.
+func NewSocketServer(conf *serverconf.SocketConfig) (*socketx.SocketServer, error) {
+	h := new(handler.Handler)
+
+	return socketx.NewSocketServer(conf, shandler.BuildParams{
+		GnetHandler: h,
+	})
+}

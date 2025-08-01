@@ -10,7 +10,6 @@ MastiffGen is a command-line tool written in Go that helps bootstrap Go projects
 ## ✨ Features
 
 - 📦 Initialize a new Go project (`init` command)
-- 🧩 Add new modules with HTTP/gRPC support (`module` command)
 - 🛠 Template-based file generation using `embed.FS`
 - 🔧 Easy integration with your existing project structure
 
@@ -30,7 +29,7 @@ go install github.com/hewen/mastiff-go/cmd/mastiffgen@latest
 
 ## 🧪 Usage
 
-### 1. Initialize a new project
+### Initialize a new project
 
 ```bash
 mastiffgen init --package github.com/yourname/myproject --project myproject --dir ./myproject
@@ -38,46 +37,58 @@ mastiffgen init --package github.com/yourname/myproject --project myproject --di
 
 This will generate the base project structure in the `./myproject` directory.
 
-### 2. Add a new module
-
-```bash
-mastiffgen module user --package github.com/yourname/myproject --dir ./myproject
-```
-
-This will generate module code under `core/user/` and automatically inject required lines into `core/core.go`:
-
-- Fields
-- Initializations
-- Route registration
-- Import statement
-
 ---
 
 ## 🧱 Project Structure
 
 ```
 myproject/
-├── core/
-│   ├── core.go         # Main registration logic for modules
-│   └── user/           # Example module
-├── pkg/
-│   └── model/          # Database models
-├── config/             # Configuration logic
-├── main.go             # Application entry point
+├── cmd/
+│   ├── root.go                   # Cobra root command
+│   └── run.go                    # command that calls di.InitApp(), starts the service, loads config, and launches HTTP/gRPC services
+├── internal/
+│   ├── di/
+│   │   └── init.go               # Generated dependency graph
+│   ├── core/
+│   │   ├── domain/               # Entities + domain services
+│   │   ├── usecase/              # Business logic orchestration
+│   │   └── interfaces/           # Adapter implementations
+│   │       ├── http/             # HTTP adapter
+│   │       │    ├── handler/     # Handlers (grouped by functionality)
+│   │       │    ├── route.go     # Route definitions
+│   │       │    └── server.go    # HTTP server creation
+│   │       ├── rpc/              # RPC adapter
+│   │       │    ├── handler/     # Handlers (grouped by functionality)
+│   │       │    └── server.go    # gRPC server creation
+│   │       ├── queue/            # Queue adapter
+│   │       │    ├── handler/     # Handlers (grouped by functionality)
+│   │       │    └── server.go    # Queue server creation
+│   │       ├── socket/           # Socket adapter
+│   │       │    ├── handler/     # Handlers (grouped by functionality)
+│   │       │    └── server.go    # Socket server creation
+│   │       ├── websocket/        # WebSocket adapter
+│   │       │    ├── handler/     # Handlers (grouped by functionality)
+│   │       │    └── server.go    # WebSocket server creation
+│   │       └── repository/       # MySQL/Redis implementations
+│   │            ├── sqlc/        # sqlc-generated code
+│   │            ├── custom/      # Custom repository code
+│   │            └── sql/         # SQL definitions for sqlc
+│   │                 ├── schema  # Table schema definitions
+│   │                 └── queries # Query definitions
+│   ├── config/                   # Configuration loading (via viper/env, etc.)
+│   └── pkg/                      # Shared internal libraries (logger, utils, etc.)
+│        └── constants/           # Global constants
+├── sqlc.yaml                     # Configuration for sqlc code generation
+├── go.mod
+├── .githooks
+├── .gitignore
+├── .golangci.yml
+├── Dockerfile
+├── Makefile
+├── README.md
+└── main.go                       # Only calls cmd.Execute()
+
 ```
-
----
-
-## 🔖 Template Markers
-
-`core/core.go` is modified using the following comment markers:
-
-- `// MODULE_PACKAGE_START` / `// MODULE_PACKAGE_END`
-- `// MODULE_FIELDS_START` / `// MODULE_FIELDS_END`
-- `// MODULE_INITS_START` / `// MODULE_INITS_END`
-- `// MODULE_ROUTES_START` / `// MODULE_ROUTES_END`
-
-These markers indicate where new module code should be injected.
 
 ---
 
@@ -87,8 +98,7 @@ Template files are stored under:
 
 ```
 templates/
-├── init/       # Used for project scaffolding
-└── module/     # Used for module generation
+└── init/       # Used for project scaffolding
 ```
 
 They are loaded using Go's `embed.FS` and rendered via Go's `text/template`.

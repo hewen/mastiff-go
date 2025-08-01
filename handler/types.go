@@ -3,12 +3,12 @@ package handler
 
 // BaseResp is a base response.
 type BaseResp struct {
-	Code  int    `json:"code"`
 	Trace string `json:"trace"`
+	Code  int    `json:"code"`
 }
 
 // RespWithData is a response with data.
 type RespWithData[T any] struct {
-	BaseResp
 	Data T `json:"data,omitempty"`
+	BaseResp
 }

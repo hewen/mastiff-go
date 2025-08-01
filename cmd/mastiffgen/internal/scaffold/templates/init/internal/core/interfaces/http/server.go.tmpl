@@ -1,0 +1,19 @@
+// Package http provides the implementation for the HTTP server.
+package http
+
+import (
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/hewen/mastiff-go/server/httpx"
+)
+
+// NewHTTPServer creates a new instance of HTTPServer with the provided configuration.
+func NewHTTPServer(conf *serverconf.HTTPConfig) (*httpx.HTTPServer, error) {
+	httpServer, err := httpx.NewHTTPServer(conf)
+	if err != nil {
+		return nil, err
+	}
+
+	initRoute(httpServer)
+
+	return httpServer, nil
+}

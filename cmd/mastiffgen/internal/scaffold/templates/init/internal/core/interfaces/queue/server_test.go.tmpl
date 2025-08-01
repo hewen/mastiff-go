@@ -1,0 +1,18 @@
+package queue
+
+import (
+	"testing"
+
+	"{{.PackageName}}/internal/core"
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewQueueServer(t *testing.T) {
+	core.InitMockRedis()
+	s, err := NewQueueServer(&serverconf.QueueConfig{
+		QueueName: "test",
+	})
+	assert.Nil(t, err)
+	assert.NotNil(t, s)
+}

@@ -1,0 +1,38 @@
+package sqlc
+
+import (
+	"testing"
+
+	"github.com/hewen/mastiff-go/store"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestNewWithMockMysql(t *testing.T) {
+	mockDB, err := store.InitMockMysql("../sql/schema/")
+	assert.NoError(t, err)
+	defer func() {
+		_ = mockDB.Close()
+	}()
+
+	queries := New(mockDB)
+	assert.NotNil(t, queries)
+}
+
+func TestWithTx(t *testing.T) {
+	mockDB, err := store.InitMockMysql("../sql/schema/")
+	assert.NoError(t, err)
+	defer func() {
+		_ = mockDB.Close()
+	}()
+
+	queries := New(mockDB)
+
+	tx, err := mockDB.Begin()
+	assert.NoError(t, err)
+	defer func() {
+		_ = tx.Rollback()
+	}()
+
+	queriesTx := queries.WithTx(tx)
+	assert.NotNil(t, queriesTx)
+}

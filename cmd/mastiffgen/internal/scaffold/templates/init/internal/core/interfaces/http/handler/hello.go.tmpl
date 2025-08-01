@@ -1,0 +1,15 @@
+// Package handler provides the implementation for the HTTP handlers.
+package handler
+
+import (
+	"net/http"
+
+	"github.com/hewen/mastiff-go/server/httpx/unicontext"
+)
+
+// Hello is the handler for the /hello route.
+func (Handler) Hello(c unicontext.UniversalContext) error {
+	return c.JSON(http.StatusOK, map[string]string{
+		"message": "ok",
+	})
+}

@@ -1,0 +1,34 @@
+// Package config provides the configuration structure and initialization for the application.
+package config
+
+import (
+	"github.com/hewen/mastiff-go/config"
+	"github.com/hewen/mastiff-go/logger"
+)
+
+var (
+	// Cfg is the global configuration instance.
+	Cfg *config.Config
+)
+
+// CustomConfig custom config.
+type CustomConfig struct {
+}
+
+// InitConfig initializes the configuration by reading the specified config file.
+func InitConfig(confFile string) (*config.Config, error) {
+	customCfg := &CustomConfig{}
+	return config.LoadConfig(confFile, customCfg, onChange)
+}
+
+func onChange(newCfg *config.Config, err error) {
+	l := logger.NewLogger()
+	if err != nil {
+		l.Errorf("config reload error: %v", err)
+		return
+	}
+	l.Infof("config reloaded: %v", newCfg)
+
+	Cfg = newCfg
+	// TODO add onChange logic here.
+}

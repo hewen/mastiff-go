@@ -8,29 +8,37 @@ import (
 	"sync"
 	"time"
 
-	"github.com/gin-gonic/gin"
+	"github.com/hewen/mastiff-go/config/middlewareconf/ratelimitconf"
 	"github.com/hewen/mastiff-go/internal/contextkeys"
+	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 	"golang.org/x/time/rate"
 	"google.golang.org/grpc/peer"
+)
+
+const (
+	// cleanerInterval is the interval at which the cleaner runs.
+	cleanerInterval = 5 * time.Minute
+	// limiterTTL is the time after which a limiter is removed from the cache.
+	limiterTTL = 10 * time.Minute
 )
 
 // routeLimiter represents a limiter for a route.
 type routeLimiter struct {
 	limiter  *rate.Limiter
-	mode     LimitMode
 	lastUsed time.Time
+	mode     ratelimitconf.LimitMode
 }
 
 // LimiterManager manages the rate limiters.
 type LimiterManager struct {
-	mu       sync.RWMutex
+	config   *ratelimitconf.Config
 	limiters map[string]*routeLimiter
-	config   *Config
 	stopCh   chan struct{}
+	mu       sync.RWMutex
 }
 
 // NewLimiterManager creates a new LimiterManager.
-func NewLimiterManager(cfg *Config) *LimiterManager {
+func NewLimiterManager(cfg *ratelimitconf.Config) *LimiterManager {
 	mgr := &LimiterManager{
 		limiters: make(map[string]*routeLimiter),
 		config:   cfg,
@@ -71,39 +79,18 @@ func (mgr *LimiterManager) cleanerOnce() {
 	mgr.mu.Unlock()
 }
 
-// getKeyFromGin returns the key for the limiter from the gin context.
-func (mgr *LimiterManager) getKeyFromGin(ctx *gin.Context, cfg *RouteLimitConfig) string {
-	parts := []string{}
-	if cfg.Strategy.EnableRoute {
-		route := ctx.FullPath()
-		if route == "" {
-			route = ctx.Request.URL.Path
-		}
-		parts = append(parts, route)
-	}
-	if cfg.Strategy.EnableIP {
-		parts = append(parts, ctx.ClientIP())
-	}
-	if cfg.Strategy.EnableUserID {
-		if uid, ok := contextkeys.GetUserID(ctx.Request.Context()); ok {
-			parts = append(parts, fmt.Sprint(uid))
-		}
-	}
-	return strings.Join(parts, "|")
-}
-
 // getKeyFromContext returns the key for the limiter from the context.
-func (mgr *LimiterManager) getKeyFromContext(ctx context.Context, route string, cfg *RouteLimitConfig) string {
+func (mgr *LimiterManager) getKeyFromContext(ctx context.Context, route string, cfg *ratelimitconf.RouteLimitConfig) string {
 	parts := []string{}
-	if cfg.Strategy.EnableRoute {
+	if cfg.EnableRoute {
 		parts = append(parts, route)
 	}
-	if cfg.Strategy.EnableIP {
+	if cfg.EnableIP {
 		if pr, _ := peer.FromContext(ctx); pr != nil {
 			parts = append(parts, pr.Addr.String())
 		}
 	}
-	if cfg.Strategy.EnableUserID {
+	if cfg.EnableUserID {
 		if uid, ok := contextkeys.GetUserID(ctx); ok {
 			parts = append(parts, uid)
 		}
@@ -111,8 +98,26 @@ func (mgr *LimiterManager) getKeyFromContext(ctx context.Context, route string, 
 	return strings.Join(parts, "|")
 }
 
+// getKeyFromHttpx returns the key for the limiter from the httpx context.
+func (mgr *LimiterManager) getKeyFromHttpx(ctx unicontext.UniversalContext, cfg *ratelimitconf.RouteLimitConfig) string {
+	parts := []string{}
+	if cfg.EnableRoute {
+		route := ctx.FullPath()
+		parts = append(parts, route)
+	}
+	if cfg.EnableIP {
+		parts = append(parts, ctx.ClientIP())
+	}
+	if cfg.EnableUserID {
+		if uid, ok := contextkeys.GetUserID(contextkeys.ContextFrom(ctx)); ok {
+			parts = append(parts, fmt.Sprint(uid))
+		}
+	}
+	return strings.Join(parts, "|")
+}
+
 // getOrCreateLimiter returns the limiter for the key. If it doesn't exist, it creates it.
-func (mgr *LimiterManager) getOrCreateLimiter(key string, cfg *RouteLimitConfig) *routeLimiter {
+func (mgr *LimiterManager) getOrCreateLimiter(key string, cfg *ratelimitconf.RouteLimitConfig) *routeLimiter {
 	mgr.mu.Lock()
 	defer mgr.mu.Unlock()
 	if l, ok := mgr.limiters[key]; ok {
@@ -131,12 +136,12 @@ func (mgr *LimiterManager) getOrCreateLimiter(key string, cfg *RouteLimitConfig)
 // AllowOrWait allows the request if the limiter allows it. If the limiter doesn't allow it, it waits for the limiter to allow it.
 func (l *routeLimiter) AllowOrWait(ctx context.Context) error {
 	switch l.mode {
-	case ModeAllow:
+	case ratelimitconf.ModeAllow:
 		if l.limiter.Allow() {
 			return nil
 		}
 		return context.DeadlineExceeded
-	case ModeWait:
+	case ratelimitconf.ModeWait:
 		return l.limiter.Wait(ctx)
 	default:
 		return context.DeadlineExceeded

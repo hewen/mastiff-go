@@ -1,0 +1,20 @@
+// Package handler provides the implementation for the queue handlers.
+package handler
+
+import (
+	"context"
+
+	"github.com/hewen/mastiff-go/server/test"
+)
+
+// ConsumerHandle is the function that handles the queue messages.
+// TODO TestMsg replace to your messages.
+func ConsumerHandle(_ context.Context, _ *test.TestMsg) error {
+	return nil
+}
+
+// NewMsg is the function that creates a new instance of the queue message.
+// TODO TestMsg replace to your messages.
+func NewMsg() *test.TestMsg {
+	return &test.TestMsg{}
+}

@@ -1,0 +1,31 @@
+package repository
+
+import (
+	"testing"
+
+	"github.com/alicebob/miniredis/v2"
+	"github.com/hewen/mastiff-go/config"
+	"github.com/hewen/mastiff-go/config/storeconf"
+	"github.com/hewen/mastiff-go/store"
+	"github.com/stretchr/testify/assert"
+)
+
+func TestInitConnector(t *testing.T) {
+	dbConn, _ := store.InitMockMysql("./sql/schema")
+	dStore := NewDbStore(dbConn)
+
+	s, _ := miniredis.Run()
+	conf := &config.Config{
+		Mysql: &storeconf.MysqlConfig{
+			DataSourceName: dStore.DataSourceName(),
+		},
+		Redis: &storeconf.RedisConfig{
+			Addr:     s.Addr(),
+			Password: "",
+			DB:       0,
+		},
+	}
+
+	err := InitConnector(conf)
+	assert.Nil(t, err)
+}

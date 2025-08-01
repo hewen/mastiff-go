@@ -40,7 +40,7 @@ func UnaryServerInterceptor(mgr *Manager) grpc.UnaryServerInterceptor {
 // StreamServerInterceptor returns a stream server interceptor with circuit breaker.
 func StreamServerInterceptor(mgr *Manager) grpc.StreamServerInterceptor {
 	return func(
-		srv interface{},
+		srv any,
 		ss grpc.ServerStream,
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,

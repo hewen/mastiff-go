@@ -1,43 +1,41 @@
+// Package handler provides a context interface for HTTP handlers.
 package handler
 
 import (
 	"net/http"
 
-	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/logger"
 )
 
-// WithRequest is a handler with request and response type.
-type WithRequest[T any, R any] func(c *gin.Context, req T) (R, error)
+// WrapHandlerFunc is the function signature for HTTP handlers.
+type WrapHandlerFunc[T any, R any] func(ctx Context, req T) (R, error)
 
-// WrapHandler wraps a handler with request and response type.
-func WrapHandler[T any, R any](handle WithRequest[T, R]) gin.HandlerFunc {
-	return func(c *gin.Context) {
+// WrapHandler wraps a handler function into a handler function that takes a Context.
+func WrapHandler[T any, R any](handle WrapHandlerFunc[T, R]) func(ctx Context) error {
+	return func(ctx Context) error {
 		var req T
-		l := logger.NewLoggerWithContext(c.Request.Context())
+		l := logger.NewLoggerWithContext(ctx.RequestContext())
 
-		if err := c.ShouldBindJSON(&req); err != nil {
+		if err := ctx.BindJSON(&req); err != nil {
 			l.Fields(map[string]any{"err": err}).Errorf("invalid request")
-			c.JSON(http.StatusBadRequest, BaseResp{
+			return ctx.JSON(http.StatusBadRequest, BaseResp{
 				Code:  http.StatusBadRequest,
 				Trace: l.GetTraceID(),
 			})
-			return
 		}
-		c.Set("req", req)
+		ctx.Set("req", req)
 
-		resp, err := handle(c, req)
+		resp, err := handle(ctx, req)
 		if err != nil {
 			l.Fields(map[string]any{"err": err}).Errorf("handler error")
-			c.JSON(http.StatusInternalServerError, BaseResp{
+			return ctx.JSON(http.StatusInternalServerError, BaseResp{
 				Code:  http.StatusInternalServerError,
 				Trace: l.GetTraceID(),
 			})
-			return
 		}
 
-		c.Set("resp", resp)
-		c.JSON(http.StatusOK, RespWithData[R]{
+		ctx.Set("resp", resp)
+		return ctx.JSON(http.StatusOK, RespWithData[R]{
 			BaseResp: BaseResp{
 				Code:  http.StatusOK,
 				Trace: l.GetTraceID(),
