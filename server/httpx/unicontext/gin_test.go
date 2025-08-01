@@ -710,3 +710,20 @@ func TestGinContext_EdgeCases(t *testing.T) {
 		assert.Equal(t, "No file", w.Body.String())
 	})
 }
+
+func TestGinContext_Body(t *testing.T) {
+	router := gin.New()
+	router.POST("/test", func(c *gin.Context) {
+		ginCtx := &GinContext{Ctx: c}
+		body, _ := ginCtx.Body()
+		c.String(http.StatusOK, string(body))
+	})
+
+	data := "body"
+	req := httptest.NewRequest("POST", "/test", strings.NewReader(data))
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	assert.Equal(t, "body", w.Body.String())
+}
