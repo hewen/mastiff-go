@@ -51,6 +51,8 @@ type UniversalContext interface {
 	// FormValue returns the value of the form field with the given key.
 	// It returns an empty string if the key does not exist.
 	FormValue(key string) string
+	// Body returns the body of the request.
+	Body() ([]byte, error)
 
 	// Method returns the HTTP method of the request.
 	Method() string

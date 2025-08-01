@@ -113,6 +113,11 @@ func (c *GinContext) FormFile(key string) (*multipart.FileHeader, error) {
 	return c.Ctx.FormFile(key)
 }
 
+// Body returns the body of the request.
+func (c *GinContext) Body() ([]byte, error) {
+	return c.Ctx.GetRawData()
+}
+
 // Method returns the HTTP method of the request.
 func (c *GinContext) Method() string {
 	return c.Ctx.Request.Method

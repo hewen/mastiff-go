@@ -870,3 +870,24 @@ func TestFiberContext_FullPath(t *testing.T) {
 		}
 	})
 }
+
+func TestFiberContext_Body(t *testing.T) {
+	app := fiber.New()
+
+	app.Post("/test", func(c *fiber.Ctx) error {
+		fiberCtx := &FiberContext{Ctx: c}
+		body, _ := fiberCtx.Body()
+		return c.SendString(string(body))
+	})
+
+	data := "body"
+	req := httptest.NewRequest("POST", "/test", strings.NewReader(data))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	assert.Equal(t, "body", string(body))
+}
