@@ -56,6 +56,10 @@ func TestCurveFromType(t *testing.T) {
 	assert.NoError(t, err)
 	assert.NotNil(t, curve)
 
+	curve, err = curveFromType(ECDHCurveX25519)
+	assert.NoError(t, err)
+	assert.NotNil(t, curve)
+
 	curve, err = curveFromType(ECDHCurveType(999))
 	assert.Error(t, err)
 	assert.Nil(t, curve)

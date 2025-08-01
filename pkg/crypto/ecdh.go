@@ -23,6 +23,8 @@ const (
 	ECDHCurveP384
 	// ECDHCurveP521 is the type of P521 curve.
 	ECDHCurveP521
+	// ECDHCurveX25519 is the type of X25519 curve.
+	ECDHCurveX25519
 )
 
 var generateKey = func(curve ecdh.Curve) (*ecdh.PrivateKey, error) {
@@ -37,6 +39,8 @@ func curveFromType(tp ECDHCurveType) (ecdh.Curve, error) {
 		return ecdh.P384(), nil
 	case ECDHCurveP521:
 		return ecdh.P521(), nil
+	case ECDHCurveX25519:
+		return ecdh.X25519(), nil
 	default:
 		return nil, errors.New("unsupported curve type")
 	}
