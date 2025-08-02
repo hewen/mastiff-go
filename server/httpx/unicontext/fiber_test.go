@@ -877,7 +877,7 @@ func TestFiberContext_Body(t *testing.T) {
 	app.Post("/test", func(c *fiber.Ctx) error {
 		fiberCtx := &FiberContext{Ctx: c}
 		body, _ := fiberCtx.Body()
-		return c.SendString(string(body))
+		return fiberCtx.Data(http.StatusOK, "application/octet-stream", body)
 	})
 
 	data := "body"

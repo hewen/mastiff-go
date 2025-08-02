@@ -54,6 +54,12 @@ func (c *GinContext) Cookie(key string) string {
 	return val
 }
 
+// Data writes some data into the body stream and updates the HTTP code.
+func (c *GinContext) Data(status int, contentType string, data []byte) error {
+	c.Ctx.Data(status, contentType, data)
+	return nil
+}
+
 // JSON sends a JSON response with the given status code and data.
 func (c *GinContext) JSON(status int, data any) error {
 	c.Ctx.JSON(status, data)

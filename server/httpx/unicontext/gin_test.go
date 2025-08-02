@@ -716,7 +716,7 @@ func TestGinContext_Body(t *testing.T) {
 	router.POST("/test", func(c *gin.Context) {
 		ginCtx := &GinContext{Ctx: c}
 		body, _ := ginCtx.Body()
-		c.String(http.StatusOK, string(body))
+		_ = ginCtx.Data(http.StatusOK, "application/octet-stream", body)
 	})
 
 	data := "body"
