@@ -57,7 +57,9 @@ func TestHTTPServerStartError(t *testing.T) {
 	s, err := NewHTTPServer(conf)
 	assert.Nil(t, err)
 
-	s.Start()
+	assert.Panics(t, func() {
+		s.Start()
+	})
 }
 
 func TestHTTPServerEmptyConfig(t *testing.T) {

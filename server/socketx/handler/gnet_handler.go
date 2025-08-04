@@ -3,6 +3,7 @@ package handler
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/hewen/mastiff-go/config/serverconf"
@@ -16,6 +17,8 @@ type GnetHandler struct {
 	conf   *serverconf.SocketConfig
 	event  gnet.EventHandler
 	engine gnet.Engine
+	name   string
+	addr   string
 }
 
 // OnBoot is called once when the engine starts.
@@ -74,7 +77,7 @@ func (h *GnetHandler) OnTraffic(c gnet.Conn) gnet.Action {
 
 // Name returns the name of the GnetHandler.
 func (h *GnetHandler) Name() string {
-	return "gnet"
+	return fmt.Sprintf("socket %s server(%s)", h.name, h.addr)
 }
 
 // Start starts the GnetHandler.
@@ -102,5 +105,7 @@ func NewGnetHandler(conf *serverconf.SocketConfig, event gnet.EventHandler) (*Gn
 		logger: l,
 		conf:   conf,
 		event:  event,
+		name:   "gnet",
+		addr:   conf.Addr,
 	}, nil
 }

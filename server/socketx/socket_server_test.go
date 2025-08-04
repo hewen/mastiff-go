@@ -62,7 +62,7 @@ func TestSocketServer(t *testing.T) {
 	err = waitForServer(addr, 2*time.Second)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "gnet", s.Name())
+	assert.Equal(t, fmt.Sprintf("socket gnet server(%s)", conf.Addr), s.Name())
 
 	l := logger.NewLogger()
 	s.WithLogger(l)
@@ -114,7 +114,9 @@ func TestSocketServer_Start_Error(t *testing.T) {
 	mockHandler.On("Start").Return(expectedError)
 
 	// Test Start - should not panic even when handler.Start() returns error
-	server.Start()
+	assert.Panics(t, func() {
+		server.Start()
+	})
 
 	// Verify that Start was called
 	mockHandler.AssertExpectations(t)

@@ -43,13 +43,16 @@ func TestRPCServerError(t *testing.T) {
 	assert.NotNil(t, err)
 }
 
-func TestRPCServerStart(_ *testing.T) {
+func TestRPCServerStart(t *testing.T) {
 	s := &RPCServer{
 		handler: &MockRPCHandler{},
 		logger:  logger.NewLogger(),
 	}
 
-	s.Start()
+	assert.Panics(t, func() {
+		s.Start()
+	})
+
 	s.Stop()
 	s.WithLogger(logger.NewLogger())
 	s.Name()
