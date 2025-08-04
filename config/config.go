@@ -39,7 +39,7 @@ var (
 // Note:
 // - `custom` must be a pointer to a struct matching the "custom" section schema in the config file.
 // - This function is safe for concurrent use.
-func LoadConfig(configPath string, custom any, onChange func(newConfig *Config, changeErr error)) (*Config, error) {
+func LoadConfig(configPath string, custom any, onUpdate func(newConfig *Config, changeErr error)) (*Config, error) {
 	v, err := newViper(configPath)
 	if err != nil {
 		return nil, err
@@ -59,20 +59,23 @@ func LoadConfig(configPath string, custom any, onChange func(newConfig *Config, 
 		newC.Custom = custom
 
 		if err := UnmarshalAll(v, &newC, custom); err != nil {
-			if onChange != nil {
-				onChange(nil, fmt.Errorf("config reload error: %w", err))
+			if onUpdate != nil {
+				onUpdate(nil, fmt.Errorf("config reload error: %w", err))
 			}
 			return
 		}
 
 		setConfig(&newC)
 
-		if onChange != nil {
-			onChange(&newC, nil)
+		if onUpdate != nil {
+			onUpdate(&newC, nil)
 		}
 	})
 
 	v.WatchConfig()
+	if onUpdate != nil {
+		onUpdate(&c, nil)
+	}
 
 	return &c, nil
 }
