@@ -12,7 +12,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/hewen/mastiff-go/config/middlewareconf"
 	"github.com/hewen/mastiff-go/config/serverconf"
-	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/middleware/logging"
 	"github.com/hewen/mastiff-go/pkg/util"
@@ -169,7 +168,7 @@ func TestGinHandler(t *testing.T) {
 	s.Use(logging.HttpxMiddleware())
 
 	s.Get("/test", func(c unicontext.UniversalContext) error {
-		ctx := contextkeys.ContextFrom(c)
+		ctx := unicontext.ContextFrom(c)
 		l := logger.NewLoggerWithContext(ctx)
 		l.Infof("test")
 

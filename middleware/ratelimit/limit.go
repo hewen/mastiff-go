@@ -109,7 +109,7 @@ func (mgr *LimiterManager) getKeyFromHttpx(ctx unicontext.UniversalContext, cfg 
 		parts = append(parts, ctx.ClientIP())
 	}
 	if cfg.EnableUserID {
-		if uid, ok := contextkeys.GetUserID(contextkeys.ContextFrom(ctx)); ok {
+		if uid, ok := contextkeys.GetUserID(unicontext.ContextFrom(ctx)); ok {
 			parts = append(parts, fmt.Sprint(uid))
 		}
 	}

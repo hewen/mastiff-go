@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 )
@@ -15,9 +14,9 @@ func HttpxMiddleware() func(unicontext.UniversalContext) error {
 	return func(c unicontext.UniversalContext) error {
 		start := time.Now()
 
-		ctx := contextkeys.ContextFrom(c)
+		ctx := unicontext.ContextFrom(c)
 		ctx = logger.NewOutgoingContextWithIncomingContext(ctx)
-		contextkeys.InjectContext(ctx, c)
+		unicontext.InjectContext(ctx, c)
 
 		err := c.Next()
 

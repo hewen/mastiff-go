@@ -26,10 +26,10 @@ func HttpxMiddleware(conf *authconf.Config) func(unicontext.UniversalContext) er
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "invalid token"})
 		}
 
-		ctx := contextkeys.ContextFrom(c)
+		ctx := unicontext.ContextFrom(c)
 		ctx = contextkeys.SetAuthInfo(ctx, info)
 		ctx = contextkeys.SetUserID(ctx, info.UserID)
-		contextkeys.InjectContext(ctx, c)
+		unicontext.InjectContext(ctx, c)
 		return c.Next()
 	}
 }
