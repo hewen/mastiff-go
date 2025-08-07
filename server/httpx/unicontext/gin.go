@@ -144,6 +144,11 @@ func (c *GinContext) ClientIP() string {
 	return c.Ctx.ClientIP()
 }
 
+// RemoteAddr returns the "IP:port" of the request.
+func (c *GinContext) RemoteAddr() string {
+	return c.Ctx.Request.RemoteAddr
+}
+
 // Set sets the value of the context with the given key.
 func (c *GinContext) Set(key string, value any) {
 	c.Ctx.Set(key, value)

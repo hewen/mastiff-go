@@ -162,6 +162,11 @@ func (c *FiberContext) ClientIP() string {
 	return c.Ctx.IP()
 }
 
+// RemoteAddr returns the "IP:port" of the request.
+func (c *FiberContext) RemoteAddr() string {
+	return c.Ctx.Context().RemoteAddr().String()
+}
+
 // Set sets the value of the context with the given key.
 func (c *FiberContext) Set(key string, value any) {
 	c.Ctx.Locals(key, value)

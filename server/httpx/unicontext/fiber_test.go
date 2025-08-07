@@ -564,6 +564,26 @@ func TestFiberContext_ClientIP(t *testing.T) {
 	assert.NotEmpty(t, string(body))
 }
 
+func TestFiberContext_RemoteAddr(t *testing.T) {
+	app := fiber.New()
+
+	app.Get("/test", func(c *fiber.Ctx) error {
+		fiberCtx := &FiberContext{Ctx: c}
+		return c.SendString(fiberCtx.RemoteAddr())
+	})
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("X-Forwarded-For", "192.168.1.1")
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	body, err := io.ReadAll(resp.Body)
+	require.NoError(t, err)
+	// Fiber should extract the IP from X-Forwarded-For header
+	assert.NotEmpty(t, string(body))
+}
+
 func TestFiberContext_SetAndGet(t *testing.T) {
 	app := fiber.New()
 

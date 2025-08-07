@@ -64,6 +64,8 @@ type UniversalContext interface {
 	FullPath() string
 	// ClientIP returns the client IP of the request.
 	ClientIP() string
+	// RemoteAddr returns the "IP:port" of the request.
+	RemoteAddr() string
 	// Set sets the value of the context with the given key.
 	Set(key string, value any)
 	// Get returns the value of the context with the given key.
