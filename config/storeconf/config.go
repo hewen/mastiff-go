@@ -6,8 +6,6 @@ type (
 	MysqlConfig struct {
 		// DataSourceName represents the data source name for the MySQL database.
 		DataSourceName string
-		// RegisterHookDriver represents whether to register the driver hook.
-		RegisterHookDriver bool
 	}
 
 	// RedisConfig holds the configuration for Redis connection.
