@@ -7,7 +7,7 @@ import (
 
 	"github.com/hewen/mastiff-go/config/middlewareconf/authconf"
 	"github.com/hewen/mastiff-go/config/serverconf"
-	"github.com/hewen/mastiff-go/internal/contextkeys"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"github.com/hewen/mastiff-go/server/httpx"
 	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 	"github.com/stretchr/testify/assert"

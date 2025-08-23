@@ -4,8 +4,8 @@ import (
 	"context"
 
 	"github.com/hewen/mastiff-go/config/middlewareconf/authconf"
-	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/middleware/internal/shared"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/metadata"

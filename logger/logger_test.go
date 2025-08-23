@@ -15,7 +15,7 @@ import (
 	"testing"
 
 	"github.com/hewen/mastiff-go/config/loggerconf"
-	"github.com/hewen/mastiff-go/internal/contextkeys"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc/metadata"
 	"gopkg.in/natefinch/lumberjack.v2"

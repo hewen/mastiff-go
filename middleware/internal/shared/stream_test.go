@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/hewen/mastiff-go/internal/contextkeys"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"github.com/stretchr/testify/assert"
 )
 

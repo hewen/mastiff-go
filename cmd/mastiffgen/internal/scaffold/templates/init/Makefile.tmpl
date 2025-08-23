@@ -1,3 +1,4 @@
+
 .DEFAULT_GOAL := test
 
 PKGS := $(shell go list ./...)
@@ -33,10 +34,10 @@ sqlc:
 
 clean-sqlc:
 	@echo "==> Removing sqlc generated files"
-	@find ./pkg/model -type f -name '*.sql.go' -delete
+	@find ./ -type f -name '*.sql.go' -delete
 
 merge-cover:
-	@gocovmerge $(COVERFILES) | grep -v ".pb.go" > $(COVER_OUT)
+	@gocovmerge $(COVERFILES) | grep -vE ".pb.go|.sql.go" > $(COVER_OUT)
 	@go tool cover -func=$(COVER_OUT) | grep total
 
 check-cover:

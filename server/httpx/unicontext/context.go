@@ -5,7 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofiber/fiber/v2"
-	"github.com/hewen/mastiff-go/internal/contextkeys"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 )
 
 // ContextFrom extracts context.Context from gin.Context, fiber.Ctx or context.Context itself.

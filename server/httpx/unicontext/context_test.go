@@ -7,7 +7,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofiber/fiber/v2"
-	"github.com/hewen/mastiff-go/internal/contextkeys"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"github.com/stretchr/testify/assert"
 	"github.com/valyala/fasthttp"
 )

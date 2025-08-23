@@ -5,8 +5,8 @@ import (
 	"context"
 	"time"
 
-	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/logger"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"github.com/hewen/mastiff-go/pkg/util"
 )
 
