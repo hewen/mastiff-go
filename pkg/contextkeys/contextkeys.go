@@ -17,7 +17,7 @@ const (
 type ctxKey string
 
 func (k ctxKey) String() string {
-	return "context key: " + string(k)
+	return string(k)
 }
 
 // Predefined context keys for common use cases.

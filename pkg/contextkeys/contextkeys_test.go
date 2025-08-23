@@ -11,7 +11,7 @@ import (
 
 func TestCtxKeyString(t *testing.T) {
 	key := ctxKey("custom")
-	assert.Equal(t, "context key: custom", key.String())
+	assert.Equal(t, "custom", key.String())
 }
 
 func TestSetAndGetAuthInfo(t *testing.T) {
