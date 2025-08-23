@@ -14,27 +14,28 @@ import (
 
 // authenticate handles token extraction and validation.
 func authenticate(ctx context.Context, method string, conf authconf.Config) (context.Context, error) {
-	if isWhiteListed(method, conf.WhiteList) {
-		return ctx, nil
-	}
-
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing metadata")
 	}
 
 	token := extractTokenFromGrpcMetadata(md, conf.HeaderKey, conf.TokenPrefixes)
-	if token == "" {
+	if token != "" {
+		authInfo, err := validateJWTToken(token, conf.JWTSecret)
+		if err != nil {
+			return nil, status.Error(codes.Unauthenticated, "invalid token")
+		}
+
+		ctx = contextkeys.SetAuthInfo(ctx, authInfo)
+		ctx = contextkeys.SetUserID(ctx, authInfo.UserID)
+		return ctx, nil
+	}
+
+	if isWhiteListed(method, conf.WhiteList) {
+		return ctx, nil
+	} else {
 		return nil, status.Error(codes.Unauthenticated, "missing token")
 	}
-
-	authInfo, err := validateJWTToken(token, conf.JWTSecret)
-	if err != nil {
-		return nil, status.Error(codes.Unauthenticated, "invalid token")
-	}
-
-	newCtx := contextkeys.SetAuthInfo(ctx, authInfo)
-	return newCtx, nil
 }
 
 // UnaryServerInterceptor implements unary auth interceptor.

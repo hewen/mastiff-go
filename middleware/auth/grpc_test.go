@@ -24,7 +24,8 @@ var testConf = authconf.Config{
 
 func TestUnaryServerInterceptor_WhiteList(t *testing.T) {
 	interceptor := UnaryServerInterceptor(testConf)
-	ctx := context.Background()
+	md := metadata.New(map[string]string{})
+	ctx := metadata.NewIncomingContext(context.Background(), md)
 	info := &grpc.UnaryServerInfo{FullMethod: "/TestService/Public"}
 
 	resp, err := interceptor(
