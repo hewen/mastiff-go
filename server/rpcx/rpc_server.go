@@ -32,7 +32,7 @@ func NewRPCServer(conf *serverconf.RPCConfig, params handler.RPCBuildParams) (*R
 // Start starts the RPCServer.
 func (s *RPCServer) Start() {
 	if err := s.handler.Start(); err != nil {
-		s.logger.Errorf("rpc server start failed: %v", err)
+		s.logger.Panicf("rpc server start failed: %v", err)
 	}
 }
 

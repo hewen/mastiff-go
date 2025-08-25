@@ -4,7 +4,6 @@ package ratelimit
 import (
 	"net/http"
 
-	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 )
 
@@ -22,7 +21,7 @@ func HttpxMiddleware(mgr *LimiterManager) func(c unicontext.UniversalContext) er
 
 		key := mgr.getKeyFromHttpx(c, cfg)
 		limiter := mgr.getOrCreateLimiter(key, cfg)
-		ctx := contextkeys.ContextFrom(c)
+		ctx := unicontext.ContextFrom(c)
 		if err := limiter.AllowOrWait(ctx); err != nil {
 			return c.JSON(http.StatusTooManyRequests, map[string]string{"error": "rate limit exceeded"})
 		}

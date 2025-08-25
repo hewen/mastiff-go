@@ -33,7 +33,7 @@ func NewHTTPServer(conf *serverconf.HTTPConfig, opts ...handler.ServerOption) (*
 // Start starts the HTTPServer.
 func (s *HTTPServer) Start() {
 	if err := s.HTTPHandler.Start(); err != nil {
-		s.logger.Errorf("http server start failed: %v", err)
+		s.logger.Panicf("http server start failed: %v", err)
 	}
 
 }

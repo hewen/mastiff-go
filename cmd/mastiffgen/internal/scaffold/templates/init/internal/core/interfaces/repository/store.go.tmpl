@@ -10,9 +10,9 @@ import (
 
 // DBStore is a struct that holds a database connection and queries.
 type DBStore struct {
-	db            *store.DB
-	Queries       *sqlc.Queries
-	CustomQueries *custom.Queries
+	db *store.DB
+	*sqlc.Queries
+	*custom.CustomQueries
 }
 
 // Ping checks the database connection by pinging it.

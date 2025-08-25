@@ -28,6 +28,8 @@ type UniversalContext interface {
 	// It returns an empty string if the key does not exist.
 	Cookie(key string) string
 
+	// Data writes some data into the body stream and updates the HTTP code.
+	Data(status int, contentType string, data []byte) error
 	// JSON sends a JSON response with the given status code and data.
 	JSON(status int, data any) error
 	// Text sends a text response with the given status code and text.
@@ -62,6 +64,8 @@ type UniversalContext interface {
 	FullPath() string
 	// ClientIP returns the client IP of the request.
 	ClientIP() string
+	// RemoteAddr returns the "IP:port" of the request.
+	RemoteAddr() string
 	// Set sets the value of the context with the given key.
 	Set(key string, value any)
 	// Get returns the value of the context with the given key.

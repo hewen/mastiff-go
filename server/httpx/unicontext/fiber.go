@@ -74,6 +74,12 @@ func (c *FiberContext) Cookie(key string) string {
 	return c.Ctx.Cookies(key)
 }
 
+// Data writes some data into the body stream and updates the HTTP code.
+func (c *FiberContext) Data(status int, contentType string, data []byte) error {
+	c.Ctx.Context().SetContentType(contentType)
+	return c.Ctx.Status(status).Send(data)
+}
+
 // JSON sends a JSON response with the given status code and data.
 func (c *FiberContext) JSON(status int, data any) error {
 	return c.Ctx.Status(status).JSON(data)
@@ -154,6 +160,11 @@ func (c *FiberContext) FullPath() string {
 // ClientIP returns the client IP of the request.
 func (c *FiberContext) ClientIP() string {
 	return c.Ctx.IP()
+}
+
+// RemoteAddr returns the "IP:port" of the request.
+func (c *FiberContext) RemoteAddr() string {
+	return c.Ctx.Context().RemoteAddr().String()
 }
 
 // Set sets the value of the context with the given key.

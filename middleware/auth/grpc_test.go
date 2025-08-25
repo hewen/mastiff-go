@@ -6,9 +6,8 @@ import (
 	"time"
 
 	"github.com/hewen/mastiff-go/config/middlewareconf/authconf"
-	"github.com/hewen/mastiff-go/internal/contextkeys"
 	"github.com/hewen/mastiff-go/middleware/internal/shared"
-
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
@@ -25,7 +24,8 @@ var testConf = authconf.Config{
 
 func TestUnaryServerInterceptor_WhiteList(t *testing.T) {
 	interceptor := UnaryServerInterceptor(testConf)
-	ctx := context.Background()
+	md := metadata.New(map[string]string{})
+	ctx := metadata.NewIncomingContext(context.Background(), md)
 	info := &grpc.UnaryServerInfo{FullMethod: "/TestService/Public"}
 
 	resp, err := interceptor(

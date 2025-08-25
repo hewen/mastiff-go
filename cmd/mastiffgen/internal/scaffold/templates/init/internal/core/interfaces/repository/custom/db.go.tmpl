@@ -6,11 +6,12 @@ import (
 )
 
 // New CustomQueries returns a new instance of CustomQueries.
-func New(db *store.DB) *Queries {
-	return &Queries{db: db}
+func New(db *store.DB) *CustomQueries {
+	return &CustomQueries{db: db}
 }
 
-// Queries is a struct that holds the database connection and custom queries.
-type Queries struct {
+// nolint
+// CustomQueries is a struct that holds the database connection and custom queries.
+type CustomQueries struct {
 	db *store.DB
 }

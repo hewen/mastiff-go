@@ -23,8 +23,13 @@ func LogRequest(l Logger, statusCode int, duration time.Duration, ip, method, ua
 		"ip":       ip,
 		"method":   method,
 		"ua":       ua,
-		"req":      MaskValue(req),
-		"resp":     MaskValue(resp),
+	}
+
+	if req != nil {
+		fields["req"] = MaskValue(req)
+	}
+	if resp != nil {
+		fields["resp"] = MaskValue(resp)
 	}
 	if err != nil {
 		fields["err"] = err.Error()

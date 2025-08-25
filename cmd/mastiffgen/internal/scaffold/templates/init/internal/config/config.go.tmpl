@@ -27,7 +27,7 @@ func onChange(newCfg *config.Config, err error) {
 		l.Errorf("config reload error: %v", err)
 		return
 	}
-	l.Infof("config reloaded: %v", newCfg)
+	l.Infof("config reloaded: %+v", newCfg)
 
 	Cfg = newCfg
 	// TODO add onChange logic here.

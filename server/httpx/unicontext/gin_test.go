@@ -541,6 +541,25 @@ func TestGinContext_ClientIP(t *testing.T) {
 	assert.NotEmpty(t, w.Body.String())
 }
 
+func TestGinContext_RemoteAddr(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+
+	router.GET("/test", func(c *gin.Context) {
+		ginCtx := &GinContext{Ctx: c}
+		c.String(http.StatusOK, ginCtx.RemoteAddr())
+	})
+
+	req := httptest.NewRequest("GET", "/test", nil)
+	req.Header.Set("X-Forwarded-For", "192.168.1.1")
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusOK, w.Code)
+	// Gin should extract the IP from X-Forwarded-For header
+	assert.NotEmpty(t, w.Body.String())
+}
+
 func TestGinContext_SetAndGet(t *testing.T) {
 	gin.SetMode(gin.TestMode)
 	router := gin.New()
@@ -716,7 +735,7 @@ func TestGinContext_Body(t *testing.T) {
 	router.POST("/test", func(c *gin.Context) {
 		ginCtx := &GinContext{Ctx: c}
 		body, _ := ginCtx.Body()
-		c.String(http.StatusOK, string(body))
+		_ = ginCtx.Data(http.StatusOK, "application/octet-stream", body)
 	})
 
 	data := "body"

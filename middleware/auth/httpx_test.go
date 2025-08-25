@@ -7,7 +7,7 @@ import (
 
 	"github.com/hewen/mastiff-go/config/middlewareconf/authconf"
 	"github.com/hewen/mastiff-go/config/serverconf"
-	"github.com/hewen/mastiff-go/internal/contextkeys"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"github.com/hewen/mastiff-go/server/httpx"
 	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 	"github.com/stretchr/testify/assert"
@@ -104,7 +104,7 @@ func TestHttpxValidToken(t *testing.T) {
 	assert.Nil(t, err)
 	r.Use(HttpxMiddleware(conf))
 	r.Get("/secure", func(c unicontext.UniversalContext) error {
-		ctx := contextkeys.ContextFrom(c)
+		ctx := unicontext.ContextFrom(c)
 		ai, exists := contextkeys.GetAuthInfo(ctx)
 		if !exists || ai.UserID != "123" {
 			return c.JSON(http.StatusInternalServerError, map[string]string{"error": "auth info missing"})

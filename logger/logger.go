@@ -15,7 +15,7 @@ import (
 	"time"
 
 	"github.com/hewen/mastiff-go/config/loggerconf"
-	"github.com/hewen/mastiff-go/internal/contextkeys"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	gonanoid "github.com/matoous/go-nanoid/v2"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog"

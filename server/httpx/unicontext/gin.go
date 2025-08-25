@@ -54,6 +54,12 @@ func (c *GinContext) Cookie(key string) string {
 	return val
 }
 
+// Data writes some data into the body stream and updates the HTTP code.
+func (c *GinContext) Data(status int, contentType string, data []byte) error {
+	c.Ctx.Data(status, contentType, data)
+	return nil
+}
+
 // JSON sends a JSON response with the given status code and data.
 func (c *GinContext) JSON(status int, data any) error {
 	c.Ctx.JSON(status, data)
@@ -136,6 +142,11 @@ func (c *GinContext) FullPath() string {
 // ClientIP returns the client IP of the request.
 func (c *GinContext) ClientIP() string {
 	return c.Ctx.ClientIP()
+}
+
+// RemoteAddr returns the "IP:port" of the request.
+func (c *GinContext) RemoteAddr() string {
+	return c.Ctx.Request.RemoteAddr
 }
 
 // Set sets the value of the context with the given key.

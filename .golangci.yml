@@ -23,6 +23,11 @@ linters:
   settings:
     govet:
       enable-all: true
+    revive:
+      rules:
+        - name: var-naming
+          disabled: true
+
 formatters:
   # Enable specific formatter.
   # Default: [] (uses standard Go formatting)

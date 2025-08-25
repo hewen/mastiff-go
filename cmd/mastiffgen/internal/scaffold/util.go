@@ -86,9 +86,14 @@ func IsEmptyDir(dir string) (bool, error) {
 		_ = f.Close()
 	}()
 
-	_, err = f.Readdir(1)
+	entries, err := f.Readdir(2)
 	if err == os.ErrNotExist || err == io.EOF {
 		return true, nil
 	}
+
+	if len(entries) == 1 && entries[0].Name() == ".git" {
+		return true, nil
+	}
+
 	return false, err
 }

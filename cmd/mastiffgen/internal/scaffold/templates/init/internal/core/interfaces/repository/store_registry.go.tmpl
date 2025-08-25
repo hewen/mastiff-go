@@ -31,7 +31,9 @@ func InitConnector(c *config.Config) (err error) {
 	}
 
 	if c.Mysql != nil {
-		dbConn, err = store.InitMysql(*c.Mysql)
+		dbConn, err = store.InitMysql(*c.Mysql, store.DatabaseOption{
+			RegisterHookDriver: true,
+		})
 		if err != nil {
 			return err
 		}

@@ -19,6 +19,11 @@ func TestIsEmptyDir_EmptyAndNonEmpty(t *testing.T) {
 	assert.Nil(t, err)
 	assert.True(t, empty)
 
+	_ = os.MkdirAll(tmpDir+"/.git", 0750)
+	empty, err = IsEmptyDir(tmpDir)
+	assert.Nil(t, err)
+	assert.True(t, empty)
+
 	err = os.WriteFile(filepath.Join(tmpDir, "f.txt"), []byte("x"), 0600)
 	assert.Nil(t, err)
 

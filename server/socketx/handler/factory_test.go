@@ -73,7 +73,7 @@ func TestNewHandler(t *testing.T) {
 			} else {
 				assert.NoError(t, err)
 				assert.NotNil(t, handler)
-				assert.Equal(t, "gnet", handler.Name())
+				assert.Equal(t, "socket gnet server(:8080)", handler.Name())
 			}
 		})
 	}
@@ -113,7 +113,7 @@ func TestNewHandler_GnetIntegration(t *testing.T) {
 	assert.NotNil(t, handler)
 
 	// Test interface methods
-	assert.Equal(t, "gnet", handler.Name())
+	assert.Equal(t, "socket gnet server(:8080)", handler.Name())
 }
 
 func TestNewHandler_ConfigValidation(t *testing.T) {

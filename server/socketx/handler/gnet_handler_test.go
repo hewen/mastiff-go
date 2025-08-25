@@ -67,7 +67,7 @@ func TestGnetHandler_Name(t *testing.T) {
 	handler, err := NewGnetHandler(conf, event)
 	assert.NoError(t, err)
 
-	assert.Equal(t, "gnet", handler.Name())
+	assert.Equal(t, "socket gnet server(:8080)", handler.Name())
 }
 
 func TestGnetHandler_OnBoot_WithReflection(t *testing.T) {

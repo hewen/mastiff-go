@@ -31,7 +31,7 @@ func NewSocketServer(conf *serverconf.SocketConfig, params handler.BuildParams) 
 // Start starts the SocketServer.
 func (s *SocketServer) Start() {
 	if err := s.handler.Start(); err != nil {
-		s.logger.Errorf("socket server start failed: %v", err)
+		s.logger.Panicf("socket server start failed: %v", err)
 	}
 }
 
