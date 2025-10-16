@@ -197,6 +197,7 @@ func TestNewOutgoingContextFromIncomingContext(t *testing.T) {
 	traceID := NewTraceID()
 	m := make(map[string]string)
 	m[string(contextkeys.LoggerTraceIDKey)] = traceID
+	m[string(contextkeys.AuthInfoKey)] = "auth"
 	md := metadata.New(m)
 	ictx := metadata.NewIncomingContext(context.TODO(), md)
 
