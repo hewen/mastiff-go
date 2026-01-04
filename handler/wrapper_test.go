@@ -10,6 +10,8 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofiber/fiber/v2"
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/hewen/mastiff-go/server/httpx"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -72,6 +74,36 @@ func TestWrapHandlerFiber(t *testing.T) {
 	err = json.NewDecoder(resp.Body).Decode(&respBody)
 	assert.Nil(t, err)
 	assert.Equal(t, "Hello, Fiber", respBody.Data.Message)
+	assert.Equal(t, http.StatusOK, respBody.Code)
+	assert.NotEmpty(t, respBody.Trace)
+}
+
+func TestWrapHandlerHttpx(t *testing.T) {
+	app, err := httpx.NewHTTPServer(&serverconf.HTTPConfig{
+		FrameworkType: serverconf.FrameworkGin,
+	})
+	assert.Nil(t, err)
+
+	app.Post("/foo", WrapHandlerHttpx(FooHandler))
+
+	reqBody, _ := json.Marshal(FooRequest{Name: "Httpx"})
+
+	req := httptest.NewRequest(http.MethodPost, "/foo", bytes.NewBuffer(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Test(req, -1)
+	defer func() {
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
+	}()
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var respBody RespWithData[FooResponse]
+	err = json.NewDecoder(resp.Body).Decode(&respBody)
+	assert.Nil(t, err)
+	assert.Equal(t, "Hello, Httpx", respBody.Data.Message)
 	assert.Equal(t, http.StatusOK, respBody.Code)
 	assert.NotEmpty(t, respBody.Trace)
 }
