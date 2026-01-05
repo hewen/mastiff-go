@@ -507,19 +507,56 @@ func TestGinContext_Path(t *testing.T) {
 
 func TestGinContext_FullPath(t *testing.T) {
 	gin.SetMode(gin.TestMode)
-	router := gin.New()
 
-	router.GET("/users/:id/posts", func(c *gin.Context) {
-		ginCtx := &GinContext{Ctx: c}
-		c.String(http.StatusOK, ginCtx.FullPath())
+	t.Run("with route pattern", func(t *testing.T) {
+		router := gin.New()
+
+		router.GET("/users/:id/posts", func(c *gin.Context) {
+			ginCtx := &GinContext{Ctx: c}
+			c.String(http.StatusOK, ginCtx.FullPath())
+		})
+
+		req := httptest.NewRequest("GET", "/users/123/posts", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		assert.Equal(t, "/users/:id/posts", w.Body.String())
 	})
 
-	req := httptest.NewRequest("GET", "/users/123/posts", nil)
-	w := httptest.NewRecorder()
-	router.ServeHTTP(w, req)
+	t.Run("fallback to path when FullPath is empty", func(t *testing.T) {
+		// Test the case where c.Ctx.FullPath() returns empty string
+		// This happens when the route is not registered or context doesn't have route info
+		router := gin.New()
 
-	assert.Equal(t, http.StatusOK, w.Code)
-	assert.Equal(t, "/users/:id/posts", w.Body.String())
+		// Using NoRoute which may not have FullPath information
+		router.NoRoute(func(c *gin.Context) {
+			ginCtx := &GinContext{Ctx: c}
+			c.String(http.StatusOK, ginCtx.FullPath())
+		})
+
+		// Make a request to a route that doesn't exist, triggering NoRoute
+		req := httptest.NewRequest("GET", "/nonexistent/path", nil)
+		w := httptest.NewRecorder()
+		router.ServeHTTP(w, req)
+
+		assert.Equal(t, http.StatusOK, w.Code)
+		// Should fallback to Path() when FullPath is empty
+		assert.Equal(t, "/nonexistent/path", w.Body.String())
+	})
+
+	t.Run("direct context without route", func(t *testing.T) {
+		// Create a test context without setting up a route
+		w := httptest.NewRecorder()
+		c, _ := gin.CreateTestContext(w)
+		c.Request = httptest.NewRequest("GET", "/api/test", nil)
+
+		ginCtx := &GinContext{Ctx: c}
+
+		// When FullPath is empty, should return Path
+		fullPath := ginCtx.FullPath()
+		assert.Equal(t, "/api/test", fullPath)
+	})
 }
 
 func TestGinContext_ClientIP(t *testing.T) {
@@ -745,4 +782,33 @@ func TestGinContext_Body(t *testing.T) {
 
 	assert.Equal(t, http.StatusOK, w.Code)
 	assert.Equal(t, "body", w.Body.String())
+}
+
+func TestGinContext_AbortWithStatusJSON(t *testing.T) {
+	gin.SetMode(gin.TestMode)
+	router := gin.New()
+
+	type ErrorResponse struct {
+		Error string `json:"error"`
+		Code  int    `json:"code"`
+	}
+
+	router.POST("/test", func(c *gin.Context) {
+		ginCtx := &GinContext{Ctx: c}
+		err := ginCtx.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid request", Code: 400})
+		assert.NoError(t, err)
+	})
+
+	req := httptest.NewRequest("POST", "/test", nil)
+	w := httptest.NewRecorder()
+	router.ServeHTTP(w, req)
+
+	assert.Equal(t, http.StatusBadRequest, w.Code)
+	assert.Equal(t, "application/json; charset=utf-8", w.Header().Get("Content-Type"))
+
+	var result ErrorResponse
+	err := json.NewDecoder(w.Body).Decode(&result)
+	require.NoError(t, err)
+	assert.Equal(t, "Invalid request", result.Error)
+	assert.Equal(t, 400, result.Code)
 }

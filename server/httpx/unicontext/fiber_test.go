@@ -911,3 +911,31 @@ func TestFiberContext_Body(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "body", string(body))
 }
+
+func TestFiberContext_AbortWithStatusJSON(t *testing.T) {
+	app := fiber.New()
+
+	type ErrorResponse struct {
+		Error string `json:"error"`
+		Code  int    `json:"code"`
+	}
+
+	app.Post("/test", func(c *fiber.Ctx) error {
+		fiberCtx := &FiberContext{Ctx: c}
+		return fiberCtx.AbortWithStatusJSON(http.StatusBadRequest, ErrorResponse{Error: "Invalid request", Code: 400})
+	})
+
+	req := httptest.NewRequest("POST", "/test", nil)
+	resp, err := app.Test(req)
+	require.NoError(t, err)
+	defer func() { _ = resp.Body.Close() }()
+
+	assert.Equal(t, http.StatusBadRequest, resp.StatusCode)
+	assert.Equal(t, "application/json", resp.Header.Get("Content-Type"))
+
+	var result ErrorResponse
+	err = json.NewDecoder(resp.Body).Decode(&result)
+	require.NoError(t, err)
+	assert.Equal(t, "Invalid request", result.Error)
+	assert.Equal(t, 400, result.Code)
+}
