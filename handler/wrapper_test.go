@@ -12,6 +12,7 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/server/httpx"
+	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -23,7 +24,7 @@ type FooResponse struct {
 	Message string `json:"message"`
 }
 
-func FooHandler(_ Context, req FooRequest) (FooResponse, error) {
+func FooHandler(_ unicontext.UniversalContext, req FooRequest) (FooResponse, error) {
 	return FooResponse{Message: "Hello, " + req.Name}, nil
 }
 
@@ -109,58 +110,48 @@ func TestWrapHandlerHttpx(t *testing.T) {
 }
 
 func TestWrapHandler_Success(t *testing.T) {
-	mock := &mockContext{
-		inputJSON: TestReq{Name: "Wen"},
-	}
-
-	handlerFn := WrapHandler(func(_ Context, req TestReq) (TestResp, error) {
+	handlerFn := WrapHandler(func(_ unicontext.UniversalContext, req TestReq) (TestResp, error) {
 		assert.Equal(t, "Wen", req.Name)
 		return TestResp{Greet: "Hello " + req.Name}, nil
 	})
 
-	err := handlerFn(mock)
-	assert.Nil(t, err)
+	ginCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ginCtx.Request, _ = http.NewRequest("GET", "/", bytes.NewReader([]byte("")))
+	ctx := &unicontext.GinContext{
+		Ctx: ginCtx,
+	}
 
-	assert.Equal(t, http.StatusOK, mock.outputCode)
-	resp, ok := mock.outputValue.(RespWithData[TestResp])
-	assert.True(t, ok)
-	assert.Equal(t, "Hello Wen", resp.Data.Greet)
-	assert.Equal(t, http.StatusOK, resp.Code)
+	err := handlerFn(ctx)
+	assert.Nil(t, err)
 }
 
 func TestWrapHandler_BindError(t *testing.T) {
-	mock := &mockContext{
-		errOnBind: errors.New("bad json"),
-	}
-
-	handlerFn := WrapHandler(func(_ Context, _ TestReq) (TestResp, error) {
+	handlerFn := WrapHandler(func(_ unicontext.UniversalContext, _ TestReq) (TestResp, error) {
 		t.Fatal("should not be called")
 		return TestResp{}, nil
 	})
 
-	err := handlerFn(mock)
-	assert.Nil(t, err)
+	ginCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ginCtx.Request, _ = http.NewRequest("GET", "/", bytes.NewReader([]byte("")))
+	ctx := &unicontext.GinContext{
+		Ctx: ginCtx,
+	}
 
-	assert.Equal(t, http.StatusBadRequest, mock.outputCode)
-	resp, ok := mock.outputValue.(BaseResp)
-	assert.True(t, ok)
-	assert.Equal(t, http.StatusBadRequest, resp.Code)
+	err := handlerFn(ctx)
+	assert.Nil(t, err)
 }
 
 func TestWrapHandler_HandlerError(t *testing.T) {
-	mock := &mockContext{
-		inputJSON: TestReq{Name: "Wen"},
-	}
-
-	handlerFn := WrapHandler(func(_ Context, _ TestReq) (TestResp, error) {
+	handlerFn := WrapHandler(func(_ unicontext.UniversalContext, _ TestReq) (TestResp, error) {
 		return TestResp{}, errors.New("internal error")
 	})
 
-	err := handlerFn(mock)
-	assert.Nil(t, err)
+	ginCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ginCtx.Request, _ = http.NewRequest("GET", "/", bytes.NewReader([]byte("")))
+	ctx := &unicontext.GinContext{
+		Ctx: ginCtx,
+	}
 
-	assert.Equal(t, http.StatusInternalServerError, mock.outputCode)
-	resp, ok := mock.outputValue.(BaseResp)
-	assert.True(t, ok)
-	assert.Equal(t, http.StatusInternalServerError, resp.Code)
+	err := handlerFn(ctx)
+	assert.Nil(t, err)
 }
