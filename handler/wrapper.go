@@ -5,16 +5,17 @@ import (
 	"net/http"
 
 	"github.com/hewen/mastiff-go/logger"
+	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 )
 
 // WrapHandlerFunc is the function signature for HTTP handlers.
-type WrapHandlerFunc[T any, R any] func(ctx Context, req T) (R, error)
+type WrapHandlerFunc[T any, R any] func(ctx unicontext.UniversalContext, req T) (R, error)
 
 // WrapHandler wraps a handler function into a handler function that takes a Context.
-func WrapHandler[T any, R any](handle WrapHandlerFunc[T, R]) func(ctx Context) error {
-	return func(ctx Context) error {
+func WrapHandler[T any, R any](handle WrapHandlerFunc[T, R]) func(ctx unicontext.UniversalContext) error {
+	return func(ctx unicontext.UniversalContext) error {
 		var req T
-		l := logger.NewLoggerWithContext(ctx.RequestContext())
+		l := logger.NewLoggerWithContext(ctx.Request().Context())
 
 		if err := ctx.BindJSON(&req); err != nil {
 			l.Fields(map[string]any{"err": err}).Errorf("invalid request")

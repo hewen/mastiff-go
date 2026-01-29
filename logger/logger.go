@@ -330,15 +330,20 @@ func NewLoggerWithTraceID(traceID string) Logger {
 // NewOutgoingContextWithIncomingContext creates a new outgoing context containing trace ID from incoming context metadata.
 func NewOutgoingContextWithIncomingContext(ctx context.Context) context.Context {
 	var traceID string
-	if md, ok := metadata.FromIncomingContext(ctx); ok {
+	md, ok := metadata.FromIncomingContext(ctx)
+	if ok {
 		if tid, ok := md[string(contextkeys.LoggerTraceIDKey)]; ok && len(tid) > 0 {
 			traceID = tid[0]
 		}
+	} else {
+		md = metadata.Pairs()
 	}
+
 	if traceID == "" {
 		traceID = NewTraceID()
+		md.Set(string(contextkeys.LoggerTraceIDKey), traceID)
 	}
-	md := metadata.Pairs(string(contextkeys.LoggerTraceIDKey), traceID)
+
 	ctx = metadata.NewOutgoingContext(ctx, md)
 
 	return contextkeys.SetTraceID(ctx, traceID)

@@ -85,6 +85,11 @@ func (c *FiberContext) JSON(status int, data any) error {
 	return c.Ctx.Status(status).JSON(data)
 }
 
+// AbortWithStatusJSON writes the status code and return a JSON body.
+func (c *FiberContext) AbortWithStatusJSON(status int, data any) error {
+	return c.JSON(status, data)
+}
+
 // Text sends a text response with the given status code and text.
 func (c *FiberContext) Text(status int, text string) error {
 	return c.Ctx.Status(status).SendString(text)
@@ -150,7 +155,7 @@ func (c *FiberContext) Path() string {
 
 // FullPath returns the route pattern of the request.
 func (c *FiberContext) FullPath() string {
-	if c.Ctx.Route().Path == "/" {
+	if c.Ctx.Route().Path == "/" || c.Ctx.Route().Path == "" {
 		return c.Ctx.Path()
 	}
 

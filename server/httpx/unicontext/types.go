@@ -32,6 +32,8 @@ type UniversalContext interface {
 	Data(status int, contentType string, data []byte) error
 	// JSON sends a JSON response with the given status code and data.
 	JSON(status int, data any) error
+	// AbortWithStatusJSON writes the status code and return a JSON body.
+	AbortWithStatusJSON(status int, data any) error
 	// Text sends a text response with the given status code and text.
 	Text(status int, text string) error
 	// String sends a string response with the given status code and formatted text.

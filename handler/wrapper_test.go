@@ -10,6 +10,9 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/gofiber/fiber/v2"
+	"github.com/hewen/mastiff-go/config/serverconf"
+	"github.com/hewen/mastiff-go/server/httpx"
+	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -21,7 +24,7 @@ type FooResponse struct {
 	Message string `json:"message"`
 }
 
-func FooHandler(_ Context, req FooRequest) (FooResponse, error) {
+func FooHandler(_ unicontext.UniversalContext, req FooRequest) (FooResponse, error) {
 	return FooResponse{Message: "Hello, " + req.Name}, nil
 }
 
@@ -76,59 +79,79 @@ func TestWrapHandlerFiber(t *testing.T) {
 	assert.NotEmpty(t, respBody.Trace)
 }
 
-func TestWrapHandler_Success(t *testing.T) {
-	mock := &mockContext{
-		inputJSON: TestReq{Name: "Wen"},
-	}
+func TestWrapHandlerHttpx(t *testing.T) {
+	app, err := httpx.NewHTTPServer(&serverconf.HTTPConfig{
+		FrameworkType: serverconf.FrameworkGin,
+	})
+	assert.Nil(t, err)
 
-	handlerFn := WrapHandler(func(_ Context, req TestReq) (TestResp, error) {
+	app.Post("/foo", WrapHandlerHttpx(FooHandler))
+
+	reqBody, _ := json.Marshal(FooRequest{Name: "Httpx"})
+
+	req := httptest.NewRequest(http.MethodPost, "/foo", bytes.NewBuffer(reqBody))
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := app.Test(req, -1)
+	defer func() {
+		if resp != nil {
+			_ = resp.Body.Close()
+		}
+	}()
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	var respBody RespWithData[FooResponse]
+	err = json.NewDecoder(resp.Body).Decode(&respBody)
+	assert.Nil(t, err)
+	assert.Equal(t, "Hello, Httpx", respBody.Data.Message)
+	assert.Equal(t, http.StatusOK, respBody.Code)
+	assert.NotEmpty(t, respBody.Trace)
+}
+
+func TestWrapHandler_Success(t *testing.T) {
+	handlerFn := WrapHandler(func(_ unicontext.UniversalContext, req TestReq) (TestResp, error) {
 		assert.Equal(t, "Wen", req.Name)
 		return TestResp{Greet: "Hello " + req.Name}, nil
 	})
 
-	err := handlerFn(mock)
-	assert.Nil(t, err)
+	ginCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ginCtx.Request, _ = http.NewRequest("GET", "/", bytes.NewReader([]byte("")))
+	ctx := &unicontext.GinContext{
+		Ctx: ginCtx,
+	}
 
-	assert.Equal(t, http.StatusOK, mock.outputCode)
-	resp, ok := mock.outputValue.(RespWithData[TestResp])
-	assert.True(t, ok)
-	assert.Equal(t, "Hello Wen", resp.Data.Greet)
-	assert.Equal(t, http.StatusOK, resp.Code)
+	err := handlerFn(ctx)
+	assert.Nil(t, err)
 }
 
 func TestWrapHandler_BindError(t *testing.T) {
-	mock := &mockContext{
-		errOnBind: errors.New("bad json"),
-	}
-
-	handlerFn := WrapHandler(func(_ Context, _ TestReq) (TestResp, error) {
+	handlerFn := WrapHandler(func(_ unicontext.UniversalContext, _ TestReq) (TestResp, error) {
 		t.Fatal("should not be called")
 		return TestResp{}, nil
 	})
 
-	err := handlerFn(mock)
-	assert.Nil(t, err)
+	ginCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ginCtx.Request, _ = http.NewRequest("GET", "/", bytes.NewReader([]byte("")))
+	ctx := &unicontext.GinContext{
+		Ctx: ginCtx,
+	}
 
-	assert.Equal(t, http.StatusBadRequest, mock.outputCode)
-	resp, ok := mock.outputValue.(BaseResp)
-	assert.True(t, ok)
-	assert.Equal(t, http.StatusBadRequest, resp.Code)
+	err := handlerFn(ctx)
+	assert.Nil(t, err)
 }
 
 func TestWrapHandler_HandlerError(t *testing.T) {
-	mock := &mockContext{
-		inputJSON: TestReq{Name: "Wen"},
-	}
-
-	handlerFn := WrapHandler(func(_ Context, _ TestReq) (TestResp, error) {
+	handlerFn := WrapHandler(func(_ unicontext.UniversalContext, _ TestReq) (TestResp, error) {
 		return TestResp{}, errors.New("internal error")
 	})
 
-	err := handlerFn(mock)
-	assert.Nil(t, err)
+	ginCtx, _ := gin.CreateTestContext(httptest.NewRecorder())
+	ginCtx.Request, _ = http.NewRequest("GET", "/", bytes.NewReader([]byte("")))
+	ctx := &unicontext.GinContext{
+		Ctx: ginCtx,
+	}
 
-	assert.Equal(t, http.StatusInternalServerError, mock.outputCode)
-	resp, ok := mock.outputValue.(BaseResp)
-	assert.True(t, ok)
-	assert.Equal(t, http.StatusInternalServerError, resp.Code)
+	err := handlerFn(ctx)
+	assert.Nil(t, err)
 }

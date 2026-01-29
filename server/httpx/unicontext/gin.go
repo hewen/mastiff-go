@@ -66,6 +66,12 @@ func (c *GinContext) JSON(status int, data any) error {
 	return nil
 }
 
+// AbortWithStatusJSON writes the status code and return a JSON body.
+func (c *GinContext) AbortWithStatusJSON(status int, data any) error {
+	c.Ctx.AbortWithStatusJSON(status, data)
+	return nil
+}
+
 // Text sends a text response with the given status code and text.
 func (c *GinContext) Text(status int, text string) error {
 	c.Ctx.String(status, text)
@@ -136,6 +142,9 @@ func (c *GinContext) Path() string {
 
 // FullPath returns the path of the request.
 func (c *GinContext) FullPath() string {
+	if c.Ctx.FullPath() == "" {
+		return c.Path()
+	}
 	return c.Ctx.FullPath()
 }
 

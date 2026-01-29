@@ -124,7 +124,7 @@ func loadSQLFiles(dbConn *DB, sqlDir string) error {
 		scanner := bufio.NewScanner(file)
 		var sb strings.Builder
 		for scanner.Scan() {
-			if strings.HasPrefix(scanner.Text(), "---") {
+			if strings.HasPrefix(scanner.Text(), "--") {
 				continue
 			}
 			_, err = sb.WriteString(scanner.Text())
