@@ -2,20 +2,19 @@
 package core
 
 import (
-	"{{.PackageName}}/internal/core/interfaces/repository"
-
-	"github.com/hewen/mastiff-go/store"
+	"code.interestingsoft.com/server/offline-service/internal/core/interfaces/repository"
+	"github.com/hewen/mastiff-go/storemock"
 )
 
 // InitMockRedis initializes a mock Redis store.
 func InitMockRedis() {
-	redisConn := store.InitMockRedis()
+	redisConn := storemock.InitMockRedis()
 	repository.RStore = repository.NewRedisStore(redisConn)
 }
 
 // InitMockMysql initializes a mock MySQL store.
 func InitMockMysql(sqlDir string) {
-	dbConn, err := store.InitMockMysql(sqlDir)
+	dbConn, err := storemock.InitMockMysql(sqlDir)
 	if err != nil {
 		panic(err)
 	}

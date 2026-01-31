@@ -3,12 +3,12 @@ package repository
 import (
 	"testing"
 
-	"github.com/hewen/mastiff-go/store"
+	"github.com/hewen/mastiff-go/storemock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNewDbStore(t *testing.T) {
-	db, err := store.InitMockMysql("./sql/schema/")
+	db, err := storemock.InitMockMysql("./sql/schema/")
 	assert.Nil(t, err)
 
 	dbStore := NewDbStore(db)
