@@ -33,6 +33,14 @@ func NewHandler(conf *serverconf.HTTPConfig, opts ...ServerOption) (HTTPHandler,
 		opts[i](h)
 	}
 
+	if conf.PprofEnabled {
+		WithPprof()(h)
+	}
+
+	if conf.EnableMetrics {
+		WithMetrics()(h)
+	}
+
 	return h, nil
 }
 
