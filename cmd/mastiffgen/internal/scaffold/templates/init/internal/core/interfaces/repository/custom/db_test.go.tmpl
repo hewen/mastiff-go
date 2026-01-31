@@ -3,12 +3,12 @@ package custom
 import (
 	"testing"
 
-	"github.com/hewen/mastiff-go/store"
+	"github.com/hewen/mastiff-go/storemock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestNew(t *testing.T) {
-	dbConn, _ := store.InitMockMysql("../sql/schema")
+	dbConn, _ := storemock.InitMockMysql("../sql/schema")
 	query := New(dbConn)
 	assert.NotNil(t, query)
 }

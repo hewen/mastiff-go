@@ -6,12 +6,12 @@ import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/hewen/mastiff-go/config"
 	"github.com/hewen/mastiff-go/config/storeconf"
-	"github.com/hewen/mastiff-go/store"
+	"github.com/hewen/mastiff-go/storemock"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestInitConnector(t *testing.T) {
-	dbConn, _ := store.InitMockMysql("./sql/schema")
+	dbConn, _ := storemock.InitMockMysql("./sql/schema")
 	dStore := NewDbStore(dbConn)
 
 	s, _ := miniredis.Run()
