@@ -9,9 +9,10 @@ import (
 // InitRedis initializes a Redis connection.
 func InitRedis(conf storeconf.RedisConfig) (*redis.Client, error) {
 	redisConn := redis.NewClient(&redis.Options{
-		Addr:     conf.Addr,
-		Password: conf.Password,
-		DB:       conf.DB,
+		Addr:      conf.Addr,
+		Password:  conf.Password,
+		DB:        conf.DB,
+		TLSConfig: conf.TLSConfig,
 	})
 
 	if conf.RegisterHookDriver {
