@@ -1,6 +1,8 @@
 // Package storeconf provides configuration for database connections.
 package storeconf
 
+import "crypto/tls"
+
 type (
 	// MysqlConfig holds the configuration for MySQL connection.
 	MysqlConfig struct {
@@ -10,6 +12,8 @@ type (
 
 	// RedisConfig holds the configuration for Redis connection.
 	RedisConfig struct {
+		// TLSConfig tls config for redis
+		TLSConfig *tls.Config
 		// Addr represents the address of the Redis server.
 		Addr string
 		// Password represents the password for the Redis server.
