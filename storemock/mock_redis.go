@@ -1,10 +1,11 @@
-// Package store mock redis
-package store
+// Package storemock redis
+package storemock
 
 import (
 	"github.com/alicebob/miniredis/v2"
 	"github.com/go-redis/redis/v7"
 	"github.com/hewen/mastiff-go/config/storeconf"
+	"github.com/hewen/mastiff-go/store"
 )
 
 var miniredisRun = miniredis.Run
@@ -16,7 +17,7 @@ func InitMockRedis() *redis.Client {
 		panic(err)
 	}
 
-	conn, _ := InitRedis(storeconf.RedisConfig{
+	conn, _ := store.InitRedis(storeconf.RedisConfig{
 		Addr:               s.Addr(),
 		RegisterHookDriver: true,
 	})

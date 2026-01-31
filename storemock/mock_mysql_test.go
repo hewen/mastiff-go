@@ -1,4 +1,4 @@
-package store
+package storemock
 
 import (
 	"errors"
@@ -13,6 +13,7 @@ import (
 	"github.com/dolthub/go-mysql-server/server"
 	"github.com/dolthub/go-mysql-server/sql"
 	"github.com/hewen/mastiff-go/config/storeconf"
+	"github.com/hewen/mastiff-go/store"
 	"github.com/jmoiron/sqlx"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -62,7 +63,7 @@ func TestInitMockMysql_StartServerFail(t *testing.T) {
 
 func TestInitMockMysql_InitMysqlFail(t *testing.T) {
 	original := initMysqlFunc
-	initMysqlFunc = func(_ storeconf.MysqlConfig, _ ...DatabaseOption) (*DB, error) {
+	initMysqlFunc = func(_ storeconf.MysqlConfig, _ ...store.DatabaseOption) (*store.DB, error) {
 		return nil, errors.New("mock init mysql error")
 	}
 	defer func() { initMysqlFunc = original }()
@@ -74,7 +75,7 @@ func TestInitMockMysql_InitMysqlFail(t *testing.T) {
 
 func TestInitMockMysql_LoadSQLFail(t *testing.T) {
 	original := loadSQLFilesFunc
-	loadSQLFilesFunc = func(_ *DB, _ string) error {
+	loadSQLFilesFunc = func(_ *store.DB, _ string) error {
 		return errors.New("mock load sql error")
 	}
 	defer func() { loadSQLFilesFunc = original }()
@@ -110,7 +111,7 @@ func TestInitMockMysql_StartServerError(t *testing.T) {
 
 func TestInitMockMysql_InitMysqlError(t *testing.T) {
 	orig := initMysqlFunc
-	initMysqlFunc = func(_ storeconf.MysqlConfig, _ ...DatabaseOption) (*DB, error) {
+	initMysqlFunc = func(_ storeconf.MysqlConfig, _ ...store.DatabaseOption) (*store.DB, error) {
 		return nil, fmt.Errorf("init mysql failed")
 	}
 	defer func() { initMysqlFunc = orig }()
@@ -122,7 +123,7 @@ func TestInitMockMysql_InitMysqlError(t *testing.T) {
 
 func TestInitMockMysql_LoadSQLFileError(t *testing.T) {
 	orig := loadSQLFilesFunc
-	loadSQLFilesFunc = func(_ *DB, _ string) error {
+	loadSQLFilesFunc = func(_ *store.DB, _ string) error {
 		return fmt.Errorf("load sql failed")
 	}
 	defer func() { loadSQLFilesFunc = orig }()
@@ -133,7 +134,7 @@ func TestInitMockMysql_LoadSQLFileError(t *testing.T) {
 }
 
 func TestLoadSQLFiles_ReadDirError(t *testing.T) {
-	err := loadSQLFiles(&DB{}, "/not/existing/path")
+	err := loadSQLFiles(&store.DB{}, "/not/existing/path")
 	assert.Error(t, err)
 }
 
@@ -149,7 +150,7 @@ func TestLoadSQLFiles_OpenFileError(t *testing.T) {
 	require.NoError(t, err)
 
 	sqlxDB := sqlx.NewDb(db, "sqlmock")
-	err = loadSQLFiles(&DB{DB: sqlxDB}, tmpDir)
+	err = loadSQLFiles(&store.DB{DB: sqlxDB}, tmpDir)
 	assert.Error(t, err)
 }
 
@@ -162,7 +163,7 @@ func TestLoadSQLFiles_ExecError(t *testing.T) {
 	require.NoError(t, err)
 
 	sqlxDB := sqlx.NewDb(db, "sqlmock")
-	mockDB := &DB{DB: sqlxDB}
+	mockDB := &store.DB{DB: sqlxDB}
 
 	err = loadSQLFiles(mockDB, tmpDir)
 	assert.Error(t, err)

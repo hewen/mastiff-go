@@ -1,5 +1,5 @@
-// Package store mock mysql
-package store
+// Package storemock mysql
+package storemock
 
 import (
 	"bufio"
@@ -16,18 +16,19 @@ import (
 	vsql "github.com/dolthub/vitess/go/mysql"
 	"github.com/hewen/mastiff-go/config/storeconf"
 	"github.com/hewen/mastiff-go/pkg/util"
+	"github.com/hewen/mastiff-go/store"
 )
 
 var (
 	getFreePortFunc    = util.GetFreePort
 	startMockMysqlFunc = startMockMysqlServer
-	initMysqlFunc      = InitMysql
+	initMysqlFunc      = store.InitMysql
 	loadSQLFilesFunc   = loadSQLFiles
 	newMysqlServerFunc = server.NewServer
 )
 
 // InitMockMysql initializes a MySQL connection with the given configuration.
-func InitMockMysql(sqlDir string) (*DB, error) {
+func InitMockMysql(sqlDir string) (*store.DB, error) {
 	// 1. create mock mysql engine
 	dbName := "mockdb"
 	engine, provider := createMockMysqlEngine(dbName)
@@ -46,7 +47,7 @@ func InitMockMysql(sqlDir string) (*DB, error) {
 
 	// 3. connect to mock mysql server
 	connStr := fmt.Sprintf("root:@tcp(%s)/%s?charset=utf8mb4&parseTime=true&interpolateParams=true", address, dbName)
-	dbConn, err := initMysqlFunc(storeconf.MysqlConfig{DataSourceName: connStr}, DatabaseOption{RegisterHookDriver: true})
+	dbConn, err := initMysqlFunc(storeconf.MysqlConfig{DataSourceName: connStr}, store.DatabaseOption{RegisterHookDriver: true})
 	if err != nil {
 		return nil, err
 	}
@@ -98,7 +99,7 @@ func startMockMysqlServer(address string, engine *sqle.Engine, provider *memory.
 	return nil
 }
 
-func loadSQLFiles(dbConn *DB, sqlDir string) error {
+func loadSQLFiles(dbConn *store.DB, sqlDir string) error {
 	if sqlDir == "" {
 		return nil
 	}
