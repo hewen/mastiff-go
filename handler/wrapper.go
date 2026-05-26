@@ -27,6 +27,9 @@ func WrapHandler[T any, R any](handle WrapHandlerFunc[T, R]) func(ctx unicontext
 		ctx.Set("req", req)
 
 		resp, err := handle(ctx, req)
+		if ctx.StatusCode() == http.StatusUnauthorized || ctx.StatusCode() == http.StatusTooManyRequests {
+			return nil
+		}
 		if err != nil {
 			l.Fields(map[string]any{"err": err}).Errorf("handler error")
 			return ctx.JSON(http.StatusInternalServerError, BaseResp{
