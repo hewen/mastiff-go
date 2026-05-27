@@ -5,7 +5,6 @@ import (
 	"net/http"
 
 	"github.com/hewen/mastiff-go/config/middlewareconf/authconf"
-	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 )
@@ -28,7 +27,6 @@ func HttpxMiddleware(conf *authconf.Config) func(unicontext.UniversalContext) er
 		}
 
 		ctx := unicontext.ContextFrom(c)
-		logger.NewLoggerWithContext(ctx).Infof("auth info: %v", authInfo.Claims)
 		ctx = contextkeys.SetAuthInfo(ctx, authInfo)
 		ctx = contextkeys.SetUserID(ctx, authInfo.UserID)
 		unicontext.InjectContext(ctx, c)

@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hewen/mastiff-go/logger"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"github.com/hewen/mastiff-go/server/httpx/unicontext"
 )
 
@@ -22,6 +23,7 @@ func HttpxMiddleware() func(unicontext.UniversalContext) error {
 
 		req, _ := c.Get("req")
 		resp, _ := c.Get("resp")
+		authInfo, _ := contextkeys.GetAuthInfo(ctx)
 
 		l := logger.NewLoggerWithContext(ctx)
 
@@ -34,6 +36,7 @@ func HttpxMiddleware() func(unicontext.UniversalContext) error {
 			c.Request().UserAgent(),
 			req,
 			resp,
+			authInfo,
 			err,
 		)
 

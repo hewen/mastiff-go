@@ -23,9 +23,6 @@ func LoadGRPCMiddlewares(conf middlewareconf.Config) []grpc.UnaryServerIntercept
 
 	var result []grpc.UnaryServerInterceptor
 
-	if IsEnabled(conf.EnableLogging) {
-		result = append(result, logging.UnaryServerInterceptor())
-	}
 	if IsEnabled(conf.EnableRecovery) {
 		result = append(result, recovery.UnaryServerInterceptor())
 	}
@@ -34,6 +31,9 @@ func LoadGRPCMiddlewares(conf middlewareconf.Config) []grpc.UnaryServerIntercept
 	}
 	if conf.Auth != nil {
 		result = append(result, auth.UnaryServerInterceptor(*conf.Auth))
+	}
+	if IsEnabled(conf.EnableLogging) {
+		result = append(result, logging.UnaryServerInterceptor())
 	}
 	if conf.CircuitBreaker != nil {
 		mgr := circuitbreaker.NewManager(conf.CircuitBreaker)
