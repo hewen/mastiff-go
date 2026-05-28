@@ -32,7 +32,7 @@ func TestUnaryServerInterceptor_WhiteList(t *testing.T) {
 		ctx,
 		"req",
 		info,
-		func(_ context.Context, _ interface{}) (interface{}, error) {
+		func(_ context.Context, _ any) (any, error) {
 			return "ok", nil
 		},
 	)
@@ -84,7 +84,22 @@ func TestUnaryServerInterceptor_ValidToken(t *testing.T) {
 	info := &grpc.UnaryServerInfo{FullMethod: "/TestService/Private"}
 
 	called := false
-	resp, err := interceptor(ctx, "req", info, func(ctx context.Context, _ interface{}) (interface{}, error) {
+	resp, err := interceptor(ctx, "req", info, func(ctx context.Context, _ any) (any, error) {
+		authInfo, _ := contextkeys.GetAuthInfo(ctx)
+		assert.NotNil(t, authInfo)
+		assert.Equal(t, "123", authInfo.UserID)
+		called = true
+		return "success", nil
+	})
+
+	assert.NoError(t, err)
+	assert.True(t, called)
+	assert.Equal(t, "success", resp)
+
+	info = &grpc.UnaryServerInfo{FullMethod: "/TestService/Public"}
+
+	called = false
+	resp, err = interceptor(ctx, "req", info, func(ctx context.Context, _ any) (any, error) {
 		authInfo, _ := contextkeys.GetAuthInfo(ctx)
 		assert.NotNil(t, authInfo)
 		assert.Equal(t, "123", authInfo.UserID)
@@ -114,6 +129,17 @@ func TestStreamServerInterceptor_ValidToken(t *testing.T) {
 		return nil
 	})
 
+	assert.NoError(t, err)
+	assert.True(t, called)
+
+	info = &grpc.StreamServerInfo{FullMethod: "/TestService/Public"}
+	err = interceptor(nil, stream, info, func(_ any, ss grpc.ServerStream) error {
+		authInfo, _ := contextkeys.GetAuthInfo(ss.Context())
+		assert.NotNil(t, authInfo)
+		assert.Equal(t, "123", authInfo.UserID)
+		called = true
+		return nil
+	})
 	assert.NoError(t, err)
 	assert.True(t, called)
 }

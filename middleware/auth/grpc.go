@@ -14,16 +14,23 @@ import (
 
 // authenticate handles token extraction and validation.
 func authenticate(ctx context.Context, method string, conf authconf.Config) (context.Context, error) {
-	if isWhiteListed(method, conf.WhiteList) {
-		return ctx, nil
-	}
-
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing metadata")
 	}
-
 	token := extractTokenFromGrpcMetadata(md, conf.HeaderKey, conf.TokenPrefixes)
+
+	if isWhiteListed(method, conf.WhiteList) {
+		if token != "" {
+			authInfo, err := validateJWTToken(token, conf.JWTSecret)
+			if err == nil && authInfo != nil {
+				ctx = contextkeys.SetAuthInfo(ctx, authInfo)
+				ctx = contextkeys.SetUserID(ctx, authInfo.UserID)
+			}
+		}
+		return ctx, nil
+	}
+
 	if token == "" {
 		return nil, status.Error(codes.Unauthenticated, "missing token")
 	}

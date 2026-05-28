@@ -12,11 +12,21 @@ import (
 // HttpxMiddleware is a fiber middleware for authentication and authorization.
 func HttpxMiddleware(conf *authconf.Config) func(unicontext.UniversalContext) error {
 	return func(c unicontext.UniversalContext) error {
+		token := extractTokenFromHeader(c.Header(conf.HeaderKey), conf.TokenPrefixes)
+
 		if isWhiteListed(c.FullPath(), conf.WhiteList) {
+			if token != "" {
+				authInfo, err := validateJWTToken(token, conf.JWTSecret)
+				if err == nil && authInfo != nil {
+					ctx := unicontext.ContextFrom(c)
+					ctx = contextkeys.SetAuthInfo(ctx, authInfo)
+					ctx = contextkeys.SetUserID(ctx, authInfo.UserID)
+					unicontext.InjectContext(ctx, c)
+				}
+			}
 			return c.Next()
 		}
 
-		token := extractTokenFromHeader(c.Header(conf.HeaderKey), conf.TokenPrefixes)
 		if token == "" {
 			return c.JSON(http.StatusUnauthorized, map[string]string{"error": "forbidden"})
 		}
