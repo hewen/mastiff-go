@@ -5,13 +5,19 @@ import (
 	"testing"
 
 	"github.com/hewen/mastiff-go/middleware/internal/shared"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 )
 
 func TestUnaryServerInterceptor(t *testing.T) {
 	fn := UnaryServerInterceptor()
-	resp, err := fn(context.TODO(), nil, &grpc.UnaryServerInfo{
+	ctx := context.TODO()
+	authInfo := &contextkeys.Info{
+		UserID: "1",
+	}
+	ctx = contextkeys.SetAuthInfo(ctx, authInfo)
+	resp, err := fn(ctx, nil, &grpc.UnaryServerInfo{
 		FullMethod: "test",
 	}, func(_ context.Context, _ any) (any, error) {
 		return "test", nil

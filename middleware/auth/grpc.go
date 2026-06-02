@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/hewen/mastiff-go/config/middlewareconf/authconf"
-	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/middleware/internal/shared"
 	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"google.golang.org/grpc"
@@ -15,16 +14,23 @@ import (
 
 // authenticate handles token extraction and validation.
 func authenticate(ctx context.Context, method string, conf authconf.Config) (context.Context, error) {
-	if isWhiteListed(method, conf.WhiteList) {
-		return ctx, nil
-	}
-
 	md, ok := metadata.FromIncomingContext(ctx)
 	if !ok {
 		return nil, status.Error(codes.Unauthenticated, "missing metadata")
 	}
-
 	token := extractTokenFromGrpcMetadata(md, conf.HeaderKey, conf.TokenPrefixes)
+
+	if isWhiteListed(method, conf.WhiteList) {
+		if token != "" {
+			authInfo, err := validateJWTToken(token, conf.JWTSecret)
+			if err == nil && authInfo != nil {
+				ctx = contextkeys.SetAuthInfo(ctx, authInfo)
+				ctx = contextkeys.SetUserID(ctx, authInfo.UserID)
+			}
+		}
+		return ctx, nil
+	}
+
 	if token == "" {
 		return nil, status.Error(codes.Unauthenticated, "missing token")
 	}
@@ -33,7 +39,6 @@ func authenticate(ctx context.Context, method string, conf authconf.Config) (con
 	if err != nil {
 		return nil, status.Error(codes.Unauthenticated, "invalid token")
 	}
-	logger.NewLoggerWithContext(ctx).Infof("auth info: %v", authInfo.Claims)
 	ctx = contextkeys.SetAuthInfo(ctx, authInfo)
 	ctx = contextkeys.SetUserID(ctx, authInfo.UserID)
 	return ctx, nil

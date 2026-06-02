@@ -6,6 +6,7 @@ import (
 
 	"github.com/hewen/mastiff-go/logger"
 	"github.com/hewen/mastiff-go/middleware/internal/shared"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 )
@@ -23,6 +24,8 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 		if pr, _ := peer.FromContext(ctx); pr != nil {
 			ip = pr.Addr.String()
 		}
+
+		authInfo, _ := contextkeys.GetAuthInfo(ctx)
 		logger.LogRequest(
 			l,
 			0,
@@ -32,6 +35,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 			"GRPC-GO-UNARY",
 			req,
 			resp,
+			authInfo,
 			err,
 		)
 		return resp, err
@@ -41,7 +45,7 @@ func UnaryServerInterceptor() grpc.UnaryServerInterceptor {
 // StreamServerInterceptor is a gRPC stream interceptor that logs the request and response stream details, including execution time and any errors.
 func StreamServerInterceptor() grpc.StreamServerInterceptor {
 	return func(
-		srv interface{},
+		srv any,
 		ss grpc.ServerStream,
 		info *grpc.StreamServerInfo,
 		handler grpc.StreamHandler,
@@ -62,6 +66,7 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 			ip = pr.Addr.String()
 		}
 
+		authInfo, _ := contextkeys.GetAuthInfo(ctx)
 		logger.LogRequest(
 			l,
 			0,
@@ -71,6 +76,7 @@ func StreamServerInterceptor() grpc.StreamServerInterceptor {
 			"GRPC-GO-STREAM",
 			nil,
 			nil,
+			authInfo,
 			err,
 		)
 
@@ -92,6 +98,7 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 		start := time.Now()
 		l := logger.NewLoggerWithContext(ctx)
 		err := invoker(ctx, method, req, reply, cc, opts...)
+		authInfo, _ := contextkeys.GetAuthInfo(ctx)
 
 		logger.LogRequest(
 			l,
@@ -102,6 +109,7 @@ func UnaryClientInterceptor() grpc.UnaryClientInterceptor {
 			"GRPC-GO-CLIENT",
 			req,
 			reply,
+			authInfo,
 			err,
 		)
 

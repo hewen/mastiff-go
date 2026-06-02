@@ -112,10 +112,24 @@ func TestHttpxValidToken(t *testing.T) {
 		return c.String(http.StatusOK, "hello "+ai.UserID)
 	})
 
+	r.Get("/public", func(c unicontext.UniversalContext) error {
+		return c.String(http.StatusOK, "")
+	})
+
 	req, _ := http.NewRequest("GET", "/secure", nil)
 	tk, _ := GenerateJWTToken(map[string]any{"user_id": "123"}, conf.JWTSecret, time.Minute)
 	req.Header.Set("Authorization", "Bearer "+tk)
 	resp, err := r.Test(req)
+	defer func() {
+		_ = resp.Body.Close()
+	}()
+	assert.Nil(t, err)
+	assert.Equal(t, http.StatusOK, resp.StatusCode)
+
+	req, _ = http.NewRequest("GET", "/public", nil)
+	tk, _ = GenerateJWTToken(map[string]any{"user_id": "123"}, conf.JWTSecret, time.Minute)
+	req.Header.Set("Authorization", "Bearer "+tk)
+	resp, err = r.Test(req)
 	defer func() {
 		_ = resp.Body.Close()
 	}()

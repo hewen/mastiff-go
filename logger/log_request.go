@@ -5,6 +5,7 @@ import (
 	"time"
 
 	masker "github.com/ggwhite/go-masker/v2"
+	"github.com/hewen/mastiff-go/pkg/contextkeys"
 )
 
 var (
@@ -15,7 +16,7 @@ var (
 )
 
 // LogRequest logs an HTTP or gRPC request in structured format (JSON-style if backend supports).
-func LogRequest(l Logger, statusCode int, duration time.Duration, ip, method, ua string, req, resp any, err error) {
+func LogRequest(l Logger, statusCode int, duration time.Duration, ip, method, ua string, req, resp any, authInfo *contextkeys.Info, err error) {
 	// Type assertion to see if logger backend supports structured logging (e.g. zerologLogger).
 	fields := map[string]any{
 		"status":   statusCode,
@@ -31,6 +32,10 @@ func LogRequest(l Logger, statusCode int, duration time.Duration, ip, method, ua
 	if resp != nil {
 		fields["resp"] = MaskValue(resp)
 	}
+	if authInfo != nil {
+		fields["auth"] = MaskValue(authInfo.Claims)
+	}
+
 	if err != nil {
 		fields["err"] = err.Error()
 	}

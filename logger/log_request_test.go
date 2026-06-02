@@ -62,7 +62,7 @@ func TestLogRequest(t *testing.T) {
 
 	t.Run("Normal request", func(t *testing.T) {
 		mock := &mockLogger{}
-		LogRequest(mock, 200, 500*time.Millisecond, "127.0.0.1", "GET /ping", "curl/1.0", "req-body", "resp-body", nil)
+		LogRequest(mock, 200, 500*time.Millisecond, "127.0.0.1", "GET /ping", "curl/1.0", "req-body", "resp-body", nil, nil)
 
 		assert.Equal(t, "info", mock.lastLevel)
 		assert.Equal(t, "req", mock.lastMsg)
@@ -76,7 +76,7 @@ func TestLogRequest(t *testing.T) {
 
 	t.Run("Slow request", func(t *testing.T) {
 		mock := &mockLogger{}
-		LogRequest(mock, 200, 2*time.Second, "127.0.0.1", "GET /slow", "test-agent", "req", "resp", nil)
+		LogRequest(mock, 200, 2*time.Second, "127.0.0.1", "GET /slow", "test-agent", "req", "resp", nil, nil)
 
 		assert.Equal(t, "info", mock.lastLevel)
 		assert.Equal(t, "slow req", mock.lastMsg)
@@ -85,7 +85,7 @@ func TestLogRequest(t *testing.T) {
 	t.Run("Request with error", func(t *testing.T) {
 		mock := &mockLogger{}
 		err := errors.New("db error")
-		LogRequest(mock, 500, 100*time.Millisecond, "127.0.0.1", "POST /api", "agent", "req", "resp", err)
+		LogRequest(mock, 500, 100*time.Millisecond, "127.0.0.1", "POST /api", "agent", "req", "resp", nil, err)
 
 		assert.Equal(t, "error", mock.lastLevel)
 		assert.Equal(t, "req", mock.lastMsg)
@@ -94,7 +94,7 @@ func TestLogRequest(t *testing.T) {
 
 	t.Run("Request with nil", func(t *testing.T) {
 		mock := &mockLogger{}
-		LogRequest(mock, 500, 100*time.Millisecond, "127.0.0.1", "POST /api", "agent", "nil", "nil", nil)
+		LogRequest(mock, 500, 100*time.Millisecond, "127.0.0.1", "POST /api", "agent", "nil", "nil", nil, nil)
 
 		assert.Equal(t, "req", mock.lastMsg)
 	})
@@ -145,7 +145,7 @@ func BenchmarkLogRequestWithoutMask(b *testing.B) {
 
 	l := NewLogger()
 	for i := 0; i < b.N; i++ {
-		LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
+		LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil, nil)
 	}
 }
 
@@ -166,7 +166,7 @@ func BenchmarkLogRequestWithMask(b *testing.B) {
 
 	l := NewLogger()
 	for i := 0; i < b.N; i++ {
-		LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
+		LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil, nil)
 	}
 }
 
@@ -192,7 +192,7 @@ func BenchmarkLogRequestParallelWithoutMask(b *testing.B) {
 	b.SetParallelism(10)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
+			LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil, nil)
 		}
 	})
 }
@@ -219,7 +219,7 @@ func BenchmarkLogRequestParallelWithMask(b *testing.B) {
 	b.SetParallelism(10)
 	b.RunParallel(func(pb *testing.PB) {
 		for pb.Next() {
-			LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
+			LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil, nil)
 		}
 	})
 }
@@ -228,12 +228,12 @@ func TestLogRequestWithMask(_ *testing.T) {
 	SetLogMasking(true)
 	// test repeat log
 	l := NewLogger()
-	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
-	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil)
+	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil, nil)
+	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", req, resp, nil, nil)
 
-	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", nil, nil, nil)
-	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", []string{"test"}, nil, nil)
-	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", 1, nil, nil)
+	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", nil, nil, nil, nil)
+	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", []string{"test"}, nil, nil, nil)
+	LogRequest(l, 200, 300*time.Millisecond, "127.0.0.1", "POST /test", "Go-http-client/1.1", 1, nil, nil, nil)
 }
 
 func TestMaskValue(t *testing.T) {
