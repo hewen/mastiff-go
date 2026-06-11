@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"testing"
 
 	"github.com/hewen/mastiff-go/storemock"
@@ -17,7 +18,7 @@ func TestNewDbStore(t *testing.T) {
 	assert.NotNil(t, dbStore.Queries)
 	assert.NotNil(t, dbStore.CustomQueries)
 
-	err = dbStore.Ping()
+	err = dbStore.Ping(context.TODO())
 	assert.Nil(t, err)
 	err = dbStore.Close()
 	assert.Nil(t, err)

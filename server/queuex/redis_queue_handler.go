@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	"github.com/go-redis/redis/v7"
+	"github.com/redis/go-redis/v9"
 	"google.golang.org/protobuf/proto"
 )
 
@@ -20,13 +20,13 @@ func NewRedisQueue(client *redis.Client, queueName string) RedisQueue {
 }
 
 // Push adds a message to the queue.
-func (r RedisQueue) Push(_ context.Context, data []byte) error {
-	return r.client.LPush(r.queueName, data).Err()
+func (r RedisQueue) Push(ctx context.Context, data []byte) error {
+	return r.client.LPush(ctx, r.queueName, data).Err()
 }
 
 // Pop retrieves a message from the queue.
-func (r RedisQueue) Pop(_ context.Context) ([]byte, error) {
-	res, err := r.client.BLPop(1*time.Second, r.queueName).Result()
+func (r RedisQueue) Pop(ctx context.Context) ([]byte, error) {
+	res, err := r.client.BLPop(ctx, 1*time.Second, r.queueName).Result()
 	if err != nil && err != redis.Nil {
 		return nil, err
 	}

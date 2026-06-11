@@ -3,9 +3,9 @@ package storemock
 
 import (
 	"github.com/alicebob/miniredis/v2"
-	"github.com/go-redis/redis/v7"
 	"github.com/hewen/mastiff-go/config/storeconf"
 	"github.com/hewen/mastiff-go/store"
+	"github.com/redis/go-redis/v9"
 )
 
 var miniredisRun = miniredis.Run

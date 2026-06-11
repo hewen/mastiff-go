@@ -2,10 +2,11 @@
 package store
 
 import (
+	"context"
 	"crypto/tls"
 
-	"github.com/go-redis/redis/v7"
 	"github.com/hewen/mastiff-go/config/storeconf"
+	"github.com/redis/go-redis/v9"
 )
 
 // InitRedis initializes a Redis connection.
@@ -36,6 +37,6 @@ func InitRedis(conf storeconf.RedisConfig) (*redis.Client, error) {
 		redisConn.AddHook(hook)
 	}
 
-	_, err := redisConn.Ping().Result()
+	_, err := redisConn.Ping(context.Background()).Result()
 	return redisConn, err
 }

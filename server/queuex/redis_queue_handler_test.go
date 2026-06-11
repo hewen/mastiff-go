@@ -8,9 +8,9 @@ import (
 	"time"
 
 	"github.com/alicebob/miniredis/v2"
-	"github.com/go-redis/redis/v7"
 	"github.com/hewen/mastiff-go/config/serverconf"
 	"github.com/hewen/mastiff-go/server/test"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"google.golang.org/protobuf/proto"
@@ -145,10 +145,11 @@ func TestRedisQueue_Pop_LengthMismatch(t *testing.T) {
 	client := redis.NewClient(&redis.Options{Addr: mr.Addr()})
 	queue := NewRedisQueue(client, "test_queue_len")
 
-	err = client.LPush("test_queue_len", "only-one").Err()
+	ctx := context.TODO()
+	err = client.LPush(ctx, "test_queue_len", "only-one").Err()
 	require.NoError(t, err)
 
-	client.LPop("test_queue_len")
+	client.LPop(ctx, "test_queue_len")
 
 	data, err := queue.Pop(context.Background())
 	assert.NoError(t, err)

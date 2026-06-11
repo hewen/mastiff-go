@@ -11,9 +11,9 @@ import (
 )
 
 // Check implements the health check for the Core service.
-func (c *Handler) Check(_ context.Context, _ *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
+func (c *Handler) Check(ctx context.Context, _ *healthpb.HealthCheckRequest) (*healthpb.HealthCheckResponse, error) {
 	if repository.DStore != nil {
-		if err := repository.DStore.Ping(); err != nil {
+		if err := repository.DStore.Ping(ctx); err != nil {
 			return &healthpb.HealthCheckResponse{
 				Status: healthpb.HealthCheckResponse_NOT_SERVING,
 			}, err
@@ -21,7 +21,7 @@ func (c *Handler) Check(_ context.Context, _ *healthpb.HealthCheckRequest) (*hea
 	}
 
 	if repository.RStore != nil {
-		if err := repository.RStore.Ping(); err != nil {
+		if err := repository.RStore.Ping(ctx); err != nil {
 			return &healthpb.HealthCheckResponse{
 				Status: healthpb.HealthCheckResponse_NOT_SERVING,
 			}, err

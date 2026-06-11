@@ -2,10 +2,12 @@
 package repository
 
 import (
+	"context"
+
 	"{{.PackageName}}/internal/core/interfaces/repository/custom"
 	"{{.PackageName}}/internal/core/interfaces/repository/sqlc"
-	"github.com/go-redis/redis/v7"
 	"github.com/hewen/mastiff-go/store"
+	"github.com/redis/go-redis/v9"
 )
 
 // DBStore is a struct that holds a database connection and queries.
@@ -16,8 +18,8 @@ type DBStore struct {
 }
 
 // Ping checks the database connection by pinging it.
-func (d *DBStore) Ping() error {
-	return d.db.Ping()
+func (d *DBStore) Ping(ctx context.Context) error {
+	return d.db.PingContext(ctx)
 }
 
 // DataSourceName returns the data source name of the database.
@@ -45,8 +47,8 @@ type RedisStore struct {
 }
 
 // Ping checks the Redis connection by pinging it.
-func (r *RedisStore) Ping() error {
-	_, err := r.db.Ping().Result()
+func (r *RedisStore) Ping(ctx context.Context) error {
+	_, err := r.db.Ping(ctx).Result()
 	return err
 }
 
