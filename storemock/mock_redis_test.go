@@ -1,6 +1,7 @@
 package storemock
 
 import (
+	"context"
 	"errors"
 	"testing"
 	"time"
@@ -12,8 +13,9 @@ import (
 func TestInitMockRedis(t *testing.T) {
 	db := InitMockRedis()
 	assert.NotNil(t, db)
-	db.Set("test", 1, time.Hour)
-	db.Get("test")
+	ctx := context.TODO()
+	db.Set(ctx, "test", 1, time.Hour)
+	db.Get(ctx, "test")
 }
 
 func TestInitMockRedis_MiniredisFail(t *testing.T) {

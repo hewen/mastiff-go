@@ -3,40 +3,52 @@ package store
 
 import (
 	"context"
+	"net"
 	"time"
 
-	"github.com/go-redis/redis/v7"
 	"github.com/hewen/mastiff-go/logger"
-	"github.com/hewen/mastiff-go/pkg/contextkeys"
 	"github.com/hewen/mastiff-go/pkg/util"
+	"github.com/redis/go-redis/v9"
 )
 
 // RedisHook implements redis.Hook interface for logging Redis commands.
 type RedisHook struct{}
 
-// BeforeProcess is called before Redis command is processed.
-func (*RedisHook) BeforeProcess(ctx context.Context, _ redis.Cmder) (context.Context, error) {
-	// Record the time when Redis command is about to be processed.
-	return contextkeys.SetRedisBeginTime(ctx, time.Now()), nil
+// DialHook is a no-op hook for dialing, it simply calls the next hook in the chain.
+func (RedisHook) DialHook(next redis.DialHook) redis.DialHook {
+	return func(ctx context.Context, network, addr string) (net.Conn, error) {
+		return next(ctx, network, addr)
+	}
 }
 
-// AfterProcess is called after Redis command is processed.
-func (*RedisHook) AfterProcess(ctx context.Context, cmd redis.Cmder) error {
-	begin, _ := contextkeys.GetRedisBeginTime(ctx)
-	l := logger.NewLoggerWithContext(ctx)
-	l.Infof("REDIS | %10s | %v", util.FormatDuration(time.Since(begin)), cmd)
-	return nil
+// ProcessHook logs Redis commands.
+func (RedisHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
+	return func(ctx context.Context, cmd redis.Cmder) error {
+		begin := time.Now()
+
+		err := next(ctx, cmd)
+
+		logger.NewLoggerWithContext(ctx).Infof(
+			"REDIS | %10s | %v",
+			util.FormatDuration(time.Since(begin)),
+			cmd,
+		)
+		return err
+	}
 }
 
-// BeforeProcessPipeline is called before a Redis pipeline is processed.
-func (*RedisHook) BeforeProcessPipeline(ctx context.Context, _ []redis.Cmder) (context.Context, error) {
-	return contextkeys.SetRedisBeginTime(ctx, time.Now()), nil
-}
+// ProcessPipelineHook logs Redis pipeline commands.
+func (RedisHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+	return func(ctx context.Context, cmds []redis.Cmder) error {
+		begin := time.Now()
 
-// AfterProcessPipeline is called after a Redis pipeline is processed.
-func (*RedisHook) AfterProcessPipeline(ctx context.Context, cmds []redis.Cmder) error {
-	begin, _ := contextkeys.GetRedisBeginTime(ctx)
-	l := logger.NewLoggerWithContext(ctx)
-	l.Infof("REDIS | %10s | %v", util.FormatDuration(time.Since(begin)), cmds)
-	return nil
+		err := next(ctx, cmds)
+
+		logger.NewLoggerWithContext(ctx).Infof(
+			"REDIS | %10s | %v",
+			util.FormatDuration(time.Since(begin)),
+			cmds,
+		)
+		return err
+	}
 }
