@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"context"
 	"testing"
 
 	"github.com/hewen/mastiff-go/storemock"
@@ -12,7 +13,7 @@ func TestNewRedisStore(t *testing.T) {
 	store := NewRedisStore(client)
 	assert.NotNil(t, store)
 
-	err := store.Ping()
+	err := store.Ping(context.TODO())
 	assert.NoError(t, err)
 
 	db := store.GetDb()
